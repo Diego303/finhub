@@ -5,6 +5,12 @@ import { CLAVE_LISTA, specItems, seccionDe, buscarItem, existeItem, validarEntid
 import { detectar, leer as leerFormato } from '../formato/index.js';
 import { fijarKv } from '../formato/motor.js';
 import { recalcularCierres } from './mes.js';
+import { parseHumor, parseAccesorios } from '../rex.js';
+import { parseCrisis } from '../herramientas.js';
+import { parseSupuestos } from '../proyeccion.js';
+
+// Ajustes de texto con su propia gramática: se comprueban al guardarlos desde Ajustes.
+const GRAMATICAS = { rex_humor: parseHumor, accesorios: parseAccesorios, crisis_periodos: parseCrisis, proyeccion_manual: parseSupuestos };
 
 // Editar cuentas.md (p. ej. un saldo inicial) cambia los saldos: se recalculan las fotos de los meses cerrados.
 const tocarLista = (tx, ruta) => {
@@ -110,6 +116,49 @@ registrar({
     if (!especKv.defs[clave]) throw new ErrorOp('invalida', `ajuste desconocido «${clave}»`);
     fijarKv(doc, null, clave, validarKv(especKv, clave, valor));
     tx.tocar('ajustes.md');
+  },
+
+  /**
+   * {valores: {clave: texto}} · varios ajustes escritos como en el fichero (un solo deshacer). Texto vacío =
+   * se quita la clave y vuelve el valor por defecto. Cada texto se valida con el propio formato.
+   */
+  'ajustes.textos'(tx, { valores = {} }) {
+    const doc = tx.doc('ajustes.md', { crear: true });
+    const especKv = doc.spec.preambulo;
+    const errores = [];
+    for (const [clave, texto] of Object.entries(valores)) {
+      if (!especKv.defs[clave]) throw new ErrorOp('invalida', `ajuste desconocido «${clave}»`);
+      const t = String(texto ?? '').replace(/\s*\n\s*/g, ' ').trim();
+      if (!t) {
+        const pre = doc.secciones[0];
+        const i = pre.nodos.findIndex((n) => n.k === 'kv' && n.clave === clave);
+        if (i >= 0) pre.nodos.splice(i, 1);
+        continue;
+      }
+      const r = especKv.parseLinea(`${clave}: ${t}`);
+      if (!r || r.valor === undefined) {
+        errores.push(r?.aviso ?? `${clave}: no válido`);
+        continue;
+      }
+      const g = GRAMATICAS[clave]?.(r.valor);
+      if (g?.error) {
+        errores.push(`${clave}: ${g.error}`);
+        continue;
+      }
+      fijarKv(doc, null, clave, r.valor);
+    }
+    if (errores.length) throw new ErrorOp('invalida', errores.join(' · '));
+    tx.tocar('ajustes.md');
+  },
+
+  /** {ruta: roles/<id>.md | tareas/<id>.md, texto} · tu versión de un rol o una tarea (validada por su formato). */
+  'texto.guardar'(tx, { ruta, texto }) {
+    if (!/^(roles|tareas)\/[a-z0-9]+(-[a-z0-9]+)*\.md$/.test(ruta ?? '')) throw new ErrorOp('invalida', 'solo se editan aquí roles/ y tareas/');
+    const t = `${String(texto ?? '').replace(/\r\n/g, '\n').trimEnd()}\n`;
+    const d = leerFormato(ruta, t);
+    const errores = d?.avisos.filter((a) => a.nivel === 'error') ?? [];
+    if (!d || errores.length) throw new ErrorOp('invalida', errores.map((a) => `línea ${a.linea}: ${a.mensaje}`).join(' · ') || 'no es un rol ni una tarea');
+    tx.escribirTexto(ruta, t);
   },
 
   'ajustes.quitar'(tx, { clave }) {

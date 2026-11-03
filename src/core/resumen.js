@@ -1,5 +1,4 @@
 // «Pendientes hoy» (§4.8), calculado por código. Nada se ejecuta solo: cada elemento es tu luz verde.
-// El resumen al abrir y Tu año llegan en F7.
 import { mesFinanciero, periodoMes, diasEntre, sumarDias, textoCorto, MESES, partesMes, mesDe, sumarMesesMes } from './fechas.js';
 import { recurrentesDelMes, proximos } from './recurrentes.js';
 import { formatearEuros } from './dinero.js';

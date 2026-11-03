@@ -12,10 +12,14 @@ import { barraR1, abrirR1 } from './componentes/r1.js';
 import { registrarAccionesClaude, refrescarInfo, abrirDatos } from './componentes/claude.js';
 import { registrarPulso, abrirPulso } from './componentes/pulso.js';
 import { registrarIngesta } from './componentes/ingesta.js';
-import { abrirAjustes } from './componentes/ajustes.js';
-import { abrirPapelera } from './componentes/papelera.js';
+import { abrirAjustes, registrarAjustes } from './componentes/ajustes.js';
+import { abrirPapelera, registrarPapelera } from './componentes/papelera.js';
+import { registrarConflictos } from './componentes/conflictos.js';
+import { abrirTextos, registrarTextos } from './componentes/textos-claude.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
 import { vistaRex, ponerModo, ponerExplicame, quitarExplicame, iniciarRex, registrarAccionesRex } from './vistas/rex.js';
+import { vistaInicio, iniciarInicio, registrarInicio } from './vistas/inicio.js';
+import { carpetaNueva } from '/core/inicio.js';
 import { vistaAnalisis, iniciarAnalisis, registrarAccionesAnalisis } from './vistas/analisis.js';
 import { vistaDescubrimientos, iniciarDescubrimientos, registrarAccionesDescubrimientos, abrirPreciosSeguimiento } from './vistas/descubrimientos.js';
 import { vistaPanel } from './vistas/panel.js';
@@ -56,6 +60,7 @@ function pestanas() {
 function contenido() {
   if (estado.cargando) return html`<div class="carga mut">Cargando tu carpeta…</div>`;
   if (!estado.modelo) return html`<div class="carga mut">No se pudieron cargar los datos.</div>`;
+  if (carpetaNueva(estado.modelo) && !estado.servidor?.carpeta.ejemplo) return vistaInicio(estado);
   const pestana = PESTANAS.find((p) => p[0] === estado.vista);
   const principal = pestana ? pestana[2](estado) : OCULTAS[estado.vista](estado);
   if (SIN_LATERAL.has(estado.vista)) return principal;
@@ -70,8 +75,8 @@ export function render() {
   const marco = document.getElementById('marco');
   pintar(
     marco,
-    html`${cabecera(estado, { menuAbierto })}${bandas(estado)}${pestanas()}
-      <main id="contenido" role="tabpanel" aria-labelledby="pestana-${estado.vista}">${contenido()}</main>
+    html`<button type="button" class="saltar" data-accion="saltar">Saltar al contenido</button>${cabecera(estado, { menuAbierto })}${bandas(estado)}${pestanas()}
+      <main id="contenido" tabindex="-1" role="tabpanel" aria-labelledby="pestana-${estado.vista}">${contenido()}</main>
       ${barraR1(estado.claude)}`,
   );
   if (clave && !hayModal()) {
@@ -105,6 +110,7 @@ accion('gestion-entrada', (el) => {
   if (id === 'ajustes') return abrirAjustes(estado);
   if (id === 'seguridad') return abrirR1();
   if (id === 'papelera') return abrirPapelera(cargar);
+  if (id === 'roles' || id === 'tareas') return abrirTextos(id, estado);
   if (id === 'activos') return abrirActivosObjetivo();
   if (id === 'metas' || id === 'conocimiento') {
     location.hash = id;
@@ -112,8 +118,9 @@ accion('gestion-entrada', (el) => {
   }
   abrirEntrada(id, estado.modelo);
 });
-accion('abrir-ajustes', () => estado.servidor && estado.modelo && abrirAjustes(estado));
+accion('abrir-ajustes', () => estado.servidor && estado.modelo && abrirAjustes(estado, 'carpeta'));
 accion('abrir-r1', () => abrirR1());
+accion('saltar', () => document.getElementById('contenido')?.focus());
 accion('reintentar', () => cargar());
 accion('tomar-control', async () => {
   if (!(await confirmar('El otro equipo pasará a solo lectura. Si estaba editando, podría perder ese cambio. ¿Tomas el control?', { si: 'Tomar el control' }))) return;
@@ -125,12 +132,6 @@ accion('tomar-control', async () => {
     toast(e.message, { tipo: 'error' });
   }
 });
-accion('conflictos', () =>
-  abrir({
-    titulo: 'Conflictos de sincronización',
-    cuerpo: html`<div class="mut" style="font-size:11px;margin:6px 0">El servicio de sincronización dejó otra versión de estos ficheros. No se mezclan con tus datos hasta que elijas.</div>${estado.servidor.conflictos.map((c) => html`<div class="pd" style="grid-template-columns:1fr"><span><b style="font-weight:500">${c.base}</b> ↔ ${c.ruta}<div class="mut" style="font-size:10.5px">${c.descripcion}</div></span></div>`)}<div class="mut" style="font-size:10.5px;margin-top:8px">Resolver (quedarte con una, fusionar por entidades o editar a mano) llega en la fase F12.</div>`,
-  }),
-);
 accion('pendiente', (el) => {
   const d = el.dataset.destino;
   const vistas = { mes: 'mes', descubrimientos: 'descubrimientos', predicciones: 'conocimiento', contexto: 'conocimiento', pausas: 'rex' };
@@ -221,15 +222,27 @@ iniciarRex({ estado, render });
 registrarAccionesRex();
 iniciarAnalisis({ estado, render });
 registrarAccionesAnalisis();
+registrarAjustes(estado);
+iniciarInicio({ estado, render });
+registrarInicio();
+registrarPapelera();
+registrarTextos(estado);
+registrarConflictos(estado, cargar);
 iniciarDescubrimientos({ estado, render });
 registrarAccionesDescubrimientos();
 document.addEventListener('finhub:claude', () => render());
+document.addEventListener('finhub:celebrar', (ev) => {
+  toast(ev.detail.texto);
+  ponerRex('feliz', 6000);
+});
 iniciarEditores(() => estado);
 registrarEditores();
 document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));
 alCambiar(render);
 render();
 arrancarAnimacion();
+// app instalable (§10 F12): el service worker no guarda nada en caché
+if ('serviceWorker' in navigator && location.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(location.hostname)) navigator.serviceWorker.register('/sw.js').catch(() => {});
 cargar().then(() => {
   sincronizar();
   refrescarInfo();

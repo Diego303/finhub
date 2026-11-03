@@ -1,4 +1,4 @@
-// Gestión ▾ (§5, §14.4): el marco. Cada entrada abre su modal; la edición completa llega en su fase.
+// Gestión ▾ (§5, §14.4): cada entrada abre su editor (o su pestaña).
 import { html } from '../esc.js';
 import { abrir } from './modal.js';
 import { formatearEuros, formatearPorcentaje } from '/core/dinero.js';
@@ -13,8 +13,8 @@ export const ENTRADAS = [
   ['activos', 'Activos y objetivo', 'Posiciones, ISIN, clase y peso objetivo', null],
   ['metas', 'Metas', 'Importe, fecha y grupo asociado · en la pestaña Metas', null],
   ['conocimiento', 'Grupos de conocimiento', 'Familias, fuentes y mezclas · en la pestaña Conocimiento', null],
-  ['roles', 'Roles expertos', 'roles/*.md · cómo piensa Claude en cada tarea', 'F9'],
-  ['tareas', 'Tareas', 'tareas/*.md · qué se le pide a Claude', 'F9'],
+  ['roles', 'Roles expertos', 'roles/*.md · cómo piensa Claude en cada tarea', null],
+  ['tareas', 'Tareas', 'tareas/*.md · qué se le pide a Claude', null],
   ['ajustes', 'Ajustes', 'Carpeta de datos (sincronizada), mes financiero, tema, impuestos…', null],
   ['seguridad', 'Seguridad y registro', 'Regla R1 · trabajos aislados · registro de Claude', null],
   ['papelera', 'Papelera y cuarentena', '30 días para recuperar lo borrado · salidas de Claude rechazadas', null],
@@ -62,6 +62,6 @@ export function abrirEntrada(id, modelo) {
     titulo: e[1],
     cuerpo: html`<div class="mut" style="font-size:11px;margin-top:6px">${e[2]}. Mismo patrón para todo: lista editable en línea, añadir, quitar con deshacer. Todo se guarda en Markdown.</div>
       ${vista(id, modelo)}
-      <div class="mut" style="font-size:10.5px;margin-top:8px">La edición desde aquí llega en la fase ${e[3]}. Mientras, puedes editar el Markdown a mano: finhub lo recarga solo.</div>`,
+      <div class="mut" style="font-size:10.5px;margin-top:8px">También puedes editar el Markdown a mano: finhub lo recarga solo.</div>`,
   });
 }

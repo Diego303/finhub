@@ -3,7 +3,7 @@ import http from 'node:http';
 import { randomBytes, randomInt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import fsp from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { Almacen, ErrorAlmacen } from './almacen.js';
 import { Candado } from './candado.js';
 import { Papelera } from './papelera.js';
@@ -12,12 +12,15 @@ import { Deshacer } from './deshacer.js';
 import { CanalSSE, Difusor } from './sse.js';
 import { cambiarCarpeta, validarDestino, enviarAPapeleraSistema } from './carpeta.js';
 import { ServicioClaude } from './claude.js';
+import { diferencias, fusionar, nombreDescartada } from './conflictos.js';
 import { fijarCarpeta } from './config.js';
 import { aRutaWindows, carpetasLocales } from './rutas.js';
 import { ErrorHttp, comprobarPeticion, leerJson, enviarJson, servirEstatico, rutasEstaticas, CABECERAS_SEGURIDAD } from './http.js';
 import { aplicarOp, ErrorOp, operaciones } from '../core/ops/index.js';
 import { leer as leerFormato } from '../core/formato/index.js';
-import { valores } from '../core/formato/motor.js';
+import { valores, items } from '../core/formato/motor.js';
+import { FUENTES_FIJAS } from '../core/formato/conocimiento.js';
+import { fuenteDeRuta } from '../core/conocimiento.js';
 import { ajustesEfectivos } from '../core/formato/config.js';
 import { crearPrng } from '../core/prng.js';
 import { fechaLocal, horaLocal, mesDe, mesFinanciero, sumarMesesMes } from '../core/fechas.js';
@@ -161,10 +164,105 @@ export class App {
       if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
       const entrada = await this.papelera.entrada(id);
       if (!entrada) throw new ErrorHttp(404, 'Esa entrada ya no está en la papelera');
-      const res = aplicarOp((r) => this.almacen.texto(r), 'papelera.restaurar', { entrada }, this.ctxOps());
+      if (entrada.tipo === 'conflicto') {
+        // una versión descartada al resolver un conflicto vuelve como copia en conflicto (se resuelve otra vez)
+        const abs = join(this.almacen.raiz, entrada.ruta);
+        if (await fsp.stat(abs).then(() => true, () => false)) throw new ErrorHttp(409, `ya existe «${entrada.ruta}»`);
+        await fsp.mkdir(dirname(abs), { recursive: true });
+        await fsp.writeFile(abs, entrada.contenido);
+        await this.papelera.quitar([id]);
+        await this.almacen.barrer();
+        this.difusor.enviar('candado', {});
+        return { ok: true, conflicto: entrada.ruta };
+      }
+      // §9.22: si lo que restauras es de una fuente que ya no existe, se restaura también la fuente (si está
+      // en la papelera); si no, se explica qué hacer antes
+      const padre = fuenteDeRuta(entrada.ruta);
+      const fuentes = this.almacen.texto('conocimiento/_fuentes.md');
+      const existe = (f) => FUENTES_FIJAS.includes(f) || (fuentes ? items(leerFormato('conocimiento/_fuentes.md', fuentes)).some((x) => x.id === f) : false);
+      const ids = [id];
+      let restaurarAntes = null;
+      if (padre && !existe(padre)) {
+        const ep = (await this.papelera.listar()).filter((f) => f.ruta === 'conocimiento/_fuentes.md' && new RegExp(`^(- )?${padre} \\|`).test(f.contenido ?? '')).at(-1);
+        if (!ep) throw new ErrorHttp(409, `La fuente «${padre}» ya no existe ni está en la papelera: créala en Conocimiento y vuelve a restaurar.`, { codigo: 'falta_padre', fuente: padre });
+        restaurarAntes = ep;
+        ids.push(ep.id);
+      }
+      const ctx = this.ctxOps();
+      let leerActual = (r) => this.almacen.texto(r);
+      let resPadre = null;
+      if (restaurarAntes) {
+        resPadre = aplicarOp(leerActual, 'papelera.restaurar', { entrada: restaurarAntes }, ctx);
+        const escritos = resPadre.escribir;
+        leerActual = (r) => (r in escritos ? escritos[r] : this.almacen.texto(r));
+      }
+      const res = aplicarOp(leerActual, 'papelera.restaurar', { entrada }, ctx);
+      if (resPadre) res.escribir = { ...resPadre.escribir, ...res.escribir };
       const r = await this.escribirResultado(res, { op: 'papelera.restaurar', sesion, conDeshacer: false });
-      await this.papelera.quitar([id]);
-      return r;
+      await this.papelera.quitar(ids);
+      return { ...r, restauradaFuente: restaurarAntes ? padre : null };
+    });
+  }
+
+  // ---------- conflictos de sincronización (§2.6, §14.17) ----------
+  async leerConflicto(ruta) {
+    const c = this.almacen.otros.conflictos.find((x) => x.ruta === ruta);
+    if (!c) throw new ErrorHttp(404, 'Ese conflicto ya no existe');
+    const otra = await fsp.readFile(join(this.almacen.raiz, ruta), 'utf8').catch((e) => {
+      throw new ErrorHttp(503, `No se puede leer «${ruta}» (${e.code}): ¿está solo en la nube?`);
+    });
+    const tuya = this.almacen.texto(c.base);
+    if (tuya === null || tuya === undefined) throw new ErrorHttp(503, `No se puede leer «${c.base}»`);
+    return { c, tuya, otra };
+  }
+
+  async verConflicto(ruta) {
+    const { c, tuya, otra } = await this.leerConflicto(ruta);
+    let fusion;
+    try {
+      const f = fusionar(c.base, tuya, otra);
+      fusion = { ok: true, ignoradas: f.ignoradas };
+    } catch (e) {
+      fusion = { ok: false, error: e.message };
+    }
+    return { ruta, base: c.base, descripcion: c.descripcion, diferencias: diferencias(tuya, otra), fusion, tuya, otra };
+  }
+
+  /** modo: tuya (te quedas con la tuya) · otra · fusionar · hecho (ya lo arreglaste a mano en el fichero). */
+  async resolverConflicto({ ruta, modo }) {
+    if (!['tuya', 'otra', 'fusionar', 'hecho'].includes(modo)) throw new ErrorHttp(400, 'modo no válido');
+    return this.enCola(async () => {
+      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      const { c, tuya, otra } = await this.leerConflicto(ruta);
+      const hoy = fechaLocal();
+      let nuevo = null;
+      const papelera = [];
+      if (modo === 'tuya' || modo === 'hecho') papelera.push({ que: `copia en conflicto de ${c.base} (descartada)`, ruta, tipo: 'conflicto', contenido: otra });
+      if (modo === 'otra') {
+        nuevo = otra;
+        papelera.push({ que: `tu versión de ${c.base} (descartada)`, ruta: nombreDescartada(c.base, hoy, 'tu versión'), tipo: 'conflicto', contenido: tuya });
+      }
+      let ignoradas = [];
+      if (modo === 'fusionar') {
+        let f;
+        try {
+          f = fusionar(c.base, tuya, otra);
+        } catch (e) {
+          throw new ErrorHttp(409, e.message);
+        }
+        nuevo = f.texto;
+        ignoradas = f.ignoradas;
+        papelera.push({ que: `copia en conflicto de ${c.base} (antes de fusionar)`, ruta, tipo: 'conflicto', contenido: otra }, { que: `tu versión de ${c.base} (antes de fusionar)`, ruta: nombreDescartada(c.base, hoy, 'tu versión antes de fusionar'), tipo: 'conflicto', contenido: tuya });
+      }
+      const ids = await this.papelera.enviar(papelera);
+      if (nuevo !== null && nuevo !== tuya) {
+        this.copias.antesDeEscribir();
+        await this.almacen.escribir({ [c.base]: nuevo });
+      }
+      await fsp.unlink(join(this.almacen.raiz, ruta));
+      await this.almacen.barrer();
+      this.difusor.enviar('candado', {});
+      return { ok: true, base: c.base, modo, papelera: ids, ignoradas };
     });
   }
 
@@ -277,6 +375,10 @@ export class App {
       }
       case 'POST /api/papelera/restaurar':
         return enviarJson(res, 200, await this.restaurarPapelera({ id: cuerpo.id, sesion }));
+      case 'GET /api/conflicto':
+        return enviarJson(res, 200, await this.verConflicto(url.searchParams.get('ruta') ?? ''));
+      case 'POST /api/conflicto/resolver':
+        return enviarJson(res, 200, await this.resolverConflicto({ ruta: String(cuerpo.ruta ?? ''), modo: cuerpo.modo }));
       case 'POST /api/candado/tomar':
         return enviarJson(res, 200, await this.enCola(() => this.candado.adquirir({ tomarControl: true })));
       case 'GET /api/semilla': {
@@ -327,6 +429,13 @@ export class App {
           throw e;
         }
       }
+      case 'GET /api/claude/cuarentena/ver':
+        try {
+          return enviarJson(res, 200, await this.claude.verCuarentena(url.searchParams.get('fichero') ?? ''));
+        } catch (e) {
+          if (e.estado) throw new ErrorHttp(e.estado, e.message);
+          throw e;
+        }
       case 'GET /api/claude/cuarentena':
         return enviarJson(res, 200, { ficheros: await this.claude.cuarentena() });
       case 'GET /api/carpeta':

@@ -33,7 +33,7 @@ export class Papelera {
       const fila = { id, que: e.que, ruta: e.ruta, tipo: e.tipo, borrado: ahora.toISOString(), expira: new Date(ahora.getTime() + DIAS * DIA_MS).toISOString() };
       if (e.seccion !== undefined && e.seccion !== null) fila.seccion = e.seccion;
       if (Number.isFinite(e.indice)) fila.indice = e.indice;
-      if (e.tipo === 'fichero') {
+      if (e.tipo === 'fichero' || e.tipo === 'conflicto') {
         fila.archivo = `papelera/${fila.borrado.slice(0, 10)}/${id}/${e.ruta}`;
         await this.almacen.escribirServicio(fila.archivo, e.contenido);
       } else fila.contenido = e.contenido;
@@ -48,7 +48,7 @@ export class Papelera {
   async entrada(id) {
     const f = (await this.listar()).find((x) => x.id === id);
     if (!f) return null;
-    if (f.tipo === 'fichero') {
+    if (f.archivo) {
       const contenido = await this.almacen.leerServicio(f.archivo);
       if (contenido === null) throw new Error(`falta la copia de «${f.ruta}» en la papelera`);
       return { ...f, contenido };

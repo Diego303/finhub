@@ -183,7 +183,7 @@ function abrirDecision(estado, ruta) {
         ${d?.vuelve ? html`<span class="mut">vuelve ${d.vuelve.fecha} ${d.vuelve.hora}</span>` : ''}</div>
       ${campo('Qué')}${campo('Por qué', 3)}${campo('Alternativas')}${d ? campo('Resultado de la revisión') : ''}
       ${sec('Preguntas de Rex') ? html`<div class="mut" style="font-size:10.5px;margin-top:6px;white-space:pre-line"><b style="font-weight:500">Preguntas de Rex</b>\n${sec('Preguntas de Rex')}</div>` : ''}
-      <div class="mut" style="font-size:10.5px;margin-top:6px">«Pausa de 48 h»: la decisión vuelve a ti dentro de dos días (en Pendientes). Las preguntas de Rex llegan en la fase F10.</div>
+      <div class="mut" style="font-size:10.5px;margin-top:6px">«Pausa de 48 h»: la decisión vuelve a ti dentro de dos días (en Pendientes). Desde Rex → «Pausa de 48 h», Claude te deja preguntas para pensarlo.</div>
       <div class="entre" style="margin-top:8px">${d ? html`<button type="button" class="go" data-accion="decision-borrar" data-ruta="${ruta}">borrar</button>` : html`<span></span>`}<button type="submit" class="pri">${d ? 'Guardar' : 'Añadir al diario'}</button></div></form>`,
   });
 }

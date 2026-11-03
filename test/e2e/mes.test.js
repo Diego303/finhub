@@ -209,7 +209,8 @@ test('mes financiero desde Ajustes: reparte todo con aviso y se deshace de una v
   if (!navegador) return t.skip('sin Chromium');
   const antes = await fsp.readFile(join(raiz, 'mes/2026-11.md'), 'utf8');
   await p.click('[data-accion=abrir-ajustes]');
-  await p.selectOption('[data-mes-inicio]', '25');
+  await p.click('[role=dialog] [data-accion=aj-seccion][data-id=general]');
+  await p.selectOption('#aj-mes', '25');
   await p.waitForSelector('text=reparte TODOS tus movimientos');
   await p.click('[data-si]');
   await toastDice(/Mes financiero cambiado/);

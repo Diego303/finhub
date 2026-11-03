@@ -61,7 +61,7 @@ function cajaFlujo(f) {
 }
 
 function cajaPulso(p) {
-  if (!p) return html`<div class="lab">Último pulso</div><div class="mut" style="font-size:11px">Aún no hay pulsos. El pulso de noticias llega con Claude en la fase F10.</div>`;
+  if (!p) return html`<div class="lab">Último pulso</div><div class="mut" style="font-size:11px">Aún no hay pulsos: hazlo desde «Pendientes hoy» (Claude busca noticias con tu luz verde).</div>`;
   return html`<div class="entre"><span class="lab" style="margin:0">Último pulso · ${textoCorto(p.fecha)} ${p.pulsos.join(' + ')}</span><span class="mut" style="font-size:10.5px">contexto, no causa</span></div>
     ${p.notas.slice(0, 3).map((n) => {
       const ep = EP[n.campos.tipo];

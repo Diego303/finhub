@@ -62,12 +62,24 @@ export function rexHacia(m, { pregunta = '', idea = '' } = {}) {
 
 const conversaciones = (m) => [...m.docs.keys()].filter((r) => r.startsWith(`chat/${rx.chat}/`)).sort().reverse().map((r) => ({ ruta: r, titulo: m.doc(r).titulo.replace(/^Conversación · /, ''), doc: m.doc(r) }));
 
+// ---------- guarida (§5): hucha con el progreso medio de tus metas, humor y accesorios ----------
+function guarida(e) {
+  const g = e.guarida ?? { humor: { humor: 'tranquilo', tasaPb: null }, hucha: null, accesorios: [] };
+  const h = g.hucha === null ? 0 : g.hucha / 10000;
+  const tasa = g.humor.tasaPb === null ? 'sin entradas este mes' : `tasa de ahorro ${Math.round(g.humor.tasaPb / 100)} %`;
+  return html`<div data-guarida style="position:relative;height:150px;border-radius:8px;overflow:hidden;background:linear-gradient(var(--surface-1),var(--surface-1) 70%,#D3D1C755 70%)"><div style="position:absolute;left:14px;bottom:26px">${rex(96, 82, e.rex)}</div>
+      <svg style="position:absolute;right:16px;bottom:20px" width="60" height="78" viewBox="0 0 30 39" role="img" aria-label="${g.hucha === null ? 'Hucha: aún no tienes metas' : `Hucha: tus metas van, de media, al ${Math.round(h * 100)} %`}"><rect x="3" y="6" width="24" height="31" rx="5" fill="none" stroke="var(--text-secondary)" stroke-width="1.2"/><rect x="4.2" y="${7 + 29 * (1 - h)}" width="21.6" height="${29 * h}" rx="4" fill="#EF9F27" opacity=".85"/><rect x="9" y="2" width="12" height="4" rx="1" fill="var(--text-secondary)"/><text x="15" y="${Math.max(11, 7 + 29 * (1 - h) - 2)}" font-size="5" text-anchor="middle" fill="var(--text-primary)" font-family="var(--font-mono)">${g.hucha === null ? '—' : `${Math.round(h * 100)}%`}</text></svg>
+      <div style="position:absolute;left:8px;top:6px;font-size:10px" class="mut">humor: <b style="font-weight:500;color:var(--text-primary)" data-humor>${g.humor.humor}</b> · ${tasa}</div></div>
+    <div class="lab" style="margin-top:8px">Accesorios de Rex</div>${g.error ? html`<div class="mut" style="font-size:10.5px">⚠ accesorios en Ajustes: ${g.error}</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:10px;text-align:center" role="list">${g.accesorios.map((a) => html`<div role="listitem" data-accesorio="${a.id}" data-logrado="${a.logrado ? 'true' : 'false'}" title="${a.que}" aria-label="${a.nombre}: ${a.logrado ? 'conseguido' : `se consigue con ${a.que}`}" style="padding:5px 0;border-radius:6px;border:0.5px solid var(--border);${a.logrado ? '' : 'opacity:.35;filter:grayscale(1)'}"><div style="font-size:15px" aria-hidden="true">${a.emoji}</div>${a.nombre}</div>`)}</div>`;
+}
+
 // ---------- vista ----------
 export function vistaRex(e) {
   const m = e.modelo;
   const lista = conversaciones(m).filter((c) => !rx.busca || normalizar(c.titulo).includes(normalizar(rx.busca)));
   return html`<div style="display:grid;grid-template-columns:230px minmax(0,1fr);gap:10px;min-height:520px">
-    <div class="box"><div style="position:relative;height:150px;border-radius:8px;overflow:hidden;background:linear-gradient(var(--surface-1),var(--surface-1) 70%,#D3D1C755 70%)"><div style="position:absolute;left:14px;bottom:26px">${rex(96, 82, e.rex)}</div><div style="position:absolute;left:8px;top:6px;font-size:10px" class="mut">guarida, hucha y accesorios: F12</div></div>
+    <div class="box">${guarida(e)}
       <div class="lab" style="margin-top:8px">Estados de Rex</div>
       <div class="fila" style="gap:4px">${ESTADOS.map((s) => html`<button type="button" class="chip ${e.rex === s ? 'on' : ''}" data-accion="rex-estado" data-estado="${s}" aria-pressed="${e.rex === s ? 'true' : 'false'}">${s}</button>`)}</div>
       <div style="border-top:.5px solid var(--border);margin-top:10px;padding-top:8px">${modo === 'chat' ? html`<button type="button" style="width:100%;margin-bottom:6px" data-accion="chat-nueva">+ nueva conversación</button>

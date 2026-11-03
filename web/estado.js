@@ -3,6 +3,8 @@
 import { obtener, alRecargar } from './api.js';
 import { construirModelo } from '/core/modelo.js';
 import { fechaLocal, horaLocal } from '/core/fechas.js';
+import { humorRex, huchaRex, accesoriosRex } from '/core/rex.js';
+import { ponerAccesoriosFijos } from './componentes/rex-sprite.js';
 
 export const estado = {
   cargando: true,
@@ -12,6 +14,8 @@ export const estado = {
   version: -1,
   vista: 'panel',
   rex: 'quieto',
+  reposo: 'quieto', // en reposo, Rex está preocupado si tu tasa de ahorro está baja (§5)
+  guarida: null, // {humor, hucha, accesorios}
   ahora: { fecha: fechaLocal(), hora: horaLocal() },
   tiempos: {},
 };
@@ -56,6 +60,8 @@ export function cargar() {
       estado.tiempos.modelo = Math.round(performance.now() - t1);
       estado.error = null;
       aplicarTema();
+      calcularGuarida();
+      vigilarAciertos();
     } catch (e) {
       estado.error = e.message;
     } finally {
@@ -67,6 +73,35 @@ export function cargar() {
   return cargaEnCurso;
 }
 alRecargar(cargar);
+
+// §14.18: cuando una predicción de un descubrimiento sale bien (a mano o sola), Rex lo celebra
+let acertadas = null;
+function vigilarAciertos() {
+  const ahora = new Set(estado.modelo.predicciones.filter((p) => p.fuente === 'finhub-descubrir' && p.estado === 'acertada').map((p) => p.id));
+  const nuevas = acertadas ? [...ahora].filter((id) => !acertadas.has(id)) : [];
+  acertadas = ahora;
+  if (nuevas.length) {
+    const p = estado.modelo.predicciones.find((x) => x.id === nuevas[0]);
+    document.dispatchEvent(new CustomEvent('finhub:celebrar', { detail: { texto: `🎉 ¡Acertó! «${p.texto}»${p.descubrimiento ? ` (${p.descubrimiento})` : ''}` } }));
+  }
+}
+
+/** Humor, hucha y accesorios de Rex (una vez por carga, no en cada repintado). */
+function calcularGuarida() {
+  try {
+    const m = estado.modelo;
+    const hoy = estado.ahora.fecha;
+    const humor = humorRex(m, hoy);
+    const acc = accesoriosRex(m, hoy);
+    estado.guarida = { humor, hucha: huchaRex(m, hoy), accesorios: acc.lista, error: acc.error ?? null };
+    ponerAccesoriosFijos(acc.lista.filter((a) => a.logrado).map((a) => a.id));
+    const reposo = humor.humor === 'preocupado' ? 'preocupado' : 'quieto';
+    if (estado.rex === estado.reposo) estado.rex = reposo;
+    estado.reposo = reposo;
+  } catch (e) {
+    estado.guarida = { humor: { humor: 'tranquilo', tasaPb: null }, hucha: null, accesorios: [], error: e.message };
+  }
+}
 
 /** Recarga solo el estado del servidor (candado, conflictos), sin volver a pedir los datos. */
 async function recargarServidor() {
@@ -86,6 +121,7 @@ export function sincronizar() {
   });
   fuente.addEventListener('candado', recargarServidor);
   fuente.addEventListener('carpeta', cargar);
+  fuente.addEventListener('progreso', (ev) => document.dispatchEvent(new CustomEvent('finhub:progreso', { detail: JSON.parse(ev.data) })));
   fuente.addEventListener('claude', (ev) => document.dispatchEvent(new CustomEvent('finhub:claude-evento', { detail: JSON.parse(ev.data) })));
   setInterval(async () => {
     try {
@@ -106,6 +142,6 @@ let tRex = null;
 export function ponerRex(e, ms = 0) {
   estado.rex = e;
   clearTimeout(tRex);
-  if (ms) tRex = setTimeout(() => ponerRex('quieto'), ms);
+  if (ms) tRex = setTimeout(() => ponerRex(estado.reposo), ms);
   document.querySelectorAll('[data-rex]').forEach((el) => (el.dataset.rexEstado = e));
 }

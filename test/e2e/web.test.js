@@ -146,7 +146,9 @@ test('tema: guardar «oscuro» en ajustes.md, aplicarlo y deshacerlo desde el to
   if (!navegador) return t.skip('sin Chromium');
   const p = await pagina();
   await p.click('[data-accion=abrir-ajustes]');
-  await p.selectOption('[data-tema]', 'oscuro');
+  await p.click('[role=dialog] [data-accion=aj-seccion][data-id=general]');
+  await p.selectOption('#aj-tema', 'oscuro');
+  await p.click('[role=dialog] form[data-seccion=general] button[type=submit]');
   await p.waitForFunction(() => document.documentElement.dataset.tema === 'oscuro');
   assert.match(await fsp.readFile(join(raiz, 'ajustes.md'), 'utf8'), /^- tema: oscuro$/m);
   assert.equal(await p.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(26, 26, 25)');

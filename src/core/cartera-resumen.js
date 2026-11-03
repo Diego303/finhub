@@ -102,6 +102,8 @@ export function resumenCartera(modelo, hoy, { indices = [], aportacion = null } 
     estado: e,
     impuesto: impuestoVenta(e.plusvalia, modelo.ajustes.impuestos_ahorro),
     impuestosVerificado: modelo.ajustes.impuestos_verificado ?? null,
+    // §9.19: al cambiar de año fiscal, los tramos de un año anterior se avisan («verificar»)
+    impuestosAviso: (modelo.ajustes.impuestos_verificado ?? 0) < +hoy.slice(0, 4) ? `tramos ${modelo.ajustes.impuestos_verificado ? `de ${modelo.ajustes.impuestos_verificado}` : 'sin verificar'}: verifica los de ${hoy.slice(0, 4)} en Ajustes → Impuestos` : null,
     twr12,
     twrTotal,
     tir12,

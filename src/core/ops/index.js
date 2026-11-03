@@ -7,5 +7,6 @@ import './metas.js';
 import './conocimiento.js';
 import './ia.js';
 import './descubrimientos.js';
+import './inicio.js';
 
 export { aplicarOp, operaciones, ErrorOp } from './motor.js';

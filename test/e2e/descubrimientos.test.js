@@ -109,9 +109,9 @@ test('investigar → guardar: a partir del pulso, con la lupa de Rex; nada se gu
   await clic('[data-accion=desc-modo][data-id=pulso]');
   await clic('[data-accion=desc-periodo][data-id="1m"]');
   await clic('[data-accion=desc-investigar]');
-  await p.waitForSelector('[data-rex-accesorio=lupa]', { timeout: 5000 });
+  await p.waitForSelector('[data-rex-accesorio~=lupa]', { timeout: 5000 });
   await p.waitForSelector('[data-propuestas]', { timeout: 15000 });
-  await p.waitForFunction(() => !document.querySelector('[data-rex-accesorio=lupa]'));
+  await p.waitForFunction(() => !document.querySelector('[data-rex-accesorio~=lupa]'));
   assert.match(await p.textContent('[data-propuestas]'), /Salud global y envejecimiento/);
   await assert.rejects(fsp.stat(join(raiz, RUTA)), 'aún no se ha guardado');
   await clic('[data-propuestas] [data-accion=desc-guardar][data-i="0"]');

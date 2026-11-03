@@ -270,6 +270,15 @@ export class ServicioClaude {
     return (await leerRegistro(this.servicio(), mes)).reverse();
   }
 
+  /** Una salida en cuarentena, para verla (texto de Claude y motivo). */
+  async verCuarentena(fichero) {
+    if (!/^[\w.-]+\.json$/.test(fichero ?? '')) throw Object.assign(new Error('fichero no válido'), { estado: 400 });
+    const t = await this.app.almacen.leerServicio(`cuarentena/${fichero}`);
+    if (t === null) throw Object.assign(new Error('ya no está en la cuarentena'), { estado: 404 });
+    const j = JSON.parse(t);
+    return { fichero, trabajo: j.trabajo, fecha: j.fecha, motivo: j.motivo, texto: String(j.texto ?? '').slice(0, 20000) };
+  }
+
   async cuarentena() {
     const fs = this.app.almacen.fs;
     const dir = this.app.almacen.rutaServicio('cuarentena');

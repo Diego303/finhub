@@ -88,7 +88,7 @@ async function puedeEscribir(dir) {
   }
 }
 
-/** Crea una carpeta de finhub mínima (el onboarding completo llega en F12). */
+/** Crea una carpeta de finhub mínima (solo ajustes.md); lo demás lo hace el asistente de la primera vez en la web. */
 export async function crearCarpeta(ruta) {
   await fsp.mkdir(ruta, { recursive: true });
   const ajustes = join(ruta, 'ajustes.md');

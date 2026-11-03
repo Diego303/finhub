@@ -9,6 +9,7 @@ import { leerConfig, fijarCarpeta, leerServidor, rutaConfig, rutaServidor } from
 import { aRutaWsl, aRutaWindows, carpetasLocales } from '../server/rutas.js';
 import { validarDestino, cambiarCarpeta } from '../server/carpeta.js';
 import { prepararEjemplo } from './ejemplo.js';
+import { arranque } from './arranque.js';
 
 export const AYUDA = `finhub · tu dinero en local
 
@@ -21,6 +22,8 @@ Uso:
       --mover     copia, verifica y manda la antigua a la papelera (pide confirmación)
       --crear     crea una carpeta de finhub nueva y vacía
       --si        no preguntar (confirma)
+  finhub arranque [activar | desactivar | estado]
+                            arrancar finhub (sin ventana) al iniciar Windows
 
 Opciones:
   --datos <ruta>   usa esa carpeta solo en esta ejecución
@@ -95,6 +98,47 @@ async function preguntar(texto) {
   return /^s(i|í)?$/i.test(r.trim());
 }
 
+/**
+ * Carpetas sugeridas para la primera vez (§14.17): dentro de Google Drive u OneDrive si existen (desde WSL),
+ * o ~/FINANZAS. Solo se sugieren: nada se crea sin que lo confirmes.
+ */
+export function sugerirCarpetas(env = process.env, existe = existsSync) {
+  const out = [];
+  const usuario = env.USER ?? '';
+  for (const unidad of ['d', 'e', 'c']) {
+    if (existe(`/mnt/${unidad}/GoogleDrive`)) out.push(`${unidad.toUpperCase()}:\\GoogleDrive\\FINANZAS`);
+    if (existe(`/mnt/${unidad}/Google Drive`)) out.push(`${unidad.toUpperCase()}:\\Google Drive\\FINANZAS`);
+  }
+  for (const u of [usuario, usuario.charAt(0).toUpperCase() + usuario.slice(1)].filter(Boolean)) {
+    if (existe(`/mnt/c/Users/${u}/OneDrive`)) out.push(`C:\\Users\\${u}\\OneDrive\\FINANZAS`);
+  }
+  out.push(join(env.HOME ?? '/tmp', 'FINANZAS'));
+  return [...new Set(out)];
+}
+
+/** Primera vez en la terminal: ¿dónde guardo tus datos? (crear o usar). → ruta WSL o null */
+async function primeraVez({ out, env }) {
+  const sug = sugerirCarpetas(env);
+  out('Bienvenido a finhub. Todo se guarda en una carpeta de Markdown que puedes sincronizar.');
+  if (sug.length > 1) out(`Sugerencias:\n${sug.map((x) => `  ${x}`).join('\n')}`);
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const r = ((await rl.question(`¿Dónde guardo tus datos? [${sug[0]}] `)).trim() || sug[0]).replace(/^"|"$/g, '');
+  rl.close();
+  const val = await validarDestino(r, { actual: null });
+  if (!val.ok) {
+    out(`✗ ${val.errores.join('; ')}`);
+    return null;
+  }
+  for (const a of val.avisos) out(`⚠ ${a}`);
+  if (val.estado === 'ajena' && !(await preguntar('Esa carpeta tiene otros ficheros que no son de finhub. ¿Crear finhub ahí igualmente?'))) return null;
+  const modo = val.estado === 'finhub' ? 'usar' : 'crear';
+  if (!(await preguntar(`${modo === 'usar' ? 'Usar los datos de finhub que ya hay en' : 'Crear finhub en'} ${aRutaWindows(val.ruta)}?`))) return null;
+  const res = await cambiarCarpeta({ entrada: r, modo, actual: null, aceptarAjenos: val.estado === 'ajena' });
+  await fijarCarpeta(res.ruta, env);
+  out(`✓ carpeta de datos: ${aRutaWindows(res.ruta)}${modo === 'crear' ? ' · al abrir el navegador te guío con lo demás' : ''}`);
+  return res.ruta;
+}
+
 // ---------- comandos ----------
 async function start(v, { out, env }) {
   const vivo = await servidorVivo(env);
@@ -109,6 +153,7 @@ async function start(v, { out, env }) {
   if (v.ejemplo) carpeta = ejemplo = await prepararEjemplo();
   else if (v.datos) carpeta = aRutaWsl(v.datos);
   else carpeta = (await leerConfig(env)).carpeta;
+  if (!carpeta && process.stdin.isTTY && !v.silencioso) carpeta = await primeraVez({ out, env });
   if (!carpeta) {
     out('Aún no has elegido carpeta de datos. Elige una con:\n  finhub carpeta "D:\\GoogleDrive\\FINANZAS" --crear   (o --usar si ya tiene datos)\no prueba con datos inventados: finhub --ejemplo');
     return 1;
@@ -254,6 +299,8 @@ export async function main(argv, { out = (m) => console.log(m), env = process.en
         return await status(v, { out, env });
       case 'carpeta':
         return await carpeta(v, positionals, { out, env });
+      case 'arranque':
+        return await arranque(positionals[1], { out, env });
       default:
         out(`Comando desconocido: «${comando}».\n\n${AYUDA}`);
         return 2;
