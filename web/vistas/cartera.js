@@ -96,7 +96,7 @@ function cajaReparto(r, e) {
 function cajaExposicion(r) {
   const ex = r.exposicion(ui.dimension);
   const fechas = [...new Set(Object.values(ex.fechas))].sort();
-  return html`<div class="box"><div class="entre"><span class="lab" style="margin:0">Dónde está tu dinero de verdad · estimado</span><span>${[['region', 'región'], ['sector', 'sector'], ['divisa', 'divisa']].map(([k, t]) => html`<button type="button" class="chip ${ui.dimension === k ? 'on' : ''}" data-accion="exposicion-dim" data-valor="${k}" aria-pressed="${ui.dimension === k}">${t}</button>`)}</span></div>
+  return html`<div class="box"><div class="entre"><span class="lab" style="margin:0">Dónde está tu dinero de verdad · estimado</span><span>${[['region', 'región'], ['sector', 'sector'], ['divisa', 'divisa']].map(([k, t]) => html`<button type="button" class="chip ${ui.dimension === k ? 'on' : ''}" data-accion="exposicion-dim" data-valor="${k}" aria-pressed="${ui.dimension === k ? 'true' : 'false'}">${t}</button>`)}</span></div>
     <div style="margin-top:6px">${ex.filas.length ? graficoTreemap({ datos: ex.filas.map((f, i) => ({ nombre: f.nombre, valor: Math.round(f.pb / 100), color: f.nombre === 'Sin desglose' ? '#B4B2A9' : COLORES[i % COLORES.length] })), titulo: `exposición por ${ui.dimension}` }) : html`<div class="mut" style="font-size:11px">Sin valor en cartera.</div>`}</div>
     <div class="mut" style="font-size:10.5px;margin-top:4px">Look-through de tus fondos según su ficha${fechas.length ? ` (base ${fechas.join(', ')})` : ''}. Es una estimación con fecha, no un dato exacto. «Sin desglose»: activos sin exposición declarada.</div></div>`;
 }

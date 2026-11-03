@@ -4,5 +4,6 @@ import './mes.js';
 import './catalogos.js';
 import './cartera.js';
 import './metas.js';
+import './conocimiento.js';
 
 export { aplicarOp, operaciones, ErrorOp } from './motor.js';

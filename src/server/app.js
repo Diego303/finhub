@@ -280,7 +280,7 @@ export class App {
       case 'GET /api/semilla': {
         // plantillas y textos por defecto del repo (públicos, sin datos): semilla/<tipo>/*.md
         const tipo = url.searchParams.get('tipo') ?? '';
-        if (!/^(plantillas-cartera|roles|tareas)$/.test(tipo)) throw new ErrorHttp(404, 'No encontrado');
+        if (!/^(plantillas-cartera|roles|tareas|base)$/.test(tipo)) throw new ErrorHttp(404, 'No encontrado');
         const dir = join(RAIZ_REPO, 'semilla', tipo);
         const ficheros = {};
         for (const n of (await fsp.readdir(dir).catch(() => [])).filter((x) => x.endsWith('.md')).sort()) ficheros[n] = await fsp.readFile(join(dir, n), 'utf8');

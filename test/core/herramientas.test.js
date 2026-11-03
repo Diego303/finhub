@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as H from '../../src/core/herramientas.js';
 import { resumenAlAbrir, kpisPanel, lineaDeTiempo, flujoDelMes, ultimoPulso, saludo, patrimonioEn } from '../../src/core/panel.js';
-import { tuAnio, aciertoPorFuente } from '../../src/core/tu-ano.js';
+import { tuAnio } from '../../src/core/tu-ano.js';
+import { aciertoPorFuente } from '../../src/core/conocimiento.js';
 import { construirModelo } from '../../src/core/modelo.js';
 import { leer } from '../../src/core/formato/index.js';
 import { valores } from '../../src/core/formato/motor.js';
@@ -188,6 +189,6 @@ test('tu año: totales, mejor mes, cartera, pulsos, metas; grupo que más bajó 
   assert.deepEqual([g.id, g.pb, g.meses], ['ocio', -10000, 3]);
   // acierto por fuente
   const preds = Array.from({ length: 6 }, (_, i) => ({ fuente: 'a', estado: i < 4 ? 'acertada' : 'fallida', resuelta: '2026-05-01' }));
-  assert.deepEqual(aciertoPorFuente(preds), [{ fuente: 'a', resueltas: 6, acertadas: 4, aciertoPb: 6667 }]);
-  assert.equal(aciertoPorFuente(preds.slice(0, 4))[0].aciertoPb, null);
+  assert.deepEqual(aciertoPorFuente(preds).get('a'), { fuente: 'a', resueltas: 6, acertadas: 4, aciertoPb: 6667 });
+  assert.equal(aciertoPorFuente(preds.slice(0, 4)).get('a').aciertoPb, null);
 });

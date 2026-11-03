@@ -15,6 +15,7 @@ import { arrancarAnimacion } from './componentes/rex-sprite.js';
 import * as basicas from './vistas/basicas.js';
 import { vistaRex, ponerModo, ponerExplicame, quitarExplicame } from './vistas/rex.js';
 import { vistaPanel } from './vistas/panel.js';
+import { vistaConocimiento, iniciarConocimiento, registrarAccionesConocimiento } from './vistas/conocimiento.js';
 import { vistaHerramientas, iniciarHerramientas, registrarAccionesHerramientas } from './vistas/herramientas.js';
 import { vistaTuAnio, registrarAccionesTuAnio } from './vistas/tu-ano.js';
 import { muestrario } from './vistas/muestrario.js';
@@ -31,7 +32,7 @@ export const PESTANAS = [
   ['herramientas', 'Herramientas', vistaHerramientas],
   ['analisis', 'Análisis', basicas.analisis],
   ['descubrimientos', '🔭 Descubrimientos', basicas.descubrimientos],
-  ['conocimiento', 'Conocimiento', basicas.conocimiento],
+  ['conocimiento', 'Conocimiento', vistaConocimiento],
   ['rex', '🦖 Rex', vistaRex],
   ['tuano', '✦ Tu año', vistaTuAnio],
 ];
@@ -101,8 +102,8 @@ accion('gestion-entrada', (el) => {
   if (id === 'seguridad') return abrirR1();
   if (id === 'papelera') return abrirPapelera(cargar);
   if (id === 'activos') return abrirActivosObjetivo();
-  if (id === 'metas') {
-    location.hash = 'metas';
+  if (id === 'metas' || id === 'conocimiento') {
+    location.hash = id;
     return;
   }
   abrirEntrada(id, estado.modelo);
@@ -204,6 +205,8 @@ registrarAccionesMetas();
 iniciarHerramientas({ estado, render });
 registrarAccionesHerramientas();
 registrarAccionesTuAnio(() => estado);
+iniciarConocimiento({ estado, render });
+registrarAccionesConocimiento();
 iniciarEditores(() => estado);
 registrarEditores();
 document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));

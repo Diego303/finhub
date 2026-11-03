@@ -65,7 +65,7 @@ function base(estado) {
 
 export function vistaHerramientas(estado) {
   const panel = { crisis: tCrisis, ipc: tIpc, oport: tOport, fondos: tFondos, vida: tVida, calc: tCalc, subs: tSubs }[ui.herramienta];
-  return html`<div style="display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px"><div class="box" role="tablist" aria-label="Herramientas" aria-orientation="vertical">${HERRAMIENTAS.map(([id, t, d]) => html`<button type="button" role="tab" class="herr ${ui.herramienta === id ? 'on' : ''}" aria-selected="${ui.herramienta === id}" data-accion="herr" data-id="${id}"><div style="font-size:11.5px">${t}</div><div class="mut" style="font-size:10px">${d}</div></button>`)}
+  return html`<div style="display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px"><div class="box" role="tablist" aria-label="Herramientas" aria-orientation="vertical">${HERRAMIENTAS.map(([id, t, d]) => html`<button type="button" role="tab" class="herr ${ui.herramienta === id ? 'on' : ''}" aria-selected="${ui.herramienta === id ? 'true' : 'false'}" data-accion="herr" data-id="${id}"><div style="font-size:11.5px">${t}</div><div class="mut" style="font-size:10px">${d}</div></button>`)}
       <div class="mut" style="font-size:10.5px;margin-top:8px;padding-top:8px;border-top:.5px solid var(--border)">Todo lo calcula el código con tus datos y el grupo «Datos». Sin IA.</div></div>
     <div class="box" id="herramienta" data-herramienta="${ui.herramienta}">${panel(estado)}</div></div>`;
 }
@@ -81,7 +81,7 @@ function tCrisis(estado) {
   const filas = H.filasCartera(m, estadoCartera({ activos: m.activos, operaciones: m.operaciones, fotos: m.fotos, hasta: estado.ahora.fecha }).porActivo);
   const r = H.pruebaCrisis({ filas, clases: m.clases, series: (id) => m.serie(id), periodo: sel, valor, aportacion });
   const rg = H.rangos12m(H.historicoMezcla(H.componentesDe(filas, m.clases), (id) => m.serie(id)));
-  const cab = html`<div class="entre"><b style="font-weight:500">Prueba de crisis</b><span>${periodos.map((p) => html`<button type="button" class="chip ck ${p.id === sel.id ? 'on' : ''}" data-accion="crisis-periodo" data-id="${p.id}" aria-pressed="${p.id === sel.id}">${p.nombre}</button>`)}</span></div>
+  const cab = html`<div class="entre"><b style="font-weight:500">Prueba de crisis</b><span>${periodos.map((p) => html`<button type="button" class="chip ck ${p.id === sel.id ? 'on' : ''}" data-accion="crisis-periodo" data-id="${p.id}" aria-pressed="${p.id === sel.id ? 'true' : 'false'}">${p.nombre}</button>`)}</span></div>
     ${errorPeriodos ? html`<div class="banda aviso" style="margin-top:6px">Periodos de Ajustes no válidos (${errorPeriodos}): uso los de por defecto.</div>` : ''}`;
   if (r.error || !filas.length) return html`${cab}<div class="banda aviso" style="margin-top:8px">No se puede simular: ${filas.length ? r.error : 'aún no tienes cartera ni objetivo'}.</div>`;
   const rec = (n) => (n === null ? `más de ${r.mesesConDatos - 1} meses` : `${n} meses`);
@@ -171,7 +171,7 @@ function tVida(estado) {
 // ---------- calculadoras ----------
 function tCalc(estado) {
   const v = ui.v;
-  const chips = html`<span>${[['ic', 'Interés compuesto'], ['meta', 'Ahorro para una meta'], ['casa', 'Alquilar o comprar']].map(([k, t]) => html`<button type="button" class="chip ck ${ui.calc === k ? 'on' : ''}" data-accion="calc" data-id="${k}" aria-pressed="${ui.calc === k}">${t}</button>`)}</span>`;
+  const chips = html`<span>${[['ic', 'Interés compuesto'], ['meta', 'Ahorro para una meta'], ['casa', 'Alquilar o comprar']].map(([k, t]) => html`<button type="button" class="chip ck ${ui.calc === k ? 'on' : ''}" data-accion="calc" data-id="${k}" aria-pressed="${ui.calc === k ? 'true' : 'false'}">${t}</button>`)}</span>`;
   let cuerpo;
   if (ui.calc === 'ic') {
     const r = H.interesCompuesto({ capital: v.icCapital, mensual: v.icMensual, anios: v.icAnios, tasa: tasa(v.icTasa) });
@@ -207,7 +207,7 @@ function tSubs(estado) {
     <table class="tb"><thead><tr><th>suscripción</th><th class="n">al año</th><th>¿la usas?</th><th></th></tr></thead><tbody>
     ${r.filas.map((f) => html`<tr style="${f.pausado ? 'opacity:.55' : ''}"><td>${f.concepto}${f.pausado ? ' · en pausa' : ''}</td><td class="n">${eur(f.anual, 2)}</td>
       <td><button type="button" class="go" data-accion="subs-uso" data-id="${f.id}" title="Cambiar «¿la usas?»">${f.uso?.estado === 'no' ? html`<span style="color:var(--text-warning)">no${f.uso.fecha ? ` desde ${mesAnio(f.uso.fecha.length === 7 ? `${f.uso.fecha}-01` : f.uso.fecha)}` : ''}</span>` : f.uso?.estado === 'sí' ? 'sí' : html`<span class="mut">¿?</span>`}</button></td>
-      <td><button type="button" class="chip ck ${f.marcada ? 'on' : ''}" data-accion="subs-marcar" data-id="${f.id}" aria-pressed="${f.marcada}">${f.marcada ? 'a cancelar' : 'cancelar'}</button></td></tr>`)}</tbody></table>
+      <td><button type="button" class="chip ck ${f.marcada ? 'on' : ''}" data-accion="subs-marcar" data-id="${f.id}" aria-pressed="${f.marcada ? 'true' : 'false'}">${f.marcada ? 'a cancelar' : 'cancelar'}</button></td></tr>`)}</tbody></table>
     <div class="mut" style="font-size:10.5px;margin-top:6px">Salen de tus recurrentes con #suscripción. «¿La usas?» lo marcas tú (se guarda en recurrentes.md); «cancelar» solo calcula, no cancela nada.</div>`;
 }
 

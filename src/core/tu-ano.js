@@ -5,22 +5,9 @@ import { puntosValor, indiceDeActivo } from './cartera-resumen.js';
 import { flujosExternos } from './cartera.js';
 import { twr, serieCompleta, indicePropio } from './rentabilidad.js';
 import { todosLosMovimientos } from './metas.js';
+import { aciertoPorFuente } from './conocimiento.js';
 import { proporcionPb, sumar, formatearEuros, formatearPct } from './dinero.js';
 import { mesFinanciero, periodoMes, sumarMesesMes, MESES, MESES_CORTOS } from './fechas.js';
-
-/** Acierto por fuente (§4.7): acertadas ÷ resueltas; con menos de 5 resueltas, null. */
-export function aciertoPorFuente(predicciones, { minimo = 5, anio = null } = {}) {
-  const por = new Map();
-  for (const p of predicciones) {
-    if (!['acertada', 'fallida'].includes(p.estado)) continue;
-    if (anio && !(p.resuelta ?? '').startsWith(String(anio))) continue;
-    const x = por.get(p.fuente) ?? { fuente: p.fuente, resueltas: 0, acertadas: 0 };
-    x.resueltas++;
-    if (p.estado === 'acertada') x.acertadas++;
-    por.set(p.fuente, x);
-  }
-  return [...por.values()].map((x) => ({ ...x, aciertoPb: x.resueltas >= minimo ? proporcionPb(x.acertadas, x.resueltas) : null }));
-}
 
 /**
  * Resumen del año `anio` (meses financieros de ese año hasta hoy).
@@ -76,7 +63,7 @@ export function tuAnio(modelo, anio, hoy) {
   }
 
   const dias = modelo.mundo.filter((d) => d.fecha.startsWith(String(anio)) && d.fecha <= hoy);
-  const fuentes = aciertoPorFuente(modelo.predicciones).filter((f) => f.aciertoPb !== null).sort((a, b) => b.aciertoPb - a.aciertoPb);
+  const fuentes = [...aciertoPorFuente(modelo.predicciones).values()].filter((f) => f.aciertoPb !== null).sort((a, b) => b.aciertoPb - a.aciertoPb);
   const fuente = fuentes[0] ? { ...fuentes[0], nombre: modelo.fuentes.find((x) => x.id === fuentes[0].fuente)?.nombre ?? fuentes[0].fuente } : null;
   const cumplidas = modelo.metas.filter((x) => x.campos.estado?.estado === 'cumplida' && (x.campos.estado.fecha ?? '').startsWith(String(anio)));
   const vivas = modelo.metas.filter((x) => x.campos.estado?.estado !== 'archivada' && !(x.campos.estado?.estado === 'cumplida' && !(x.campos.estado.fecha ?? '').startsWith(String(anio))));

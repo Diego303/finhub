@@ -101,8 +101,8 @@ function cajaProyeccion(r) {
   const controles = html`<form class="fila" data-form="proyeccion" style="flex-wrap:wrap;gap:10px;font-size:11px;margin-bottom:6px">
     <label>aportación <input class="inp" id="proy-aportacion" name="aportacion" value="${formatearImporte(r.aportacion).replace(/,00$/, '')}" style="width:62px;text-align:right" data-cambio="proy-aportacion"> €/mes</label>
     <label>años <input class="inp" id="proy-anios" name="anios" value="${r.anios}" style="width:38px;text-align:right" data-cambio="proy-anios" inputmode="numeric"></label>
-    <span>${perfiles.map((x) => html`<button type="button" class="chip ck ${r.perfil?.id === x.id ? 'on' : ''}" data-accion="proy-perfil" data-perfil="${x.id}" aria-pressed="${r.perfil?.id === x.id}">${x.id === 'objetivo' ? 'tu objetivo' : x.titulo.split(' · ')[1] ?? x.titulo}</button>`)}</span>
-    <button type="button" class="chip ck ${r.real ? 'on' : ''}" data-accion="proy-real" aria-pressed="${r.real}">en € de hoy</button></form>`;
+    <span>${perfiles.map((x) => html`<button type="button" class="chip ck ${r.perfil?.id === x.id ? 'on' : ''}" data-accion="proy-perfil" data-perfil="${x.id}" aria-pressed="${r.perfil?.id === x.id ? 'true' : 'false'}">${x.id === 'objetivo' ? 'tu objetivo' : x.titulo.split(' · ')[1] ?? x.titulo}</button>`)}</span>
+    <button type="button" class="chip ck ${r.real ? 'on' : ''}" data-accion="proy-real" aria-pressed="${r.real ? 'true' : 'false'}">en € de hoy</button></form>`;
   if (p.error) return html`<div class="box"><div class="lab">Proyección de tu cartera · simulación con históricos (código)</div>${controles}<div class="banda aviso">No se puede proyectar: ${p.error}.</div></div>`;
   const k = (v) => v / 100000; // miles de euros
   const n = p.anios.length - 1;

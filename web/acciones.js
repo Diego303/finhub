@@ -18,6 +18,9 @@ export function delegar(raiz) {
   raiz.addEventListener('click', (ev) => {
     const el = ev.target.closest('[data-accion]');
     if (!el || !raiz.contains(el)) return;
+    // un control dentro de un elemento clicable (p. ej. la casilla de una fila): manda el control
+    const control = ev.target.closest('input, select, textarea, label');
+    if (control && control !== el && el.contains(control)) return;
     const fn = acciones.get(el.dataset.accion);
     if (!fn) return;
     ev.preventDefault();

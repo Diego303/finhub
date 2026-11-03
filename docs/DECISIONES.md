@@ -93,3 +93,21 @@
 | 13 | **PNG de Tu año** | Dibujado en `<canvas>` por código (1200 × 860, tema claro siempre), descargado como `finhub-tu-AAAA.png`. El e2e comprueba la firma y el tamaño del PNG. |
 | 14 | **Activar con teclado elementos que no son botones** | `acciones.js` dispara la acción con Enter o espacio en cualquier `[data-accion][role=button]` (los hitos del gráfico). |
 
+## F8 · 2026-11-03
+| # | Decisión | Detalle |
+|---|---|---|
+| 1 | **Tu mezcla = `activa_por_defecto`** | La mezcla activa se guarda en `_fuentes.md` (campo que ya existía): la casilla de cada fuente, «añadir/quitar todos», «todas», «ninguna» (Base y Datos) y «usar» una mezcla guardada la cambian con una sola operación. El chip dice el nombre de la mezcla guardada que coincide, o «personalizada». |
+| 2 | **Selectores dinámicos** | `@postura` usa la postura media (−1…1), `@acierto` el % de acierto (las fuentes sin 5 resueltas no entran), `@familia` la familia. Se resuelven cada vez con los datos del momento. |
+| 3 | **Postura** | Media de las notas con postura (alcista 1, neutral 0, bajista −1) ponderada por 0,5^(días/90) a fecha de hoy; las de fecha futura no cuentan. La ficha la dibuja desde el primer mes con postura. |
+| 4 | **Caducidad** | La de la nota («caduca:»), o fecha + caducidad de su fuente, o de su familia. Las caducadas se ven atenuadas y se pueden excluir del buscador; no entrarán en los análisis (F10). |
+| 5 | **Predicciones** | `medir` en %: variación desde el cierre del mes anterior a «desde» hasta el último mes del periodo; caída y subida máximas dentro del periodo; nivel = último valor; `cartera twr` con las fotos. Se resuelven al terminar el periodo con datos de su último mes; una caída/subida máxima que ya pasó el umbral se resuelve antes. «Resolver automáticamente» es un botón (tu luz verde), también desde Pendientes. Manual: ✓, ✗, «no medible» y reabrir. |
+| 6 | **Calibración de finhub** | % de las predicciones de rango de finhub (`… en a…b`) resueltas que contuvieron el valor real. |
+| 7 | **Deduplicación de Mundo** | `duplicadoDe()` (misma URL, o Jaccard ≥ 0,6 de los títulos normalizados, palabras de más de 2 letras, a ±1 día) queda en core para el pulso de F10. |
+| 8 | **Base de finhub** | `semilla/base/*.md`, ids B-1001…B-1599 por tema (no chocan con las del ejemplo, B-0xxx). Escrita investigando en la web, solo hechos, datos y consenso, con «origen» (organización · documento · URL · fecha de consulta), parafraseada y sin comillas; las de fiscalidad con `verificar: 2026`. `scripts/validar-base.js` y un test lo comprueban. En la app: «La Base tiene N notas nuevas · revisar e importar» (op `base.importar`, que solo añade ids que no tienes). El onboarding de F12 la copiará al crear la carpeta. |
+| 9 | **Manifiesto de Datos** | `semilla/datos-manifiesto.md`: id, qué es, unidad, proxy (ETF UCITS de acumulación o INE/BCE) y método de cada serie; ISIN orientativos que el trabajo `datos` (F9) verificará; nunca valores. |
+| 10 | **Visor de series** | En Conocimiento → Datos: meses, rango, huecos (que se interpolan), aproximados, fuente, método y avisos del formato (saltos > 40 % sin nota, duplicados); gráfico de 5 años, 10 años o todo. |
+| 11 | **Controles dentro de filas clicables** | `acciones.js` deja pasar el clic a una casilla, select o etiqueta dentro de un elemento con `data-accion` (antes el `preventDefault` de la fila impedía marcar la casilla). |
+| 12 | **ARIA con booleanos** | La plantilla `html` pinta `false` como vacío: `aria-pressed/expanded/selected` se escriben siempre como `'true'`/`'false'` explícitos (corregido también en Mes, Cartera, Metas y Herramientas). |
+| 13 | **Ejemplo coherente** | PR-0012 pasa a «sube más de un 15 %» para que su estado (fallida) coincida con la resolución automática sobre la serie sintética (test). |
+| 14 | **Base: 208 notas y sus cautelas** | Conceptos 38 · índices 36 · crisis 34 · comportamiento 32 · fiscalidad 34 (cifras del ejercicio 2025, solo AEAT y BOE) · renta fija y ahorro 34. Sin cifras SPIVA (la web de S&P DJI no se dejó abrir). Las cifras de fichas (pesos, nº de valores, tipo del BCE del 2,50 %) llevan su fecha y caducan: conviene revisarlas. Dos notas de comportamiento citan la información divulgativa oficial del Nobel publicada por la Real Academia Sueca (kva.se) en lugar de nobelprize.org, que no se dejó abrir. |
+

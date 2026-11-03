@@ -3,7 +3,6 @@
 import { html } from '../esc.js';
 import { proximamente } from '../componentes/proximamente.js';
 
-const kpis = (lista) => html`<div class="kpis">${lista.map(([lab, valor, sub]) => html`<div class="box"><div class="lab">${lab}</div><div class="k" style="font-size:19px">${valor}</div>${sub ? html`<div class="mut" style="font-size:10.5px">${sub}</div>` : ''}</div>`)}</div>`;
 
 export function analisis(e) {
   const m = e.modelo;
@@ -19,9 +18,4 @@ export function descubrimientos(e) {
     ${proximamente('Descubrimientos', 'F11', ['Investigar (4 modos), mapa de efectos del pulso', '¿Cómo encaja con mi cartera? (sin internet, guardado en privado)', 'Simulador y rendimiento desde el descubrimiento'])}</div></div>`;
 }
 
-export function conocimiento(e) {
-  const m = e.modelo;
-  return html`${kpis([['Fuentes', m.fuentes.length, `${m.familias.length} familias`], ['Notas', m.notas, ''], ['Mezclas', m.mezclas.length, 'guardadas'], ['Predicciones', m.predicciones.length, `${m.predicciones.filter((p) => p.estado === 'pendiente').length} pendientes`]])}
-    <div style="margin-top:8px">${proximamente('Conocimiento', 'F8', ['Tabla de fuentes con postura y acierto, y su ficha', 'Buscador, vista y edición de notas', 'Pulsos (14 días) y bandeja CONTEXTO', 'Familias, mezclas y predicciones'])}</div>`;
-}
 

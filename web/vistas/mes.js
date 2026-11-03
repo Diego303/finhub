@@ -137,7 +137,7 @@ function mapaDinero(estado, x) {
   const tot = ui.sankey === 'año' ? sumarTotales(x.mesesTot.filter((t) => t.mes.startsWith(anio)).map((t) => t.totales)) : x.tot;
   const s = datosSankey(tot, m.grupos);
   const vacio = !s.entradas.length && !s.salidas.length;
-  return html`<div class="box" style="margin-top:8px"><div class="entre"><span class="lab" style="margin:0">Mapa del dinero</span><span>${[['mes', tituloMes(x.id).split(' ')[0].toLowerCase()], ['año', anio]].map(([k, t]) => html`<button type="button" class="chip ${ui.sankey === k ? 'on' : ''}" data-accion="mes-sankey" data-valor="${k}" aria-pressed="${ui.sankey === k}">${t}</button>`)}</span></div>
+  return html`<div class="box" style="margin-top:8px"><div class="entre"><span class="lab" style="margin:0">Mapa del dinero</span><span>${[['mes', tituloMes(x.id).split(' ')[0].toLowerCase()], ['año', anio]].map(([k, t]) => html`<button type="button" class="chip ${ui.sankey === k ? 'on' : ''}" data-accion="mes-sankey" data-valor="${k}" aria-pressed="${ui.sankey === k ? 'true' : 'false'}">${t}</button>`)}</span></div>
     ${vacio ? html`<div class="mut" style="padding:20px;text-align:center;font-size:11.5px">Sin movimientos todavía.</div>` : graficoSankey({ entradas: s.entradas, salidas: s.salidas, formato: (c) => eur(c) })}
     <div class="mut" style="font-size:10.5px;margin-top:4px">Invertir y ahorrar sale de tu cuenta, pero <b style="font-weight:500;color:var(--text-primary)">no es gasto</b>. Las devoluciones restan del consumo de su grupo, no suman a Entradas.</div></div>`;
 }
@@ -156,7 +156,7 @@ function tablaMovimientos(estado, x) {
   const etiquetas = [...new Set(x.movimientos.flatMap((mv) => mv.etiquetas))].sort();
   const lista = filtrar(x.movimientos);
   return html`<div class="box"><div class="entre"><span class="lab" style="margin:0">Movimientos · ${x.movimientos.length} · clic en la naturaleza para cambiarla, doble clic para editar</span>
-      <span>${etiquetas.map((t) => html`<button type="button" class="chip ${ui.etiqueta === t ? 'on' : ''}" data-accion="mes-etiqueta" data-valor="${t}" aria-pressed="${ui.etiqueta === t}">#${t}</button>`)}</span></div>
+      <span>${etiquetas.map((t) => html`<button type="button" class="chip ${ui.etiqueta === t ? 'on' : ''}" data-accion="mes-etiqueta" data-valor="${t}" aria-pressed="${ui.etiqueta === t ? 'true' : 'false'}">#${t}</button>`)}</span></div>
     <div class="fila" style="margin-top:6px"><label class="sr-only" for="buscar-mov">Buscar movimientos</label><input class="inp" id="buscar-mov" placeholder="buscar…" value="${ui.busqueda}" style="flex:1" data-entrada-texto="buscar-mov"><label class="sr-only" for="orden-mov">Orden</label><select class="inp" id="orden-mov" data-cambio="orden-mov">${[['fecha', 'por fecha'], ['fecha-desc', 'más recientes'], ['importe', 'por importe']].map(([v, t]) => html`<option value="${v}" ${ui.orden === v ? 'selected' : ''}>${t}</option>`)}</select></div>
     ${x.tot.sinGrupo.length ? html`<div class="banda aviso" style="margin-top:6px">⚠ ${x.tot.sinGrupo.length} movimiento(s) sin grupo (o con un grupo que ya no existe): no entran en los totales. Edítalos para darles grupo.</div>` : ''}
     <form id="form-edicion" data-form="mov-editar"></form>
