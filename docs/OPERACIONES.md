@@ -1,107 +1,111 @@
-# Operaciones (`src/core/ops/`) · propuesta F0
+# Operaciones (`src/core/ops/`)
 
-> Cada operación es una **función pura** `(modelo, args) → { modelo, inversa: {op, args}, ficheros: [rutas], avisos: [] }`.
-> El servidor comprueba la versión de cada fichero tocado (409 si no coincide), serializa, escribe de forma atómica y guarda la inversa (30 por sesión, deshacer de 10 s).
-> **Deshacer (implementado en F2):** la inversa que devuelve el motor es siempre `ficheros.restaurar` con el contenido exacto anterior de cada fichero tocado; el servidor solo la aplica si esos ficheros siguen como los dejó la operación (si no, 409 «cambió después»). Las inversas «semánticas» de las tablas describen el efecto; la restauración exacta lo garantiza byte a byte (propiedad testeada). Ver `docs/DECISIONES.md` F2.
->
-> **Implementadas en F12:** `inicio.crear` (la primera vez, en una carpeta vacía: ajustes, cuentas con su saldo, grupos por defecto elegidos, etiquetas, recurrentes y la Base; no se repite sobre una carpeta con datos; un solo deshacer), `ajustes.textos` (varios ajustes escritos como en el fichero, validados con su tipo y su gramática —humor, accesorios, crisis, supuestos—; vacío = valor por defecto), `texto.guardar` (tu versión de un rol o una tarea, solo en `roles/` y `tareas/`, validada; volver al de finhub = `fichero.borrar`). Fuera de las operaciones, en el servidor: resolver un conflicto de sincronización (`/api/conflicto/resolver`: tuya, otra, fusionar por entidades o a mano; lo descartado va a la papelera como «copia en conflicto» y al restaurarlo vuelve el conflicto) y restaurar de la papelera algo cuya fuente ya no existe (se restaura también la fuente si está en la papelera, §9.22).
->
-> **Implementadas en F11:** `descubrimiento.crear` (D-NNN; vehículos con ISIN no válido se descartan con aviso; la referencia es el primer ISIN válido; un importe en euros en tesis, condiciones o riesgos se rechaza; la predicción va a `predicciones.md` con fuente `finhub-descubrir` y enlace al descubrimiento), `descubrimiento.version` («¿qué ha cambiado?»: nueva `## vN` arriba con `cambios`; sin novedades, según `descubrir_sin_cambios`, versión «sin cambios relevantes» o solo se aplaza `revisar`), `descubrimiento.estado` (nuevo, siguiendo, descartado, archivado; al seguir sin fecha, revisar a 30 días), `encaje.guardar` (solo `analisis/encajes/D-NNN-fecha.md`, privado), `precios.seguimiento` (precio de la referencia de lo que sigues → serie `<isin>` en Datos, una fila por mes, el último precio del mes manda) y `descubrir.listas` (sectores del mapa y filtros, un solo deshacer). Borrar un descubrimiento = `fichero.borrar` (sus versiones van juntas a la papelera; los encajes no se tocan).
->
-> **Implementadas en F10:** `pulso.aplicar` (fusión con lo que ya hay: misma URL o título casi igual a ±1 día), `ingesta.aplicar` (notas revisadas con ids de su fuente y predicciones; reingesta sin pisar lo editado), `analisis.guardar` (fichero privado y, si hay rango, la predicción de finhub), `chat.crear | turno | renombrar`, `semana.guardar`, `quiz.responder`, `tuano.rexDice` y `borrador.revisado`. Los precios se guardan con `valores.guardar` y la pausa con `decision.crear`. Todo lo propuesto por Claude se aplica con una de estas operaciones, con deshacer.
->
-> **Implementadas en F9:** `datos.aplicar` (guarda las filas que propuso el trabajo «datos» y que tú confirmaste; crea la serie si no existe; nunca completa una serie sintética; solo meses posteriores a los que tienes). Ningún trabajo de Claude escribe en tus datos: el motor devuelve una propuesta y la aplica una operación lanzada por ti.
->
-> **Implementadas en F8:** `nota.crear` (no en Mundo ni Datos: los escriben sus trabajos), `nota.editar` (marca «editada: sí»), `nota.mover` (fichero propio en la otra fuente; el id no cambia; si el de origen queda vacío, a la papelera); borrar = `bloque.borrar`. `fuente.crear` (id y prefijo propios; Mis notas siempre privadas), `fuente.borrar` (sus ficheros a la papelera; las fijas no), `familia.borrar` (sus fuentes a otra familia), `mezcla.crear`, `mezcla.limpiar` (quita fuentes borradas; vacía → papelera), `fuentes.activas` (tu mezcla = «activa_por_defecto»), `prediccion.crear | resolver`, `predicciones.resolverAuto` y `base.importar` (solo ids nuevos; las tuyas no se tocan). Editar fuentes, familias, mezclas y predicciones usa `lista.editar`.
->
-> **Implementadas en F6:** `meta.crear` (id desde el título), `meta.estado` (pausar, reanudar, cumplir con la fecha de hoy → Rex lo celebra, archivar); editar y borrar una meta son `bloque.editar | borrar`. `hito.crear` (H-NNNN, en orden de fecha); editar y borrar, `lista.editar | borrar`. `decision.crear` (una «pausa de 48 h» sin «vuelve» vuelve en 48 h) y `decision.editar` (título, cabeceras y secciones; vacía = se quita); borrar, `fichero.borrar`.
->
-> **Implementadas en F5:** `operacion.crear | editar | borrar` (con enlace op ↔ movimiento), `valores.guardar`, `objetivo.fijar` (pesos, redondeo y umbral), `borrador.crear | aceptar`; descartar un borrador es `fichero.borrar`. Activos y clases usan `bloque.*` y `lista.*`. Cambiar operaciones o valores recalcula la foto de los meses cerrados.
->
-> **Implementadas en F4:** `mes.cerrar | reabrir | cambiarInicio`, `rec.editar` (este mes o desde el siguiente), `rec.pausar`, `rec.confirmarTodos`, `grupo.cambiarNaturaleza | borrar`, `etiqueta.renombrar | borrar`, `cuenta.ajustarSaldo` y el recálculo automático de las fotos de los meses cerrados.
->
-> **Implementadas en F2:** `mov.crear | editar | borrar`, `rec.confirmar | saltar | desmarcar`, `pres.fijar`, `lista.crear | editar | borrar` (cuentas, grupos, etiquetas, recurrentes, hitos, operaciones, objetivo, clases, valores, plantillas, borradores, familias, fuentes, mezclas, predicciones), `bloque.crear | editar | borrar` (metas, activos, notas, descubrimientos), `ajustes.fijar | quitar`, `fichero.borrar`, `papelera.restaurar` y `ficheros.restaurar`. Las de cierre de mes, cartera, metas, conocimiento… llegan en sus fases, sobre estas mismas piezas.
-> **Borrar** = mover a la papelera (§2.5). Su inversa es `papelera.restaurar`.
+Todo lo que cambia tus ficheros pasa por una **operación**: una función pura registrada con un nombre (`mov.crear`), que recibe la lectura de tus ficheros y unos argumentos y devuelve qué ficheros escribir. La web la pide con `POST /api/ops {op, args, versiones}`. Los tests llaman a la misma función.
 
-## Mes (`ops/mes.js`)
-| Operación | Args | Inversa |
+```
+aplicarOp(leer, nombre, args, ctx) → { escribir: {ruta: texto | null}, inversa, papelera, avisos, resultado }
+```
+
+## Reglas comunes
+- **Pura y determinista.** No toca el disco: lee con `leer(ruta)` y devuelve el texto nuevo de cada fichero tocado (`null` = borrar). El contexto (`ctx`) trae `hoy`, `hora`, `ajustes`, `rutas` y un PRNG con semilla.
+- **Inversa exacta.** La inversa es siempre `ficheros.restaurar` con el contenido anterior, byte a byte, de cada fichero tocado (propiedad probada).
+  - El servidor la guarda para **deshacer**: 30 por sesión, desde el aviso de 10 s.
+  - Solo la aplica si esos ficheros siguen como los dejó la operación; si no, responde 409 «cambió después».
+- **Versiones (409).** La web manda la versión de cada fichero que vio. Si otro equipo o una edición a mano lo cambió entre medias, el servidor responde 409, la web recarga y nada se pisa.
+- **Papelera.** Lo que una operación borra (una línea, un bloque o un fichero) va a `.finhub/papelera/` 30 días. `papelera.restaurar` lo devuelve a su sitio.
+- **Una a la vez.** El servidor encola las operaciones. Escribe cada fichero de forma atómica (temporal + `fsync` + renombrar) y, si falla a mitad, vuelve atrás los que ya había escrito.
+- **Solo lectura.** Si la carpeta está abierta en otro equipo, ninguna operación escribe (423).
+- **Mes cerrado.** Las que cambian un mes cerrado piden confirmación (`confirmarCerrado: true`), lo marcan «editado tras cierre» y recalculan su foto y la de los siguientes.
+- **Claude propone, tú confirmas.** Ningún trabajo de Claude escribe en tus datos. Su salida se aplica con una de estas operaciones cuando la confirmas. Las que nacen de trabajos privados (`privado`, `encaje`) **nunca escriben en `conocimiento/`** (regla R1 en ops, con test).
+
+## Genéricas (`genericas.js`)
+| Operación | Argumentos | Qué hace |
 |---|---|---|
-| `mov.crear` | mes, movimiento | `mov.borrarDefinitivo(mes, id)`: sin papelera, porque acaba de nacer |
-| `mov.editar` | mes, id, cambios (incl. naturaleza, grupo, mes destino) | `mov.editar(mes, id, valores anteriores)` |
-| `mov.mover` | mesOrigen, id, mesDestino | `mov.mover` al revés |
-| `mov.borrar` | mes, id | `mov.restaurar(mes, línea, posición)` |
-| `mov.ajustarSaldo` | cuenta, fecha, saldo real | `mov.borrarDefinitivo` del ajuste creado |
-| `mes.cerrar` | mes, lección | `mes.descerrar(mes, estado y bloque Cierre anteriores)` |
-| `mes.reabrir` | mes | `mes.recerrar(mes, bloque Cierre)` |
-| `mes.recalcularCierre` | mes (tras editar un mes cerrado) | `mes.restaurarCierre(mes, bloque anterior)` + saldos iniciales siguientes |
-| `mes.cambiarInicio` | día nuevo | `mes.cambiarInicio(día anterior)` + reparto inverso (operación compuesta, §9.3) |
-| `pres.fijar` | grupo, importe, (mes \| plantilla) | `pres.fijar` con el valor anterior o `pres.quitar` |
-| `rec.crear` / `rec.editar` | recurrente, `aplicar: esteMes \| siguiente` | `rec.borrarDefinitivo` / `rec.editar` anterior (y el movimiento de este mes, si se tocó) |
-| `rec.pausar` / `rec.reanudar` | id | la contraria |
-| `rec.confirmar` | mes, id, importe? | `mov.borrarDefinitivo` + quitar la marca `confirmado` |
-| `rec.saltar` | mes, id | quitar la marca `saltado` |
-| `rec.borrar` | id | `papelera.restaurar` |
+| `lista.crear` · `lista.editar` · `lista.borrar` | `{ruta, valor}` · `{ruta, clave, cambios}` · `{ruta, clave, que?}` | entidades de una lista (cuentas, grupos, etiquetas, recurrentes, hitos, objetivo, clases, valores, fuentes, familias, mezclas, predicciones…); validadas con su formato; borrar → papelera |
+| `bloque.crear` · `bloque.editar` · `bloque.borrar` | `{ruta, id, titulo, campos, cuerpo}` · … · `{ruta, id, que?}` | bloques «## id · título» (metas, activos, notas, versiones…) |
+| `ajustes.fijar` · `ajustes.quitar` | `{clave, valor}` · `{clave}` | un ajuste (valor ya interpretado) o volver al valor por defecto |
+| `ajustes.textos` | `{valores: {clave: texto}}` | varios ajustes escritos como en el fichero (vacío = por defecto), validados con su tipo y su gramática (humor, accesorios, crisis, supuestos, patrones de conflicto); un solo deshacer |
+| `texto.guardar` | `{ruta, texto}` | tu versión de un rol o una tarea (solo `roles/` y `tareas/`), validada |
+| `fichero.borrar` | `{ruta, que?}` | un fichero entero a la papelera (análisis, borrador, decisión, descubrimiento, conversación…) |
+| `papelera.restaurar` | `{entrada}` | devuelve lo borrado (la pide el servidor, no la web) |
+| `ficheros.restaurar` (`motor.js`) | `{ficheros}` | la inversa de todas: restaura el contenido exacto |
 
-## Catálogos (`ops/catalogos.js`)
-| Operación | Inversa |
-|---|---|
-| `cuenta.crear` / `cuenta.editar` / `cuenta.renombrar` | borrarDefinitivo / editar anterior / renombrar anterior |
-| `cuenta.archivar` (si tiene movimientos no se borra) | `cuenta.desarchivar` |
-| `grupo.crear` / `grupo.renombrar` | borrarDefinitivo / renombrar anterior |
-| `grupo.cambiarNaturaleza(id, nat, aplicarAMovimientos)` | restaura la naturaleza y, si se aplicó, la de cada movimiento tocado (lista guardada en la inversa) |
-| `grupo.borrar(id, destino?)` | restaura el grupo y reasigna los movimientos movidos |
-| `etiqueta.renombrar(de, a)` | `etiqueta.renombrar(a, de)` sobre los mismos movimientos |
-| `etiqueta.borrar` | restaura la etiqueta en los movimientos que la tenían |
+## Mes (`mes.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `mov.crear` · `mov.editar` · `mov.borrar` | `{mov}` · `{mes, id, cambios}` · `{mes, id}` | movimientos del mes financiero que toca (ordenados por fecha, con id corto propio) |
+| `rec.confirmar` · `rec.confirmarTodos` · `rec.saltar` · `rec.desmarcar` | `{mes, rec, importe, fecha}` … | los recurrentes del mes: confirmarlos (crea el movimiento), saltarlos o quitar la marca |
+| `pres.fijar` | `{mes, grupo, importe}` | presupuesto de un grupo solo para ese mes |
+| `mes.cerrar` · `mes.reabrir` | `{mes, leccion?}` · `{mes}` | foto de cierre (saldos, cartera, patrimonio) o quitarla |
+| `mes.cambiarInicio` | `{dia}` | cambia el mes financiero y reparte **todos** los movimientos en sus nuevos meses (con avisos) |
 
-## Cartera (`ops/cartera.js`)
-| Operación | Inversa |
-|---|---|
-| `activo.crear` / `activo.editar` / `activo.borrar` | borrarDefinitivo / editar anterior / papelera.restaurar |
-| `operacion.crear` / `operacion.editar` / `operacion.borrar` | ídem (TWR, TIR, coste y plusvalía se recalculan, no se guardan) |
-| `valores.guardar(fecha, filas)` | `valores.restaurar(fecha, filas anteriores \| ninguna)` |
-| `objetivo.fijar(pesos)` | `objetivo.fijar(anteriores)` |
-| `clase.crear` / `clase.editar` / `clase.borrar` | ídem |
-| `plantilla.editar` / `plantilla.restaurarDefecto` | restaurar el contenido anterior |
-| `borrador.crear` / `borrador.editar` / `borrador.descartar` | borrarDefinitivo / editar anterior / papelera.restaurar |
-| `borrador.aceptar` (crea activos y objetivo) | restaura `activos.md` y `objetivo.md` anteriores y el estado del borrador |
-| `precios.confirmar(propuesta)` | = `valores.guardar`; la propuesta de Claude no es una operación hasta que la confirmas |
+## Catálogos (`catalogos.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `rec.editar` · `rec.pausar` | `{id, cambios, aplicar, mes?}` · `{id, pausado}` | cambiar un recurrente «también este mes» o «desde el siguiente»; pausarlo |
+| `grupo.cambiarNaturaleza` · `grupo.borrar` | `{id, naturaleza, aplicarAMovimientos}` · `{id, destino?}` | sin destino, lo anotado queda «sin grupo», sin perderse (§9.2) |
+| `etiqueta.renombrar` · `etiqueta.borrar` | `{de, a}` · `{id}` | en todos los ficheros, conservando la posición |
+| `cuenta.ajustarSaldo` | `{cuenta, fecha, saldo}` | un movimiento «ajuste» por la diferencia, neutro en el mes |
 
-## Metas y decisiones (`ops/metas.js`)
-`meta.crear | editar | pausar | reanudar | cumplir | archivar | borrar`, `hito.crear | editar | borrar`, `decision.crear | editar | cambiarEstado | borrar`, `pausa.crear` (= `decision.crear` con `estado: pausa-48h`): cada una con su contraria o con la restauración de los valores anteriores.
+## Cartera (`cartera.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `operacion.crear` · `operacion.editar` · `operacion.borrar` | `{op, mov?}` · `{id, cambios}` · `{id}` | aportación, venta, traspaso, dividendo, comisión y ajuste, enlazados con su movimiento del mes |
+| `valores.guardar` | `{fecha, filas}` | la foto de valores de tu cartera de ese día (a mano o con los precios que confirmaste) |
+| `objetivo.fijar` | `{pesos, redondeo, umbral}` | pesos objetivo (suman 100 %) |
+| `borrador.crear` · `borrador.aceptar` | `{plantilla, fecha}` · `{ruta}` | «Generar cartera base»: borrador desde una plantilla; al aceptarlo crea activos y objetivo |
 
-## Conocimiento (`ops/conocimiento.js`)
-| Operación | Inversa |
-|---|---|
-| `nota.crear` / `nota.editar` (marca `editada: sí`) | borrarDefinitivo / editar anterior, **incluida la marca** |
-| `nota.mover(id, fuenteDestino)` | `nota.mover` de vuelta |
-| `nota.borrar` | papelera.restaurar |
-| `fuente.crear` / `renombrar` / `cambiarFamilia` / `caducidad` | la contraria |
-| `fuente.borrar` (notas a la papelera; las mezclas se limpian, §9.10) | restaura la fuente, sus notas y las mezclas |
-| `familia.*`, `mezcla.crear` / `editar` / `borrar` | ídem |
-| `prediccion.crear` / `editar` / `resolver` / `reabrir` | ídem |
-| `ingesta.aceptar(notas propuestas)` | borrarDefinitivo de las notas creadas |
-| `pulso.fusionar(fecha, notas)` (dedup §4.7) | quitar exactamente las notas añadidas |
-| `descubrimiento.crear` / `nuevaVersion` / `cambiarEstado` / `borrar` | borrarDefinitivo / quitar la versión / estado anterior / papelera.restaurar |
-| `base.importarSemilla(notas nuevas)` | borrarDefinitivo de las importadas |
+## Metas y decisiones (`metas.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `meta.crear` · `meta.estado` | `{titulo, campos}` · `{id, estado}` | crear; pausar, reanudar, cumplir (Rex lo celebra) o archivar. Editar y borrar: `bloque.*` |
+| `hito.crear` | `{fecha, texto, tipo?, nota?}` | hitos de la línea de tiempo (H-NNNN). Editar y borrar: `lista.*` |
+| `decision.crear` · `decision.editar` | `{titulo, fecha, estado?, revisar?, vuelve?, origen?, secciones}` · `{ruta, …}` | diario de decisiones; una pausa de 48 h sin «vuelve» vuelve en 48 h |
 
-**Regla R1 en ops (test):** las operaciones que nacen de una salida de los trabajos `privado` o `encaje` **no pueden escribir en `conocimiento/`**. `encaje.guardar` solo escribe en `analisis/encajes/`.
+## Conocimiento (`conocimiento.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `nota.crear` · `nota.editar` · `nota.mover` | `{fuente, titulo, fecha, campos, cuerpo}` · `{ruta, id, …}` · `{ruta, id, fuente}` | notas propias (no en Mundo ni Datos); editar marca «editada: sí»; mover conserva el id. Borrar: `bloque.borrar` |
+| `fuente.crear` · `fuente.borrar` | `{nombre, familia, caducidad?, privada?}` · `{id}` | borrar manda sus notas a la papelera y avisa de las mezclas que la usan |
+| `familia.borrar` | `{id, destino}` | sus fuentes pasan a otra familia |
+| `mezcla.crear` · `mezcla.limpiar` · `fuentes.activas` | `{nombre, miembros}` · `{id}` · `{ids}` | mezclas (con selectores `@…`); limpiar quita las fuentes borradas (§9.10); tu mezcla por defecto |
+| `prediccion.crear` · `prediccion.resolver` · `predicciones.resolverAuto` | `{fuente, texto, medir?, nota?}` · `{id, estado}` · `{}` | predicciones y su resolución, a mano o automática con las series |
+| `datos.aplicar` | `{series}` | guarda las filas que propuso el trabajo «datos» y confirmaste (nunca completa una serie sintética) |
+| `base.importar` | `{ficheros}` | copia a `conocimiento/base/` las notas de la Base que aún no tienes |
 
-## Rex, roles, tareas y ajustes (`ops/rex.js`, `ops/ajustes.js`)
-| Operación | Inversa |
-|---|---|
-| `conversacion.crear` / `renombrar` / `borrar` | ídem |
-| `conversacion.añadirTurno` | sin deshacer: es un registro; se puede borrar la conversación |
-| `quiz.registrar` | sin deshacer |
-| `rol.editar` / `tarea.editar` / `restaurarDefecto` | restaurar el contenido anterior |
-| `ajustes.fijar(clave, valor)` | `ajustes.fijar(clave, anterior)` |
+## Lo que propone Claude (`ia.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `pulso.aplicar` | `{fecha, hora, notas}` | notas de Mundo del día, fusionadas con lo que ya hay (misma URL o título casi igual) |
+| `ingesta.aplicar` | `{fuente, fichero, fecha, notas, predicciones}` | notas revisadas de un texto de CONTEXTO, sin pisar lo que editaste a mano |
+| `analisis.guardar` | `{fecha, tarea, …, cifras, resultado_md, json, prediccion?}` | el análisis en `analisis/` (privado) y, si hay rango, la predicción de finhub |
+| `chat.crear` · `chat.turno` · `chat.renombrar` | `{modo, titulo, fecha}` · `{ruta, tu, rex, cuando, sesion?}` · `{ruta, titulo}` | conversaciones de Rex en `chat/privado/` o `chat/web/` |
+| `semana.guardar` · `quiz.responder` · `tuano.rexDice` · `borrador.revisado` | … | resumen semanal, progreso del quiz, «Rex dice» de Tu año y revisión de la cartera base |
 
-## Sistema (`ops/sistema.js`)
-| Operación | Inversa |
-|---|---|
-| `papelera.enviar` (la usan los `*.borrar`) | `papelera.restaurar` |
-| `papelera.restaurar(id)` (si falta el padre: lo restaura o pregunta, §9.22) | `papelera.enviar` |
-| `papelera.purgar` (> 30 días, avisando antes) | **sin inversa** (único borrado real, con confirmación) |
-| `conflicto.resolver(fichero, quedarse A \| B \| fusionar \| manual)` | restaura la versión descartada desde la papelera |
-| `esquema.migrar(fichero, de, a)` (con copia previa) | restaurar desde la copia |
+## Descubrimientos (`descubrimientos.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `descubrimiento.crear` | `{fecha, origen, d}` | D-NNN desde la salida de «descubrir»: ISIN no válidos fuera con aviso, importes en euros rechazados, predicción `finhub-descubrir` enlazada |
+| `descubrimiento.version` | `{id, fecha, d?, cambios?, sinCambios?}` | «¿qué ha cambiado?»: nueva `## vN` arriba; sin novedades, según `descubrir_sin_cambios` |
+| `descubrimiento.estado` | `{id, estado}` | nuevo, siguiendo, descartado o archivado. Borrar: `fichero.borrar` |
+| `encaje.guardar` | `{fecha, descubrimiento, …}` | solo en `analisis/encajes/` (privado), nunca junto al descubrimiento |
+| `precios.seguimiento` | `{precios}` | precio de la referencia de lo que sigues → serie `<isin>` en Datos (una fila por mes) |
+| `descubrir.listas` | `{sectores, filtros}` | sectores del mapa de efectos y filtros del panel, en un solo deshacer |
 
-**No son operaciones** (no tienen deshacer, sino su propio flujo con confirmación): cambiar de carpeta (mover, copiar o usar), tomar el control del candado y purgar la papelera.
+## Primera vez (`inicio.js`)
+| Operación | Argumentos | Qué hace |
+|---|---|---|
+| `inicio.crear` | `{fecha, nombre, mes_inicio_dia, tema, cuentas, grupos, recurrentes, base?}` | de una carpeta vacía a tu carpeta: ajustes, cuentas con saldo, grupos por defecto elegidos, etiquetas, recurrentes y la Base; no se repite sobre una carpeta con datos |
+
+## Acciones del servidor que no son operaciones
+Escriben en tu carpeta, pero no son funciones puras sobre los ficheros de datos. También se ven en el indicador de guardado.
+
+| Ruta | Qué hace | Cómo se deshace |
+|---|---|---|
+| `POST /api/deshacer` | aplica la inversa guardada (si los ficheros no cambiaron después) | — |
+| `POST /api/papelera/restaurar` | devuelve lo borrado; si son notas de una fuente borrada, restaura también la fuente (§9.22) | borrarlo otra vez |
+| `POST /api/conflicto/resolver` | conflicto de sincronización: tu versión, la otra, fusionar por entidades o «ya lo arreglé a mano» | lo descartado está en la papelera como «copia en conflicto» |
+| `POST /api/carpeta/cambiar` | usar, crear, copiar o mover la carpeta (copia verificada por hash) | la antigua se queda, o va a la Papelera de reciclaje si lo confirmas |
+| `POST /api/contexto/procesado` | pasa un texto de `CONTEXTO/` a `CONTEXTO/procesados/<fuente>/` | moverlo a mano |
+
+La historia de cómo se decidió cada una está en [DECISIONES.md](DECISIONES.md).

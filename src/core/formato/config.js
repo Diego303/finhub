@@ -65,3 +65,20 @@ export const ajustes = definirFormato({
 export function ajustesEfectivos(valoresFichero) {
   return { ...AJUSTES_DEFECTO, ...valoresFichero, claude_modelo: { ...AJUSTES_DEFECTO.claude_modelo, ...(valoresFichero.claude_modelo ?? {}) } };
 }
+
+/**
+ * Patrones de copias en conflicto propios (`conflictos` en ajustes.md, §2.6): «{nombre} (conflicto *).md | …».
+ * {nombre} es el nombre del fichero original sin .md (una vez) y * cualquier texto. Se suman a los de serie.
+ * → [{id, descripcion, re, base}] o {error}
+ */
+export function parsePatronesConflicto(texto) {
+  const out = [];
+  for (const p of String(texto ?? '').split('|').map((x) => x.trim()).filter(Boolean)) {
+    if ((p.match(/\{nombre\}/g) ?? []).length !== 1 || !/\.md$/i.test(p) || p.includes('/')) return { error: `«${p}» debe llevar {nombre} una vez, sin carpetas, y acabar en .md (p. ej. «{nombre} (conflicto *).md»)` };
+    const trozo = (t) => t.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    const re = new RegExp(`^${p.split('{nombre}').map(trozo).join('(.+?)')}$`, 'i');
+    out.push({ id: `ajustes:${p}`, descripcion: `copia en conflicto (patrón de tus ajustes «${p}»)`, re, base: (m) => `${m[1]}.md` });
+  }
+  return out;
+}
+

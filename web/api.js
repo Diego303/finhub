@@ -1,6 +1,7 @@
 // Cliente de la API local. Los errores nunca son silenciosos: se ven en un toast en español.
 import { toast } from './componentes/toast.js';
 import { confirmar } from './componentes/modal.js';
+import { ESCRITURAS, empezarGuardado, terminarGuardado, describirUltimo } from './componentes/guardado.js';
 
 const SESION = (() => {
   const k = 'finhub-sesion';
@@ -21,7 +22,12 @@ export class ErrorApi extends Error {
   }
 }
 
+/** Ficheros que tocó una escritura, según lo que devuelve cada ruta. */
+const ficherosDe = (d) => (d?.cambios ? Object.keys(d.cambios) : [d?.base, d?.conflicto, d?.destino].filter(Boolean));
+
 export async function pedir(metodo, ruta, cuerpo) {
+  // lo que escribe en tu carpeta se ve en el indicador de guardado (arriba a la derecha)
+  const escribe = metodo === 'POST' && ESCRITURAS.has(ruta) ? empezarGuardado(ruta) : null;
   let r;
   try {
     r = await fetch(ruta, {
@@ -30,10 +36,16 @@ export async function pedir(metodo, ruta, cuerpo) {
       body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     });
   } catch {
-    throw new ErrorApi(0, { error: 'No hay conexión con el servidor de finhub. ¿Sigue en marcha? (finhub status)' });
+    const mensaje = 'No hay conexión con el servidor de finhub. ¿Sigue en marcha? (finhub status)';
+    if (escribe) terminarGuardado(escribe, { error: { estado: 0, mensaje } });
+    throw new ErrorApi(0, { error: mensaje });
   }
   const datos = await r.json().catch(() => null);
-  if (!r.ok) throw new ErrorApi(r.status, datos);
+  if (!r.ok) {
+    if (escribe) terminarGuardado(escribe, { error: { estado: r.status, mensaje: datos?.error ?? `error ${r.status}` } });
+    throw new ErrorApi(r.status, datos);
+  }
+  if (escribe) terminarGuardado(escribe, { ficheros: ficherosDe(datos) });
   return datos;
 }
 
@@ -54,6 +66,7 @@ export async function op(nombre, args = {}, { versiones = {}, mensaje = 'Hecho',
     const r = await pedir('POST', '/api/ops', { op: nombre, args, versiones });
     await recargar();
     const texto = (typeof mensaje === 'function' ? mensaje(r) : mensaje) + (r.avisos?.length ? ` · ⚠ ${r.avisos.join(' · ')}` : '');
+    describirUltimo(typeof mensaje === 'function' ? mensaje(r) : mensaje === 'Hecho' ? nombre : mensaje);
     if (!silencioso) toast(texto, { deshacer: r.deshacer ? () => deshacer(r.deshacer) : null });
     return r;
   } catch (e) {

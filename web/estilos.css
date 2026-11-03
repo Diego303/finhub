@@ -150,3 +150,14 @@ tr.editando td { vertical-align: top; }
 .saltar:not(:focus) { width: 1px; height: 1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 main:focus { outline: none; }
 main:focus-visible { outline: 2px solid var(--naranja); outline-offset: 4px; }
+
+/* indicador de guardado (arriba a la derecha) */
+.guardado { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; padding: 2px 9px; border-radius: 999px; border: .5px solid var(--border-strong); background: transparent; color: var(--text-secondary); white-space: nowrap; transition: background-color .4s, color .4s; }
+.guardado.ok { color: var(--text-success); }
+.guardado.ok.reciente { background: var(--bg-success); border-color: var(--text-success); }
+.guardado.curso { color: var(--text-secondary); }
+.guardado.info { color: var(--azul); border-color: var(--azul); }
+.guardado.aviso { color: var(--text-warning); background: var(--bg-warning); border-color: var(--text-warning); }
+.guardado.mal { color: #fff; background: var(--text-danger); border-color: var(--text-danger); }
+.spinner.pequeno { width: 8px; height: 8px; border-width: 1.5px; }
+@media (prefers-reduced-motion: reduce) { .guardado { transition: none; } }

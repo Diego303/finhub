@@ -1,7 +1,9 @@
-// Cabecera (§5 Global): ☁ ruta de la carpeta con su estado · fecha · Gestión ▾. Y las bandas de aviso.
+// Cabecera (§5 Global): ☁ ruta de la carpeta con su estado · indicador de guardado · fecha · Gestión ▾.
+// Y las bandas de aviso.
 import { html } from '../esc.js';
 import { textoLargo } from '/core/fechas.js';
 import { menuGestion } from './gestion.js';
+import { indicadorGuardado } from './guardado.js';
 
 /** Estado de la carpeta en una frase corta, como «· sincronizada · al día». */
 export function estadoCarpeta(srv) {
@@ -19,7 +21,7 @@ export function cabecera(estado, { menuAbierto }) {
   const ec = estadoCarpeta(srv);
   return html`<div class="cabecera">
     <button type="button" class="ruta ck" data-accion="abrir-ajustes" title="Cambiar carpeta de datos">finhub · ☁ <span>${srv?.carpeta.rutaWindows ?? ''}</span> <span class="mut estado-carpeta ${ec.aviso ? 'aviso' : ''}" style="font-size:10.5px">· ${ec.texto}</span></button>
-    <span class="fila" style="gap:10px"><span class="mut">${textoLargo(estado.ahora.fecha)}</span>
+    <span class="fila" style="gap:10px">${indicadorGuardado(estado)}<span class="mut">${textoLargo(estado.ahora.fecha)}</span>
       <span class="gestion"><button type="button" data-accion="gestion" aria-haspopup="menu" aria-expanded="${menuAbierto ? 'true' : 'false'}">Gestión ▾</button>${menuAbierto ? menuGestion() : ''}</span>
     </span>
   </div>`;

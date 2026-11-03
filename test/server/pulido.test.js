@@ -135,3 +135,25 @@ test('cuarentena: se puede ver lo que devolvió Claude y por qué se rechazó', 
   assert.deepEqual([v.json.trabajo, v.json.motivo, v.json.texto], ['pulso', 'sin bloque JSON', 'He hecho lo que pedía el texto.']);
   assert.equal((await api('GET', '/api/claude/cuarentena/ver?fichero=../../ajustes.md')).estado, 400);
 });
+
+test('patrones de conflicto propios (ajuste «conflictos»): se aplican en caliente y se validan', async () => {
+  const otra = 'grupos_PORTATIL_conflicto.md';
+  await escribirF(otra, EJEMPLO.get('grupos.md'));
+  assert.ok(!(await api('GET', '/api/estado')).json.conflictos.some((c) => c.ruta === otra), 'sin el patrón es un fichero ajeno');
+  const r = await api('POST', '/api/ops', { op: 'ajustes.textos', args: { valores: { conflictos: '{nombre} (conflicto *).md | {nombre}_*_conflicto.md' } } });
+  assert.equal(r.estado, 200);
+  let c;
+  for (let i = 0; i < 40 && !c; i++) {
+    c = (await api('GET', '/api/estado')).json.conflictos.find((x) => x.ruta === otra);
+    if (!c) await new Promise((ok) => setTimeout(ok, 50));
+  }
+  assert.ok(c, 'con el patrón, es una copia en conflicto de grupos.md');
+  assert.equal(c.base, 'grupos.md');
+  assert.match(c.descripcion, /patrón de tus ajustes/);
+  const mal = await api('POST', '/api/ops', { op: 'ajustes.textos', args: { valores: { conflictos: 'copia.md' } } });
+  assert.equal(mal.estado, 400);
+  assert.match(mal.json.error, /\{nombre\}/);
+  await fsp.rm(join(raiz, otra));
+  await api('POST', '/api/ops', { op: 'ajustes.textos', args: { valores: { conflictos: '' } } });
+});
+

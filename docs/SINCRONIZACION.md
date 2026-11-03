@@ -1,7 +1,7 @@
 # Carpeta sincronizada desde WSL · verificación F0
 
 > Medido el 2026-11-03 en WSL2 (Ubuntu 22.04, kernel 6.18), Node 24.21.0.
-> **Caso objetivo:** la carpeta de datos estará dentro de `D:\GoogleDrive` (carpeta local de `D:` sincronizada con Google Drive para escritorio). La ruta exacta la decides tú en F12.
+> **Caso objetivo:** la carpeta de datos estará dentro de `D:\GoogleDrive` (carpeta local de `D:` sincronizada con Google Drive para escritorio). La ruta exacta la eliges tú: [INSTRUCCIONES.md §4](../INSTRUCCIONES.md).
 > Pruebas hechas **solo** en una carpeta nueva y vacía, `D:\GoogleDrive\finhub-prueba-F0`, creada por el banco y borrada al terminar con un borrado que solo quitaba, uno a uno, los ficheros con nombres creados por las pruebas (614 ficheros, 10 carpetas, 0 inesperados). No se leyó nada más de `D:\GoogleDrive`. OneDrive no se tocó.
 
 ## 1. Cómo se ve desde WSL
@@ -51,7 +51,7 @@
 
 ## 4. Pendiente (no reproducible en F0, con un solo equipo)
 
-- **Nombres de las copias en conflicto de Google Drive.** No los he podido provocar sin un segundo equipo y **no los invento**. El plan habla de patrones de OneDrive (`nombre-EQUIPO.md`). Los patrones de conflicto serán **configurables** (§2.6), y los de Google Drive se verificarán en F12 con la carpeta real o con un segundo equipo.
+- **Nombres de las copias en conflicto de Google Drive.** No los he podido provocar sin un segundo equipo y **no los invento**. El plan habla de patrones de OneDrive (`nombre-EQUIPO.md`). Los patrones son **configurables** (ajuste `conflictos`, ver §7). **Sigue pendiente** comprobar con tu carpeta real o con un segundo equipo cómo los nombra tu cliente; si no coincide con ninguno de serie, basta con añadir su patrón.
 - Qué hace el cliente con un `.finhub-tmp-*` que quede huérfano (si llega a subirlo). finhub los limpia al arrancar.
 - «Archivos a petición»: en una carpeta de `D:` sincronizada los ficheros están siempre en local, así que no aplica a tu caso. Aun así, el código mantiene la regla de §2.6: **un fallo de lectura nunca se trata como fichero vacío** (reintento con espera y aviso).
 - Comportamiento si Google Drive está pausado o cerrado: finhub no depende de él. Solo escribe en disco local.
@@ -65,3 +65,18 @@ En el scratchpad de la sesión, no en el repo: `fsbench.mjs` (banco; aborta si l
 - `src/server/candado.js`: `.finhub/abierto.lock` con latido cada 30 s; < 2 min de otro equipo → solo lectura; «tomar el control»; el otro lo detecta en su siguiente latido.
 - `src/server/carpeta.js`: validar, crear, usar, copiar y mover (verificado por hash; si se interrumpe, se deshace lo copiado).
 - Tests en `test/server/` con directorios temporales que simulan la carpeta sincronizada: conflictos, fichero ilegible, temporal huérfano, dos equipos, mover interrumpido. Ninguno toca `D:\GoogleDrive`.
+
+## 7. Implementado en F12 y después
+- **Resolver conflictos** (`src/server/conflictos.js`, banda «Conflicto» o Ajustes → Carpeta):
+  - diferencias por entidad (cada línea de una lista o de un bloque) entre tu versión y la copia;
+  - cuatro salidas: quedarte con la tuya, con la otra, **fusionar por entidades** (si la misma entidad cambió en los dos lados, no se fusiona sola: a mano) o «ya lo arreglé a mano»;
+  - lo descartado va a la papelera como «copia en conflicto», y al restaurarlo vuelve a aparecer el conflicto.
+- **Patrones propios** (`conflictos` en ajustes.md): `{nombre} (conflicto *).md | …`. Se suman a los de serie, se validan al guardar y se aplican en caliente (la carpeta se vuelve a clasificar).
+- **Indicador de guardado** (arriba a la derecha):
+  - dice si todo está en el disco, si se está guardando, si algo no se pudo guardar, si no hay conexión, si estás en solo lectura y qué ha llegado de fuera (lo detecta el sondeo);
+  - no puede saber si Google Drive ya lo subió a la nube, y lo dice.
+- **Pantalla de carpeta** (Ajustes → Carpeta): validar, crear, usar, copiar o mover, con progreso.
+- **Primera vez:** `finhub` sin carpeta sugiere `D:\GoogleDrive\FINANZAS` si existe `D:\GoogleDrive` (solo comprueba que exista). Paso a paso en [INSTRUCCIONES.md](../INSTRUCCIONES.md).
+- **Probado** con carpetas temporales que simulan cada caso (`test/server/pulido.test.js`, `test/e2e/pulido.test.js`, `test/e2e/guardado.test.js`).
+- **Sin probar todavía:** la carpeta real ni un segundo equipo. Se harán solo con tu permiso.
+

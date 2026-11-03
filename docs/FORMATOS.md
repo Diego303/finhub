@@ -1,6 +1,6 @@
-# Formatos de la carpeta de datos · propuesta F0 (esquema 1)
+# Formatos de la carpeta de datos (esquema 1)
 
-> Gramática exacta de cada fichero de §3 del plan, con ejemplos válidos e inválidos. F1 la implementa en `src/core/formato/` con tests de ida y vuelta.
+> Gramática exacta de cada fichero de §3 del plan, con ejemplos válidos e inválidos. Implementada en `src/core/formato/` (un módulo por familia de ficheros) con tests de ida y vuelta: leer y volver a escribir un fichero sin tocarlo da exactamente el mismo texto, también con líneas mal escritas o desconocidas. Se propuso en F0 y se fue completando en cada fase (los añadidos llevan la fase).
 > Leyenda de errores: **⚠ aviso** = la línea se conserva y la entidad se usa · **✗ imposible** = la línea se conserva tal cual, se marca ⚠ en la interfaz y la entidad **no** entra en los cálculos · **⛔ fichero** = el fichero no se puede interpretar: error visible, nunca se trata como vacío.
 > Las propuestas que **amplían o cambian** el plan llevan 🆕 y se recogen al final (§6).
 
@@ -70,7 +70,7 @@ Cabecera `# Ajustes`, `esquema: 1` y una lista `- clave: valor`. Claves (todas o
 | `moneda` | `EUR` (única soportada) | `EUR` |
 | `mes_inicio_dia` | entero 1–28 | `1` |
 | `tema` | `claro` \| `oscuro` \| `auto` | `auto` |
-| `puerto` | entero 1024–65535 | `4747` |
+| `puerto` | entero 1024–65535 (lo usa `finhub` al arrancar si no le pasas `--puerto`; si está ocupado, prueba el siguiente) | `4747` |
 | `impuestos_ahorro` | tramos `desde-hasta:porcentaje` separados por ` \| `; el último `desde-:p` | tramos del plan, con `verificar: AAAA` 🆕 |
 | `impuestos_verificado` 🆕 | año (`2026`) | — |
 | `proyeccion` | `datos` \| `manual` | `datos` |
@@ -79,7 +79,7 @@ Cabecera `# Ajustes`, `esquema: 1` y una lista `- clave: valor`. Claves (todas o
 | `pendientes` | lista de `elemento [frecuencia]` separada por ` \| ` | del plan |
 | `rex_humor`, `accesorios` | como el plan | del plan |
 | `copias` | `carpeta` \| `local` | `carpeta` |
-| `conflictos` 🆕 | patrones separados por ` \| ` | patrones genéricos (§2.6) + los de Google Drive cuando se verifiquen |
+| `conflictos` 🆕 | patrones de copias en conflicto de tu servicio de sincronización, separados por ` \| `: `{nombre}` es el nombre del fichero original sin `.md` (una vez), `*` cualquier texto, y acaba en `.md`. Ejemplo: `{nombre} (conflicto *).md \| {nombre}_*_conflicto.md`. Se suman a los de serie y se aplican en caliente | sin patrones propios; los de serie: `nombre-EQUIPO.md`, `nombre (1).md`, `nombre (… conflicted copy …).md` / `(… copia en conflicto …)`, `nombre.sync-conflict-….md` |
 | `claude_modelo` 🆕 | `trabajo=modelo` separados por `, ` (modelo: `opus` \| `sonnet` \| `haiku` \| nombre completo) | `pulso=sonnet, precios=haiku, datos=haiku, ingesta=sonnet, conocimiento=sonnet, rex-web=sonnet, privado=opus, encaje=opus, descubrir=opus` |
 | `nombre` 🆕 | texto (para el saludo del resumen al abrir) | — |
 | `umbral_desviacion` 🆕 | porcentaje (aviso de clases frente a objetivo) | `1` |
@@ -299,14 +299,18 @@ Una línea del cuerpo que empiece por `## ` se escribe `\## ` para no romper los
 
 ## 5. Ficheros de servicio
 
+Viven en `.finhub/` dentro de tu carpeta (salvo los de tu equipo), los escribe finhub y no hace falta tocarlos.
+
 | Fichero | Formato |
 |---|---|
-| `.finhub/registro/AAAA-MM.jsonl` | una línea JSON por ejecución: `{runId, trabajo, inicio, duracion_ms, estado, herramientas:{WebSearch:6}, entradas:[ids], destino, coste_usd, tokens, version_claude, motivo?}`. Nunca el texto del prompt. |
-| `.finhub/abierto.lock` | JSON `{equipo, pid, inicio, latido, version}` |
-| `.finhub/papelera/_indice.jsonl` + `.finhub/papelera/AAAA-MM-DD/<ruta original>` | `{id, que, ruta, fragmento, borrado, expira}` |
-| `.finhub/cuarentena/AAAA-MM-DD-<trabajo>-<runId>.md` | motivo, validaciones fallidas y salida bruta **dentro de un bloque de código** (nunca se interpreta como datos) |
-| `.finhub/copias/AAAA-MM-DD/` | copia del día (14 últimas) |
-| `~/.config/finhub/config.json` | `{"esquema":1,"carpeta":"/mnt/d/GoogleDrive/FINANZAS","recientes":[…]}` (fuera de la carpeta) |
+| `.finhub/registro/AAAA-MM.jsonl` | una línea JSON por ejecución de Claude: `{id, trabajo, inicio, internet, privado, externo, entradas: ["origen:nivel(n)"], tarea, modelo, version, herramientas: [{nombre, entrada}], turnos, coste, sesion, duracionMs, estado, motivo, avisos}`. **Nunca** el texto del prompt ni tus datos. |
+| `.finhub/cuarentena/<inicio>-<trabajo>-<id>.json` | salida de Claude que no pasó la validación: `{id, trabajo, fecha, motivo, texto, json}`. Se ve en Gestión ▾ → Papelera y cuarentena; nunca se interpreta como datos. |
+| `.finhub/abierto.lock` | JSON `{equipo, pid, inicio, latido, version}` (candado entre equipos, latido cada 30 s) |
+| `.finhub/papelera/_indice.jsonl` + `.finhub/papelera/AAAA-MM-DD/<id>/<ruta original>` | una línea por entrada: `{id, que, ruta, tipo: entidad\|bloque\|fichero\|conflicto, borrado, expira, seccion?, indice?, contenido? \| archivo?}`; los ficheros enteros se guardan aparte. Se borra de verdad a los 30 días. |
+| `.finhub/copias/AAAA-MM-DD/` | copia del día de todos tus ficheros (las 14 últimas); con `copias: local`, en `~/.local/share/finhub/copias/` |
+| `~/.config/finhub/config.json` | `{"esquema":1,"carpeta":"/mnt/d/GoogleDrive/FINANZAS","recientes":[…]}` (en tu equipo, fuera de la carpeta) |
+| `~/.cache/finhub/` | `servidor.json` (el servidor en marcha), `servidor.log` y `sandbox/` de Claude (vacío entre ejecuciones) |
+| `~/.local/share/finhub/sesiones.json` | qué sesión de Claude es de qué trabajo (para reanudar chats sin mezclar trabajos) |
 
 ## 6. Reglas generales concretadas en F1
 - **Cabecera obligatoria ausente** (p. ej. `modo:` en un chat, `descubrimiento:` en un encaje, `trabajo:` en un rol) → ✗ error del fichero.

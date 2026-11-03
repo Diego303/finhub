@@ -7,7 +7,6 @@ import { progresoMetas, consumo12 } from './metas.js';
 import { estadoCartera } from './cartera.js';
 import { parsePorcentaje } from './dinero.js';
 
-export const HUMORES = ['contento', 'tranquilo', 'preocupado'];
 export const ACCESORIOS = { gafas: ['👓', 'gafas'], corbata: ['👔', 'corbata'], japon: ['🎌', 'Japón'], corona: ['👑', 'corona'] };
 
 /** "contento>=30 | tranquilo>=15 | preocupado<15" → [{humor, op, pb}] o {error}. Se evalúan en orden. */

@@ -178,3 +178,12 @@
 | 14 | **Celebración de aciertos** | Cuando una predicción de un descubrimiento pasa a «acertada» (a mano o sola), Rex se alegra con un aviso (§14.18). |
 | 15 | **Textos de «llega en la fase…»** | Se quitaron los que quedaban (Pendientes, Panel, Metas, Gestión). |
 
+## Después de F12 · pulido y documentación · 2026-11-03
+| # | Decisión | Detalle |
+|---|---|---|
+| 1 | **Indicador de guardado** | Arriba a la derecha, siempre visible. Sigue cada petición que escribe en la carpeta (`api.pedir`) y enseña, por prioridad: sin conexión, guardando…, no se guardó, solo lectura, ficheros sin leer, actualizado (cambio de fuera), guardado HH:MM. «Guardando…» se ve al menos 350 ms (sin parpadeos). Un rechazo 4xx no escribe nada y no cuenta como error de guardado. Al pulsarlo: dónde se guarda, cómo (temporal + fsync + renombrar), qué no puede saber (si la nube ya subió) y el historial de la sesión con sus ficheros. Cerrar la pestaña con un guardado a medias pide confirmación. Los errores se anuncian a lectores de pantalla. |
+| 2 | **Ajustes que no hacían nada** | El repaso encontró dos: `conflictos` (los patrones no llegaban al almacén) y `puerto` (la CLI usaba siempre 4747). Ahora los patrones `{nombre} (conflicto *).md` se validan al guardar y se aplican en caliente, y `finhub` arranca en el `puerto` de ajustes.md si no pasas `--puerto`. |
+| 3 | **Capturas reproducibles** | `pnpm capturas` levanta finhub con el ejemplo en una copia temporal y fotografía las 10 pestañas, 4 modales, el tema oscuro y la primera vez. Escribe solo en `docs/capturas/`. La ruta del temporal se enseña como `D:\GoogleDrive\FINANZAS`; la cabecera sigue diciendo «ejemplo · datos inventados». |
+| 4 | **Documentación** | `INSTRUCCIONES.md` (instalar, elegir y cambiar tu carpeta, primera vez, uso diario, Claude, arranque, copias, actualizar, problemas), `docs/ARQUITECTURA.md` (mapa del código y flujos), `docs/README.md` (índice), `OPERACIONES.md` reescrito desde el registro real de operaciones (la propuesta de F0 tenía nombres que nunca existieron) y `FORMATOS.md` §5 corregido (cuarentena en JSON, campos reales del registro y de la papelera). README con galería de capturas. |
+| 5 | **Sectores con nombre** | El mapa de efectos enseña «Consumo básico», «Tecnología»… en vez de los ids. |
+

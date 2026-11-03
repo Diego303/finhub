@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { readFileSync } from 'node:fs';
 import { arranque, scriptVbs, MARCA } from '../src/cli/arranque.js';
-import { sugerirCarpetas, main } from '../src/cli/index.js';
+import { sugerirCarpetas, main, puertoDeCarpeta } from '../src/cli/index.js';
 import { icono } from '../scripts/generar-iconos.js';
 import { temporal, borrarTemporal } from './server/ayudas.js';
 
@@ -69,3 +69,12 @@ test('app instalable: manifiesto, iconos PNG válidos (192 y 512) y service work
   const sw = readFileSync(join(import.meta.dirname, '..', 'web', 'sw.js'), 'utf8');
   assert.doesNotMatch(sw, /caches\.|cache\.put|indexedDB/, 'no guarda nada de tus datos en el navegador');
 });
+
+test('puerto: el de ajustes.md si no pasas --puerto; 4747 si no hay', async () => {
+  const dir = await temporal('puerto');
+  limpiar.push(dir);
+  assert.equal(await puertoDeCarpeta(dir), 4747);
+  await fsp.writeFile(join(dir, 'ajustes.md'), '# Ajustes\nesquema: 1\n- puerto: 4811\n');
+  assert.equal(await puertoDeCarpeta(dir), 4811);
+});
+

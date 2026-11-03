@@ -5,6 +5,7 @@ import { construirModelo } from '/core/modelo.js';
 import { fechaLocal, horaLocal } from '/core/fechas.js';
 import { humorRex, huchaRex, accesoriosRex } from '/core/rex.js';
 import { ponerAccesoriosFijos } from './componentes/rex-sprite.js';
+import { cambioExterno } from './componentes/guardado.js';
 
 export const estado = {
   cargando: true,
@@ -116,7 +117,8 @@ async function recargarServidor() {
 export function sincronizar() {
   const fuente = new EventSource('/api/eventos');
   fuente.addEventListener('version', (ev) => {
-    const { version } = JSON.parse(ev.data);
+    const { version, rutas = [], origen } = JSON.parse(ev.data);
+    if (origen === 'disco') cambioExterno(rutas);
     if (version !== estado.version) cargar();
   });
   fuente.addEventListener('candado', recargarServidor);

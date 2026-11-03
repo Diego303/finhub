@@ -10,6 +10,8 @@ import { aRutaWsl, aRutaWindows, carpetasLocales } from '../server/rutas.js';
 import { validarDestino, cambiarCarpeta } from '../server/carpeta.js';
 import { prepararEjemplo } from './ejemplo.js';
 import { arranque } from './arranque.js';
+import { leer } from '../core/formato/index.js';
+import { valores } from '../core/formato/motor.js';
 
 export const AYUDA = `finhub · tu dinero en local
 
@@ -27,7 +29,7 @@ Uso:
 
 Opciones:
   --datos <ruta>   usa esa carpeta solo en esta ejecución
-  --puerto <n>     puerto (por defecto 4747 o el siguiente libre)
+  --puerto <n>     puerto (por defecto el de ajustes.md, 4747, o el siguiente libre)
   --silencioso     no abre el navegador
   --ejemplo        usa una copia temporal de ejemplo/ (datos inventados)
   --primer-plano   no se separa de la terminal (Ctrl+C para parar)
@@ -98,6 +100,13 @@ async function preguntar(texto) {
   return /^s(i|í)?$/i.test(r.trim());
 }
 
+/** Puerto de `ajustes.md` de la carpeta (o 4747): la opción --puerto manda. */
+export async function puertoDeCarpeta(carpeta) {
+  const t = await fsp.readFile(join(carpeta, 'ajustes.md'), 'utf8').catch(() => null);
+  const p = t ? valores(leer('ajustes.md', t)).puerto : null;
+  return Number.isInteger(p) ? p : 4747;
+}
+
 /**
  * Carpetas sugeridas para la primera vez (§14.17): dentro de Google Drive u OneDrive si existen (desde WSL),
  * o ~/FINANZAS. Solo se sugieren: nada se crea sin que lo confirmes.
@@ -158,7 +167,7 @@ async function start(v, { out, env }) {
     out('Aún no has elegido carpeta de datos. Elige una con:\n  finhub carpeta "D:\\GoogleDrive\\FINANZAS" --crear   (o --usar si ya tiene datos)\no prueba con datos inventados: finhub --ejemplo');
     return 1;
   }
-  const puerto = v.puerto ? Number(v.puerto) : 4747;
+  const puerto = v.puerto ? Number(v.puerto) : await puertoDeCarpeta(carpeta);
   if (!Number.isInteger(puerto) || puerto < 0 || puerto > 65535) {
     out(`puerto no válido: ${v.puerto}`);
     return 2;

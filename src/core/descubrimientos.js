@@ -5,7 +5,6 @@ import { estadoCartera, exposicion, terMedio } from './cartera.js';
 import { aportacionMensualInversion } from './cartera-resumen.js';
 import { pruebaCrisis, parseCrisis, CRISIS_DEFECTO, historicoMezcla, componentesDe } from './herramientas.js';
 import { proporcionPb, sumar, parsePorcentaje } from './dinero.js';
-import { validarIsin } from './ids.js';
 
 export const VS_DEFECTO = 'msci-world-nr-eur';
 
@@ -74,9 +73,6 @@ export function terVehiculo(texto) {
   const r = parsePorcentaje(m[1]);
   return r.ok ? r.valor : null;
 }
-
-/** ISIN válidos que aparecen en el texto de los vehículos. */
-export const isinsDe = (texto) => [...new Set([...String(texto ?? '').matchAll(/\b[A-Z]{2}[A-Z0-9]{9}\d\b/g)].map((m) => m[0]).filter(validarIsin))];
 
 /**
  * Simulador (§4.9, sin IA, no toca tu cartera): dedicar `pct` (0–50 %) a un descubrimiento, sacándolo de

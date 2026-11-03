@@ -21,7 +21,9 @@
     "ejemplo": "node scripts/generar-ejemplo.js",
     "ejemplo:comprobar": "node scripts/generar-ejemplo.js --comprobar",
     "test:e2e": "node scripts/test.js test/e2e",
-    "claude:probar": "node scripts/probar-claude.js"
+    "claude:probar": "node scripts/probar-claude.js",
+    "capturas": "node scripts/capturas.js",
+    "iconos": "node scripts/generar-iconos.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"

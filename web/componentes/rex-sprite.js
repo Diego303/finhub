@@ -30,7 +30,6 @@ export function ponerAccesoriosFijos(lista = []) {
   fijos = [...lista];
   aplicar();
 }
-export const accesorioRex = accesorio;
 
 /** Interior del SVG para un estado y un fotograma (la animación alterna fotogramas). */
 export function interior(estado, f = 0, acc = '') {
@@ -47,7 +46,7 @@ export function interior(estado, f = 0, acc = '') {
   const accs = new Set(String(acc ?? '').split(' ').filter(Boolean));
   if (accs.has('japon')) partes.push(html`<rect x="3.9" y="0.15" width="6.2" height="0.6" fill="#F1EFE8"/><circle cx="7.9" cy="0.45" r="0.35" fill="#E24B4A"/>`);
   if (accs.has('corona')) partes.push(html`<path d="M4.3 0 L4.3 -1.4 L5.2 -0.6 L6.1 -1.7 L7 -0.6 L7.9 -1.4 L7.9 0 Z" fill="#EF9F27" stroke="#BA7517" stroke-width="0.15"/>`);
-  if (accs.has('gafas')) partes.push(html`<rect x="5.3" y="0.9" width="2.2" height="2.2" fill="none" stroke="#2C2C2A" stroke-width="0.35"/><line x1="7.5" y1="1.9" x2="9" y2="1.6" stroke="#2C2C2A" stroke-width="0.3"/>`);
+  if (accs.has('gafas')) partes.push(html`<rect x="4.75" y="0.75" width="2.3" height="1.9" rx="0.35" fill="#B5D4F4" fill-opacity="0.35" stroke="#2C2C2A" stroke-width="0.28"/><line x1="4.75" y1="1.45" x2="3.95" y2="1.25" stroke="#2C2C2A" stroke-width="0.25"/>`);
   if (accs.has('corbata')) partes.push(html`<path d="M6.6 4 L7.6 4 L7.4 4.6 L7.8 6.2 L7.1 6.8 L6.4 6.2 L6.8 4.6 Z" fill="#378ADD"/>`);
   if (accs.has('lupa')) {
     const dx = impar ? 0.3 : 0;

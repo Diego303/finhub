@@ -4,7 +4,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import fsp from 'node:fs/promises';
 import { join, dirname } from 'node:path';
-import { Almacen, ErrorAlmacen } from './almacen.js';
+import { Almacen, ErrorAlmacen, PATRONES_CONFLICTO } from './almacen.js';
 import { Candado } from './candado.js';
 import { Papelera } from './papelera.js';
 import { Copias } from './copias.js';
@@ -21,11 +21,18 @@ import { leer as leerFormato } from '../core/formato/index.js';
 import { valores, items } from '../core/formato/motor.js';
 import { FUENTES_FIJAS } from '../core/formato/conocimiento.js';
 import { fuenteDeRuta } from '../core/conocimiento.js';
-import { ajustesEfectivos } from '../core/formato/config.js';
+import { ajustesEfectivos, parsePatronesConflicto } from '../core/formato/config.js';
 import { crearPrng } from '../core/prng.js';
 import { fechaLocal, horaLocal, mesDe, mesFinanciero, sumarMesesMes } from '../core/fechas.js';
 
 const RAIZ_REPO = join(import.meta.dirname, '..', '..');
+
+/** Patrones de conflicto: los de serie más los de `conflictos` en ajustes.md (si están bien escritos). */
+function patronesDe(textoAjustes) {
+  if (!textoAjustes) return PATRONES_CONFLICTO;
+  const extra = parsePatronesConflicto(valores(leerFormato('ajustes.md', textoAjustes)).conflictos);
+  return extra.error ? PATRONES_CONFLICTO : [...PATRONES_CONFLICTO, ...extra];
+}
 export const VERSION_APP = JSON.parse(readFileSync(join(RAIZ_REPO, 'package.json'), 'utf8')).version;
 
 const ESTADO_OP = { invalida: 400, no_existe: 404, solo_lectura: 423, mes_cerrado: 409, conflicto: 409 };
@@ -50,7 +57,9 @@ export class App {
 
   // ---------- carpeta ----------
   async abrirCarpeta(ruta, { tomarControl = false } = {}) {
-    const almacen = await new Almacen({ raiz: ruta }).cargar();
+    // patrones de conflicto: los de serie + los de tus ajustes (se leen antes de clasificar la carpeta)
+    const ajustesTexto = await fsp.readFile(join(ruta, 'ajustes.md'), 'utf8').catch(() => null);
+    const almacen = await new Almacen({ raiz: ruta, patrones: patronesDe(ajustesTexto) }).cargar();
     const ajustes = this.ajustesDe(almacen);
     this.almacen = almacen;
     this.carpeta = ruta;
@@ -61,9 +70,23 @@ export class App {
     this.papelera = new Papelera({ almacen });
     this.copias = new Copias({ almacen, hoy: () => fechaLocal(), destinoLocal: ajustes.copias === 'local' ? join(carpetasLocales(this.env).datos, 'copias') : null });
     this.purgadas = await this.papelera.purgar().catch(() => []);
-    almacen.alCambiar((ev) => this.difusor.enviar('version', { version: ev.version, rutas: ev.rutas, origen: ev.origen }));
+    almacen.alCambiar((ev) => {
+      this.difusor.enviar('version', { version: ev.version, rutas: ev.rutas, origen: ev.origen });
+      if (ev.rutas.includes('ajustes.md')) this.actualizarPatrones();
+    });
     this.arrancarSondeo();
     this.difusor.enviar('carpeta', { ruta });
+  }
+
+  /** Si cambian los patrones de conflicto de ajustes.md, se vuelve a clasificar la carpeta. */
+  actualizarPatrones() {
+    const a = this.almacen;
+    const nuevos = patronesDe(a?.texto('ajustes.md') ?? null);
+    if (!a || nuevos.map((p) => p.id).join('|') === a.patrones.map((p) => p.id).join('|')) return;
+    a.patrones = nuevos;
+    a.barrer()
+      .then(() => this.difusor.enviar('candado', {}))
+      .catch((e) => this.log(`patrones de conflicto: ${e.message}`));
   }
 
   async cerrarCarpeta() {

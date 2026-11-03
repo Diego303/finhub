@@ -15,6 +15,7 @@ import { registrarIngesta } from './componentes/ingesta.js';
 import { abrirAjustes, registrarAjustes } from './componentes/ajustes.js';
 import { abrirPapelera, registrarPapelera } from './componentes/papelera.js';
 import { registrarConflictos } from './componentes/conflictos.js';
+import { abrirGuardado } from './componentes/guardado.js';
 import { abrirTextos, registrarTextos } from './componentes/textos-claude.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
 import { vistaRex, ponerModo, ponerExplicame, quitarExplicame, iniciarRex, registrarAccionesRex } from './vistas/rex.js';
@@ -121,6 +122,7 @@ accion('gestion-entrada', (el) => {
 accion('abrir-ajustes', () => estado.servidor && estado.modelo && abrirAjustes(estado, 'carpeta'));
 accion('abrir-r1', () => abrirR1());
 accion('saltar', () => document.getElementById('contenido')?.focus());
+accion('abrir-guardado', () => abrirGuardado(estado));
 accion('reintentar', () => cargar());
 accion('tomar-control', async () => {
   if (!(await confirmar('El otro equipo pasará a solo lectura. Si estaba editando, podría perder ese cambio. ¿Tomas el control?', { si: 'Tomar el control' }))) return;

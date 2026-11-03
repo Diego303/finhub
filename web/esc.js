@@ -30,8 +30,6 @@ export function html(partes, ...valores) {
   return new Seguro(s);
 }
 
-export const esSeguro = (v) => v instanceof Seguro;
-
 /** Une fragmentos seguros. */
 export const unir = (lista, sep = '') => new Seguro(lista.map(valor).join(valor(sep)));
 

@@ -48,7 +48,6 @@ export function ponerExplicame(x) {
   rx.ruta = null;
 }
 export const quitarExplicame = () => (explicame = null);
-export const explicameActual = () => explicame;
 
 /** Ir a Rex en un modo con algo ya escrito (desde Análisis). */
 export function rexHacia(m, { pregunta = '', idea = '' } = {}) {

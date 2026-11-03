@@ -1,8 +1,6 @@
 // Cálculos del mes (§4.1). Todo en céntimos y puntos básicos; sin floats en lo que se guarda.
 import { proporcionPb, sumar } from './dinero.js';
 
-export const COLOR_PRESUPUESTO = { verde: 'verde', ambar: 'ambar', rojo: 'rojo' };
-
 /** Naturaleza efectiva: la del movimiento si la indica; si no, la de su grupo; si no hay grupo, null. */
 export function naturalezaDe(mov, gruposPorId) {
   if (mov.naturaleza) return mov.naturaleza;

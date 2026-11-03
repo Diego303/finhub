@@ -8,9 +8,10 @@ import { recalcularCierres } from './mes.js';
 import { parseHumor, parseAccesorios } from '../rex.js';
 import { parseCrisis } from '../herramientas.js';
 import { parseSupuestos } from '../proyeccion.js';
+import { parsePatronesConflicto } from '../formato/config.js';
 
 // Ajustes de texto con su propia gramática: se comprueban al guardarlos desde Ajustes.
-const GRAMATICAS = { rex_humor: parseHumor, accesorios: parseAccesorios, crisis_periodos: parseCrisis, proyeccion_manual: parseSupuestos };
+const GRAMATICAS = { rex_humor: parseHumor, accesorios: parseAccesorios, crisis_periodos: parseCrisis, proyeccion_manual: parseSupuestos, conflictos: parsePatronesConflicto };
 
 // Editar cuentas.md (p. ej. un saldo inicial) cambia los saldos: se recalculan las fotos de los meses cerrados.
 const tocarLista = (tx, ruta) => {

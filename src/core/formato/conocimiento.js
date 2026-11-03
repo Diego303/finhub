@@ -1,7 +1,7 @@
 // conocimiento/: _familias, _fuentes, _mezclas, predicciones, notas, semana, series y descubrimientos.
 import * as T from './tipos.js';
 import * as D from '../dinero.js';
-import { validarIsin, RE_ID_NOTA, normalizar } from '../ids.js';
+import { validarIsin, RE_ID_NOTA } from '../ids.js';
 import { mesesEntre } from '../fechas.js';
 import { definirFormato, entidad, kv, p, c, cita } from './motor.js';
 import { sinDuplicados, nodosItems, bloquesDoc, bloquesSinDuplicados, campoBloque } from './comun.js';
@@ -244,5 +244,3 @@ export const descubrimiento = definirFormato({
   },
 });
 
-/** Ids de fuentes en minúsculas para comparar. */
-export const claveFuente = normalizar;
