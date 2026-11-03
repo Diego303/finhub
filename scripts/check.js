@@ -47,7 +47,8 @@ for (const f of js) {
   const src = readFileSync(f, 'utf8');
   for (const m of src.matchAll(reImport)) {
     const spec = m[1] || m[2] || m[3];
-    if (!(spec.startsWith('./') || spec.startsWith('../') || spec.startsWith('/') || spec.startsWith('node:'))) {
+    const e2e = relative(raiz, f).replaceAll('\\', '/').startsWith('test/e2e/') && spec === '@playwright/test';
+    if (!e2e && !(spec.startsWith('./') || spec.startsWith('../') || spec.startsWith('/') || spec.startsWith('node:'))) {
       error(relative(raiz, f), `import no permitido «${spec}» (solo relativos o node:)`);
     }
   }

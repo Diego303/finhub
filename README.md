@@ -33,6 +33,7 @@ pnpm test        # node:test (solo *.test.js) · ningún test llama al Claude re
 pnpm check       # sintaxis, imports solo node:/relativos, sin dependencias, HTML solo vía esc()
 pnpm dev         # finhub --ejemplo --primer-plano (datos inventados; Ctrl+C para parar)
 pnpm ejemplo     # regenera ejemplo/ (determinista, datos inventados y series sintéticas)
+pnpm test:e2e    # solo los e2e (Chromium con Playwright) · #muestrario: componentes y gráficos
 ```
 Verificaciones de F0: [`docs/CLAUDE-CLI.md`](docs/CLAUDE-CLI.md) (aislamiento de Claude Code) y [`docs/SINCRONIZACION.md`](docs/SINCRONIZACION.md) (carpeta sincronizada desde WSL).
 

@@ -4,7 +4,10 @@ import { registrar, ErrorOp } from './motor.js';
 import { seccionDe, buscarItem, validarEntidad, validarKv, nodoItem, lineaDe } from './comun.js';
 import { movimiento } from '../formato/mes.js';
 import { fijarCabecera, fijarKv, cabeceras, items, asegurarSeccion } from '../formato/motor.js';
-import { periodoMes, mesFinanciero, diasDelMes, partesMes, sumarMesesMes, enPeriodo } from '../fechas.js';
+import { periodoMes, mesFinanciero } from '../fechas.js';
+import { fechaCobro } from '../recurrentes.js';
+
+export { fechaCobro };
 import { idCorto } from '../ids.js';
 
 const rutaMes = (mes) => `mes/${mes}.md`;
@@ -67,16 +70,6 @@ function validarMov(valor, que) {
 function guardar(tx, doc, ruta) {
   asegurarIds(doc, tx.ctx.prng);
   tx.tocar(ruta);
-}
-
-/** Fecha del mes (financiero) para un día de cobro D. */
-export function fechaCobro(mes, dia, inicio = 1) {
-  const p = periodoMes(mes, inicio);
-  const candidatos = [sumarMesesMes(mes, -1), mes].map((m) => {
-    const { a, m: mm } = partesMes(m);
-    return `${m}-${String(Math.min(dia, diasDelMes(a, mm))).padStart(2, '0')}`;
-  });
-  return candidatos.find((f) => enPeriodo(f, p)) ?? p.hasta;
 }
 
 registrar({
