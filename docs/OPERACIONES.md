@@ -4,6 +4,8 @@
 > El servidor comprueba la versión de cada fichero tocado (409 si no coincide), serializa, escribe de forma atómica y guarda la inversa (30 por sesión, deshacer de 10 s).
 > **Deshacer (implementado en F2):** la inversa que devuelve el motor es siempre `ficheros.restaurar` con el contenido exacto anterior de cada fichero tocado; el servidor solo la aplica si esos ficheros siguen como los dejó la operación (si no, 409 «cambió después»). Las inversas «semánticas» de las tablas describen el efecto; la restauración exacta lo garantiza byte a byte (propiedad testeada). Ver `docs/DECISIONES.md` F2.
 >
+> **Implementadas en F6:** `meta.crear` (id desde el título), `meta.estado` (pausar, reanudar, cumplir con la fecha de hoy → Rex lo celebra, archivar); editar y borrar una meta son `bloque.editar | borrar`. `hito.crear` (H-NNNN, en orden de fecha); editar y borrar, `lista.editar | borrar`. `decision.crear` (una «pausa de 48 h» sin «vuelve» vuelve en 48 h) y `decision.editar` (título, cabeceras y secciones; vacía = se quita); borrar, `fichero.borrar`.
+>
 > **Implementadas en F5:** `operacion.crear | editar | borrar` (con enlace op ↔ movimiento), `valores.guardar`, `objetivo.fijar` (pesos, redondeo y umbral), `borrador.crear | aceptar`; descartar un borrador es `fichero.borrar`. Activos y clases usan `bloque.*` y `lista.*`. Cambiar operaciones o valores recalcula la foto de los meses cerrados.
 >
 > **Implementadas en F4:** `mes.cerrar | reabrir | cambiarInicio`, `rec.editar` (este mes o desde el siguiente), `rec.pausar`, `rec.confirmarTodos`, `grupo.cambiarNaturaleza | borrar`, `etiqueta.renombrar | borrar`, `cuenta.ajustarSaldo` y el recálculo automático de las fotos de los meses cerrados.

@@ -19,7 +19,7 @@ import { leer as leerFormato } from '../core/formato/index.js';
 import { valores } from '../core/formato/motor.js';
 import { ajustesEfectivos } from '../core/formato/config.js';
 import { crearPrng } from '../core/prng.js';
-import { fechaLocal, mesDe, mesFinanciero, sumarMesesMes } from '../core/fechas.js';
+import { fechaLocal, horaLocal, mesDe, mesFinanciero, sumarMesesMes } from '../core/fechas.js';
 
 const RAIZ_REPO = join(import.meta.dirname, '..', '..');
 export const VERSION_APP = JSON.parse(readFileSync(join(RAIZ_REPO, 'package.json'), 'utf8')).version;
@@ -103,7 +103,7 @@ export class App {
 
   ctxOps() {
     const ajustes = this.ajustesDe(this.almacen);
-    return { ajustes, formato: { diaInicio: ajustes.mes_inicio_dia }, prng: crearPrng(randomInt(1, 2 ** 31)), hoy: fechaLocal(), rutas: [...this.almacen.ficheros.keys()] };
+    return { ajustes, formato: { diaInicio: ajustes.mes_inicio_dia }, prng: crearPrng(randomInt(1, 2 ** 31)), hoy: fechaLocal(), hora: horaLocal(), rutas: [...this.almacen.ficheros.keys()] };
   }
 
   // ---------- operaciones ----------

@@ -18,6 +18,11 @@ function arrastrar(valores) {
   return valores.map((v) => (v === null ? ultimo : (ultimo = v)));
 }
 
+/** Aportación mensual a la cartera según tus recurrentes: Σ de los mensuales de grupos de inversión. */
+export function aportacionMensualInversion(modelo) {
+  return modelo.recurrentes.filter((r) => !r.pausado && modelo.grupos.find((g) => g.id === r.grupo)?.naturaleza === 'inversion' && r.cada === 'mes').reduce((s, r) => s + Math.abs(r.importe), 0);
+}
+
 /** Índice (serie) asociado a un activo: el suyo, el de su clase, o el de la clase «parecida». */
 export function indiceDeActivo(activo, clases) {
   if (activo?.campos.indice) return activo.campos.indice;
@@ -87,8 +92,7 @@ export function resumenCartera(modelo, hoy, { indices = [], aportacion = null } 
   const propio = ip ? { valores: arrastrar(meses.map((m) => (baseIp && ip.get(m) ? (ip.get(m) / baseIp) * 100 : null))), tendrias: comparar(new Map(mesesIp.map((m) => [m, { valor: ip.get(m), interpolado: false }]))), sinIndice: componentes.filter((c) => !c.serie).map((c) => c.activo) } : null;
 
   // reparto de la aportación: por defecto, la aportación mensual de los recurrentes de inversión
-  const recInversion = modelo.recurrentes.filter((r) => !r.pausado && modelo.grupos.find((g) => g.id === r.grupo)?.naturaleza === 'inversion' && r.cada === 'mes');
-  const aporta = aportacion ?? (recInversion.reduce((s, r) => s + Math.abs(r.importe), 0) || 60000);
+  const aporta = aportacion ?? (aportacionMensualInversion(modelo) || 60000);
   const sumaObjetivo = objetivo.reduce((s, o) => s + o.peso, 0);
   const reparto = sumaObjetivo === 10000 ? repartirAportacion({ activos: objetivo.map((o) => ({ id: o.activo, valor: e.porActivo.get(o.activo)?.valor ?? 0, pesoPb: o.peso, minimo: o.minimo })), aportacion: aporta, redondeo: cabObjetivo.redondeo ?? 1000 }) : null;
 

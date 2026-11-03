@@ -11,7 +11,7 @@ export const ENTRADAS = [
   ['presupuestos', 'Presupuestos', 'Por grupo y mes', 'F4'],
   ['recurrentes', 'Recurrentes', 'Plantilla que se propone cada mes', 'F4'],
   ['activos', 'Activos y objetivo', 'Posiciones, ISIN, clase y peso objetivo', null],
-  ['metas', 'Metas', 'Importe, fecha y grupo asociado', 'F6'],
+  ['metas', 'Metas', 'Importe, fecha y grupo asociado · en la pestaña Metas', null],
   ['conocimiento', 'Grupos de conocimiento', 'Familias, fuentes y mezclas', 'F8'],
   ['roles', 'Roles expertos', 'roles/*.md · cómo piensa Claude en cada tarea', 'F9'],
   ['tareas', 'Tareas', 'tareas/*.md · qué se le pide a Claude', 'F9'],

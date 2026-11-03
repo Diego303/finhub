@@ -60,3 +60,18 @@
 | 10 | **e2e en serie** | `pnpm test` lanza primero los tests sin navegador (en paralelo) y después los e2e de uno en uno (`--test-concurrency=1`). |
 | 11 | **Impuesto «si vendieras hoy»** | Plusvalía total por los tramos de `ajustes.md` (base del ahorro), siempre como estimación con el año de verificación de los tramos. |
 
+## F6 · 2026-11-03
+| # | Decisión | Detalle |
+|---|---|---|
+| 1 | **Progreso de una meta** | Cuenta → su saldo hoy; grupo → lo apartado en ese grupo (los movimientos, con el signo cambiado) hasta hoy; manual → el importe escrito. Una meta «cumplida» cuenta como llena. Si ya llegas y sigue activa, se ofrece «¡cumplida!». |
+| 2 | **Aportación «media3m»** | Media de los 3 meses financieros completos anteriores al actual: neto que entra en la cuenta (o lo apartado en el grupo). Con «manual» no tiene sentido y se avisa. Fecha estimada = hoy + ⌈falta ÷ aportación⌉ meses; con fecha deseada se dice si llegas y, si no, cuánto haría falta al mes. |
+| 3 | **Proyección por bootstrap** | Rentabilidades mensuales de la mezcla (reequilibrada cada mes) en los meses en que todas sus series tienen dato; cada año del camino es un bloque de 12 meses consecutivos al azar; 2.000 caminos; aportación al final de cada mes; semilla fija `finhub-proyeccion-v1` (mulberry32) → mismo resultado en Node y en el navegador (probado en el e2e). Percentiles con interpolación lineal. Parte del valor de tu cartera hoy. |
+| 4 | **Mezcla de un perfil** | Clase → su índice, o el de su clase «parecida». Efectivo sin índice → tipo del BCE (`bce-deposito`) ÷ 12 si existe; si no, 0. Otro activo sin índice → 0 con aviso. Perfiles: «tu objetivo» (objetivo.md) y las plantillas de la carpeta (o las del repo). |
+| 5 | **Real / nominal** | Real: cada mes se descuenta el IPC del MISMO mes del bloque (`ipc-espana`), así se conserva la relación entre inflación y mercado. Sin serie de IPC se avisa y se muestra nominal. |
+| 6 | **Modo manual** (`proyeccion: manual`) | Normal mensual con los supuestos de Ajustes (reales): media y volatilidad ponderadas por peso, como si las clases estuvieran perfectamente correlacionadas (prudente); mixto = mitad rv, mitad rf. Nominal = real + inflación media de la serie de IPC (o 2 %). Caída mensual limitada a −95 %. |
+| 7 | **Libertad financiera** | Objetivo = consumo de los 12 meses financieros completos anteriores × `libertad_multiplicador` (25 → «regla del 4 %»). Con menos de 12 meses se anualiza la media y se dice con cuántos. Año = el primero en que la mediana lo supera; si no, «más de N años». |
+| 8 | **Decisiones** | Fichero `decisiones/AAAA-MM-DD-<slug>.md`; las secciones se guardan en el orden del formato y las vacías se quitan. Las «Preguntas de Rex» las escribe Rex en F10; aquí se muestran si existen. |
+| 9 | **Hitos** | Se editan desde la pestaña Metas (caja «Hitos»). En F7 también desde la línea de tiempo del Panel. Gestión → Metas lleva a la pestaña Metas. |
+| 10 | **Dos fallos de la web arreglados** (salían en los e2e con carga) | (a) `cargar()` ignoraba una recarga pedida mientras otra estaba en marcha: la pantalla podía quedarse con los datos de antes de un cambio hasta el siguiente sondeo. Ahora se encadena una recarga más. (b) Los editores de grupos y recurrentes se reabrían al terminar la operación, encima de lo que el usuario hubiera hecho mientras (p. ej. cerrarlos con Esc). Ahora vuelven al instante y se repintan al llegar los datos. |
+| 11 | **`hora` en el contexto de las operaciones** | El servidor pasa la hora local para calcular «vuelve» de la pausa de 48 h. |
+

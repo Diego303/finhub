@@ -3,7 +3,7 @@
 import { html } from '../esc.js';
 import { accion, cambio, formulario } from '../acciones.js';
 import { op } from '../api.js';
-import { abrir, cerrar, confirmar, elegir } from './modal.js';
+import { abrir, cerrar, confirmar, elegir, repintarModal } from './modal.js';
 import { toast } from './toast.js';
 import { slugUnico } from '/core/ids.js';
 import { parseImporte, formatearImporte, formatearEuros } from '/core/dinero.js';
@@ -162,8 +162,10 @@ export function registrarEditores() {
       if (r === null) return;
       aplicar = r === 'si';
     }
+    // el editor vuelve YA (se repinta solo al llegar los datos): reabrirlo al terminar la operación lo
+    // abriría encima de lo que el usuario haya hecho mientras tanto (p. ej. cerrarlo con Esc)
+    if (usos) abrirEditor('grupos');
     await op('grupo.cambiarNaturaleza', { id: g.id, naturaleza: el.dataset.valor, aplicarAMovimientos: aplicar }, { mensaje: `«${g.nombre}» ahora es ${NAT[el.dataset.valor][0]}` });
-    abrirEditor('grupos');
   });
   accion('grupo-borrar', (el) => {
     ed.borrarGrupo = el.dataset.id;
@@ -240,8 +242,11 @@ export function registrarEditores() {
     const aplicar = await elegir('¿Solo a partir del mes que viene o también este mes?', [['siguiente', 'Desde el mes que viene'], ['esteMes', 'También este mes']], { titulo: 'Editar recurrente' });
     if (aplicar === null) return abrir({ titulo: 'Recurrentes', cuerpo: cuerpoRecurrentes, ancho: true });
     const mes = mesFinanciero(est().ahora.fecha, m().ajustes.mes_inicio_dia);
+    abrir({ titulo: 'Recurrentes', cuerpo: cuerpoRecurrentes, ancho: true }); // ya, no al terminar (ver grupo-naturaleza)
     const r = await op('rec.editar', { id: d.id, cambios: valor, aplicar, mes }, { mensaje: aplicar === 'esteMes' ? 'Recurrente guardado (también este mes)' : 'Recurrente guardado desde el mes que viene' });
-    if (r) ed.rec = null;
-    abrir({ titulo: 'Recurrentes', cuerpo: cuerpoRecurrentes, ancho: true });
+    if (r) {
+      ed.rec = null;
+      repintarModal();
+    }
   });
 }

@@ -30,8 +30,19 @@ function aplicarTema() {
 }
 
 let cargaEnCurso = null;
+let otraCarga = null;
+/**
+ * Pide los datos y reconstruye el modelo. Si ya hay una carga en marcha, esa pudo pedir los datos ANTES
+ * del cambio que motiva esta llamada: se encadena una más (una sola, aunque lleguen varias peticiones).
+ */
 export function cargar() {
-  if (cargaEnCurso) return cargaEnCurso;
+  if (cargaEnCurso) {
+    otraCarga ??= cargaEnCurso.then(() => {
+      otraCarga = null;
+      return cargar();
+    });
+    return otraCarga;
+  }
   cargaEnCurso = (async () => {
     try {
       const t0 = performance.now();

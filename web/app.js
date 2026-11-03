@@ -17,13 +17,14 @@ import { vistaRex, ponerModo } from './vistas/rex.js';
 import { muestrario } from './vistas/muestrario.js';
 import { vistaMes, iniciarMes, registrarAccionesMes, enDobleClic, abrirRecurrentes, abrirCierre } from './vistas/mes.js';
 import { iniciarEditores, registrarEditores } from './componentes/editores.js';
+import { vistaMetas, iniciarMetas, registrarAccionesMetas } from './vistas/metas.js';
 import { vistaCartera, iniciarCartera, registrarAccionesCartera, abrirValores, abrirActivosObjetivo } from './vistas/cartera.js';
 
 export const PESTANAS = [
   ['panel', 'Panel', basicas.panel],
   ['mes', 'Mes', vistaMes],
   ['cartera', 'Cartera', vistaCartera],
-  ['metas', 'Metas', basicas.metas],
+  ['metas', 'Metas', vistaMetas],
   ['herramientas', 'Herramientas', basicas.herramientas],
   ['analisis', 'Análisis', basicas.analisis],
   ['descubrimientos', '🔭 Descubrimientos', basicas.descubrimientos],
@@ -97,6 +98,10 @@ accion('gestion-entrada', (el) => {
   if (id === 'seguridad') return abrirR1();
   if (id === 'papelera') return abrirPapelera(cargar);
   if (id === 'activos') return abrirActivosObjetivo();
+  if (id === 'metas') {
+    location.hash = 'metas';
+    return;
+  }
   abrirEntrada(id, estado.modelo);
 });
 accion('abrir-ajustes', () => estado.servidor && estado.modelo && abrirAjustes(estado));
@@ -182,6 +187,8 @@ iniciarMes({ estado, render });
 registrarAccionesMes();
 iniciarCartera({ estado, render });
 registrarAccionesCartera();
+iniciarMetas({ estado, render });
+registrarAccionesMetas();
 iniciarEditores(() => estado);
 registrarEditores();
 document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));
