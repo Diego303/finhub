@@ -45,14 +45,16 @@ export const alRecargar = (fn) => (recargar = fn);
 
 /**
  * Aplica una operación. Gestiona: mes cerrado (pide confirmación y reintenta), 409 por versión vieja
- * (recarga y avisa), solo lectura (423) y nube (503). Muestra el toast con «deshacer» 10 s.
+ * (recarga y avisa), solo lectura (423) y nube (503). Muestra el toast con «deshacer» 10 s; los avisos de la
+ * operación van en ese mismo toast (un segundo toast taparía el «deshacer»). `mensaje` puede ser (r) => texto.
  * → resultado o null si no se hizo.
  */
 export async function op(nombre, args = {}, { versiones = {}, mensaje = 'Hecho', silencioso = false } = {}) {
   try {
     const r = await pedir('POST', '/api/ops', { op: nombre, args, versiones });
     await recargar();
-    if (!silencioso) toast(mensaje, { deshacer: r.deshacer ? () => deshacer(r.deshacer) : null });
+    const texto = (typeof mensaje === 'function' ? mensaje(r) : mensaje) + (r.avisos?.length ? ` · ⚠ ${r.avisos.join(' · ')}` : '');
+    if (!silencioso) toast(texto, { deshacer: r.deshacer ? () => deshacer(r.deshacer) : null });
     return r;
   } catch (e) {
     if (e.codigo === 'mes_cerrado') {

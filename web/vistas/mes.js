@@ -6,6 +6,7 @@ import { op } from '../api.js';
 import { abrir, cerrar, confirmar } from '../componentes/modal.js';
 import { toast } from '../componentes/toast.js';
 import { graficoSankey } from '../graficos/sankey.js';
+import { abrirOperacion } from './cartera.js';
 import { totales, presupuestos, mediaCerrados, variacionPb, datosSankey, sumarTotales, naturalezaDe, indexar } from '/core/mes.js';
 import { saldos, cuentaPorDefecto } from '/core/patrimonio.js';
 import { recurrentesDelMes, fechaCobro } from '/core/recurrentes.js';
@@ -344,7 +345,9 @@ export function registrarAccionesMes() {
     ui.borrador = { grupo: ui.borrador.grupo ?? d.grupo, cuenta: ui.borrador.cuenta ?? d.cuenta };
     repintar();
     document.getElementById('anotar-concepto')?.focus();
-    if (g?.naturaleza === 'inversion') setTimeout(() => toast('¿Registrar también la operación en la cartera? Llega en la fase F5 (Cartera → + operación).'), 3300);
+    if (g?.naturaleza === 'inversion' && r.resultado?.id && (await confirmar(`«${mov.concepto}» es una inversión. ¿Registras también la operación en la cartera? Quedarán enlazadas.`, { si: 'Registrar la operación', no: 'Ahora no' }))) {
+      abrirOperacion(est(), { prefijo: { fecha, importe: Math.abs(imp.valor), tipo: imp.valor < 0 ? 'aportacion' : 'venta' }, mov: { mes: r.resultado.mes, id: r.resultado.id, concepto: mov.concepto } });
+    }
   });
   accion('mov-editar', (el) => {
     ui.edicion = el.dataset.id;
@@ -431,7 +434,6 @@ export function registrarAccionesMes() {
     if (!r) return;
     cerrar();
     ui.editarCerrado.delete(d.mes);
-    if (r.avisos.length) setTimeout(() => toast(`Cerrado con avisos: ${r.avisos.join(' · ')}`), 3300);
   });
   accion('mes-reabrir', async () => {
     const id = mesActual(est());

@@ -28,14 +28,6 @@ export function mes(e) {
     ${proximamente('Mes', 'F4', ['Barra «Anotar» con la naturaleza que sale del grupo', 'KPI, mapa del dinero (Sankey) y tabla con edición en línea', 'Presupuestos y comparación con tu media', 'Recurrentes del mes, cerrar, editar cerrado y reabrir'])}`;
 }
 
-export function cartera(e) {
-  const m = e.modelo;
-  const foto = m.fotos.at(-1);
-  return html`<div class="mut" style="font-size:11px;margin-bottom:8px">Tu cartera la mantienes tú: posiciones, aportaciones y valores. ${foto ? `Valores del ${textoCorto(foto.fecha)}.` : ''}</div>
-    ${kpis([['Activos', m.activos.filter((a) => !a.campos.archivado).length, `${m.clases.length} clases`], ['Operaciones', m.operaciones.length, ''], ['Fotos de valor', m.fotos.length, foto ? `última: ${foto.fecha}` : ''], ['Objetivo', `${m.objetivo.length} pesos`, '']])}
-    <div style="margin-top:8px">${proximamente('Cartera', 'F5', ['Generar cartera base y borradores', 'Valor, aportado, plusvalía, TWR, TIR e impuesto si vendieras', 'Comparativa con índices y reparto de la aportación', 'Exposición real y clases frente a objetivo'])}</div>`;
-}
-
 export function metas(e) {
   const m = e.modelo;
   return html`<div class="grid2" style="margin-top:0"><div class="box"><div class="lab">Metas de ahorro</div>${m.metas.map((x) => html`<div style="padding:6px 0;border-top:.5px solid var(--border);font-size:11.5px"><b style="font-weight:500">${x.titulo}</b> <span class="mut">· ${x.campos.estado?.estado ?? 'activa'}</span></div>`)}

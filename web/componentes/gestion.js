@@ -10,7 +10,7 @@ export const ENTRADAS = [
   ['etiquetas', 'Etiquetas', '#fijo, #social, #meta…', 'F4'],
   ['presupuestos', 'Presupuestos', 'Por grupo y mes', 'F4'],
   ['recurrentes', 'Recurrentes', 'Plantilla que se propone cada mes', 'F4'],
-  ['activos', 'Activos y objetivo', 'Posiciones, ISIN, clase y peso objetivo', 'F5'],
+  ['activos', 'Activos y objetivo', 'Posiciones, ISIN, clase y peso objetivo', null],
   ['metas', 'Metas', 'Importe, fecha y grupo asociado', 'F6'],
   ['conocimiento', 'Grupos de conocimiento', 'Familias, fuentes y mezclas', 'F8'],
   ['roles', 'Roles expertos', 'roles/*.md · cómo piensa Claude en cada tarea', 'F9'],

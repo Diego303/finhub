@@ -2,6 +2,7 @@
 import http from 'node:http';
 import { randomBytes, randomInt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import fsp from 'node:fs/promises';
 import { join } from 'node:path';
 import { Almacen, ErrorAlmacen } from './almacen.js';
 import { Candado } from './candado.js';
@@ -276,6 +277,15 @@ export class App {
         return enviarJson(res, 200, await this.restaurarPapelera({ id: cuerpo.id, sesion }));
       case 'POST /api/candado/tomar':
         return enviarJson(res, 200, await this.enCola(() => this.candado.adquirir({ tomarControl: true })));
+      case 'GET /api/semilla': {
+        // plantillas y textos por defecto del repo (públicos, sin datos): semilla/<tipo>/*.md
+        const tipo = url.searchParams.get('tipo') ?? '';
+        if (!/^(plantillas-cartera|roles|tareas)$/.test(tipo)) throw new ErrorHttp(404, 'No encontrado');
+        const dir = join(RAIZ_REPO, 'semilla', tipo);
+        const ficheros = {};
+        for (const n of (await fsp.readdir(dir).catch(() => [])).filter((x) => x.endsWith('.md')).sort()) ficheros[n] = await fsp.readFile(join(dir, n), 'utf8');
+        return enviarJson(res, 200, { tipo, ficheros });
+      }
       case 'GET /api/carpeta':
         return enviarJson(res, 200, { ruta: this.carpeta, rutaWindows: aRutaWindows(this.carpeta), ejemplo: this.ejemplo });
       case 'POST /api/carpeta/validar':

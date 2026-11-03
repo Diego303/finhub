@@ -1,5 +1,6 @@
 // Saldos, patrimonio, colchón y foto de cierre (§4.2). Céntimos enteros.
 import { sumar } from './dinero.js';
+import { valorCarteraEn } from './cartera.js';
 
 /** Cuenta por defecto para movimientos sin «cuenta:»: la primera corriente activa (o la primera activa). */
 export function cuentaPorDefecto(cuentas) {
@@ -68,10 +69,11 @@ export function colchon(porCuenta, cuentas, consumoMedio) {
 }
 
 /** Foto de cierre de un mes: saldos de las cuentas activas, cartera y patrimonio a la fecha final. */
-export function fotoCierre({ cuentas, movimientos, fotos, hasta, archivados = [] }) {
+export function fotoCierre({ cuentas, movimientos, fotos, hasta, archivados = [], activos = null, operaciones = null }) {
   const { porCuenta } = saldos(cuentas, movimientos, hasta);
   const activas = cuentas.filter((c) => !c.archivada || porCuenta[c.id] !== 0); // archivada con saldo: sigue contando
   const s = Object.fromEntries(activas.map((c) => [c.id, porCuenta[c.id]]));
-  const cartera = valorCartera(fotos, hasta, { archivados }).valor;
+  // con activos y operaciones, el valor completo de F5 (fotos + operaciones posteriores); si no, solo las fotos
+  const cartera = activos && operaciones ? valorCarteraEn({ activos, operaciones, fotos, hasta }) : valorCartera(fotos, hasta, { archivados }).valor;
   return { fecha: hasta, saldos: s, cartera, patrimonio: patrimonio(s, activas, cartera) };
 }

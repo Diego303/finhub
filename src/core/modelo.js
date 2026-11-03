@@ -83,6 +83,12 @@ export function construirModelo(ficheros) {
     mundo: ordenar(mundo, 'fecha'),
     descubrimientos,
     series,
+    /** Filas de una serie de Datos → [{mes, valor (número), aproximacion}] o null si no existe. */
+    serie(id) {
+      const s = series.find((x) => x.id === id);
+      if (!s) return null;
+      return items(doc(s.ruta), 'Filas').map((f) => ({ mes: f.mes, valor: f.valor / 1e6, aproximacion: !!f['aproximación'] }));
+    },
     roles: porPrefijo('roles/').map((r) => ({ ruta: r, titulo: doc(r).titulo, ...cabeceras(doc(r)) })),
     tareas: porPrefijo('tareas/').map((r) => ({ ruta: r, titulo: doc(r).titulo, ...cabeceras(doc(r)) })),
     chats: porPrefijo('chat/').map((r) => ({ ruta: r, titulo: doc(r).titulo, ...cabeceras(doc(r)) })),

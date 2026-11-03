@@ -17,11 +17,12 @@ import { vistaRex, ponerModo } from './vistas/rex.js';
 import { muestrario } from './vistas/muestrario.js';
 import { vistaMes, iniciarMes, registrarAccionesMes, enDobleClic, abrirRecurrentes, abrirCierre } from './vistas/mes.js';
 import { iniciarEditores, registrarEditores } from './componentes/editores.js';
+import { vistaCartera, iniciarCartera, registrarAccionesCartera, abrirValores, abrirActivosObjetivo } from './vistas/cartera.js';
 
 export const PESTANAS = [
   ['panel', 'Panel', basicas.panel],
   ['mes', 'Mes', vistaMes],
-  ['cartera', 'Cartera', basicas.cartera],
+  ['cartera', 'Cartera', vistaCartera],
   ['metas', 'Metas', basicas.metas],
   ['herramientas', 'Herramientas', basicas.herramientas],
   ['analisis', 'Análisis', basicas.analisis],
@@ -95,6 +96,7 @@ accion('gestion-entrada', (el) => {
   if (id === 'ajustes') return abrirAjustes(estado);
   if (id === 'seguridad') return abrirR1();
   if (id === 'papelera') return abrirPapelera(cargar);
+  if (id === 'activos') return abrirActivosObjetivo();
   abrirEntrada(id, estado.modelo);
 });
 accion('abrir-ajustes', () => estado.servidor && estado.modelo && abrirAjustes(estado));
@@ -121,6 +123,7 @@ accion('pendiente', (el) => {
   const vistas = { mes: 'mes', descubrimientos: 'descubrimientos', predicciones: 'conocimiento', contexto: 'conocimiento', pausas: 'rex' };
   if (d === 'recurrentes') return abrirRecurrentes(estado);
   if (d === 'cierre') return abrirCierre(estado);
+  if (d === 'valores') return abrirValores(estado);
   if (d === 'pausas') ponerModo('pausa');
   if (vistas[d]) location.hash = vistas[d];
   else abrirDestino(d, estado);
@@ -177,6 +180,8 @@ estado.vista = vistaDesdeHash();
 delegar(document.getElementById('app'));
 iniciarMes({ estado, render });
 registrarAccionesMes();
+iniciarCartera({ estado, render });
+registrarAccionesCartera();
 iniciarEditores(() => estado);
 registrarEditores();
 document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));

@@ -2,5 +2,6 @@
 import './genericas.js';
 import './mes.js';
 import './catalogos.js';
+import './cartera.js';
 
 export { aplicarOp, operaciones, ErrorOp } from './motor.js';

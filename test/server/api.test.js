@@ -81,6 +81,13 @@ test('estado, datos y fichero', async () => {
   assert.equal((await api('GET', '/api/fichero?ruta=no.md')).estado, 404);
 });
 
+test('semilla: plantillas públicas del repo, solo los tipos permitidos', async () => {
+  const s = (await api('GET', '/api/semilla?tipo=plantillas-cartera')).json;
+  assert.deepEqual(Object.keys(s.ficheros), ['conservadora.md', 'crecimiento.md', 'equilibrada.md', 'total.md']);
+  assert.match(s.ficheros['crecimiento.md'], /^# Plantilla · Crecimiento/);
+  for (const t of ['', 'ejemplo', '../src', 'plantillas-cartera/../../src', 'roles%2F..']) assert.equal((await api('GET', `/api/semilla?tipo=${t}`)).estado, 404, t);
+});
+
 test('operación, 409 por versión vieja, mes cerrado, y deshacer byte a byte', async () => {
   const ruta = 'mes/2026-11.md';
   const v0 = (await api('GET', `/api/fichero?ruta=${ruta}`)).json.version;

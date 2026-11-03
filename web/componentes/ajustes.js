@@ -35,7 +35,6 @@ export function abrirAjustes(estado) {
     const si = await confirmar(`Cambiar el mes financiero ${dia === 1 ? 'al mes natural' : `a «del ${dia} al ${dia - 1}»`} reparte TODOS tus movimientos en sus nuevos meses (el fichero se llama por el mes que termina).${cerrados ? ` Los meses cerrados afectados se marcarán «editados tras cierre» y se recalculará su foto (tienes ${cerrados}).` : ''} Se puede deshacer.`, { si: 'Cambiar y repartir' });
     if (!si) return abrirAjustes(estado);
     const r = await op('mes.cambiarInicio', { dia }, { mensaje: 'Mes financiero cambiado y movimientos repartidos' });
-    if (r?.avisos?.length) setTimeout(() => toast(r.avisos.join(' · ')), 3300);
   });
 
   dialogo.querySelector('[data-tema]').addEventListener('change', async (ev) => {

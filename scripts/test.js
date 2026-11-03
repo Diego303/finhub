@@ -23,6 +23,16 @@ if (!ficheros.length) {
   console.error('No hay ficheros *.test.js en', carpetas.join(', ') || 'test/');
   process.exit(1);
 }
-const opciones = ['--test', ...(cobertura ? ['--experimental-test-coverage'] : []), ...ficheros.map((f) => relative(raiz, f))];
-const r = spawnSync(process.execPath, opciones, { cwd: raiz, stdio: 'inherit', env: { ...process.env, TZ: process.env.TZ || 'Europe/Madrid' } });
-process.exit(r.status ?? 1);
+// Los e2e manejan un navegador real con toasts que caducan: van después y de uno en uno, para que la carga
+// de los demás ficheros (en paralelo) no los vuelva intermitentes.
+const esE2e = (f) => relative(raiz, f).split(/[\\/]/).includes('e2e');
+const tandas = [ficheros.filter((f) => !esE2e(f)), ficheros.filter(esE2e)].filter((t) => t.length);
+let estado = 0;
+for (const [i, tanda] of tandas.entries()) {
+  const serie = tanda.some(esE2e) ? ['--test-concurrency=1'] : [];
+  const opciones = ['--test', ...serie, ...(cobertura ? ['--experimental-test-coverage'] : []), ...tanda.map((f) => relative(raiz, f))];
+  if (i > 0) console.log('\n— e2e (navegador), de uno en uno —');
+  const r = spawnSync(process.execPath, opciones, { cwd: raiz, stdio: 'inherit', env: { ...process.env, TZ: process.env.TZ || 'Europe/Madrid' } });
+  if ((r.status ?? 1) !== 0) estado = r.status ?? 1;
+}
+process.exit(estado);

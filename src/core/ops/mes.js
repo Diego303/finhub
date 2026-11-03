@@ -50,8 +50,9 @@ function datosFoto(tx) {
   const meses = todosLosMeses(tx);
   const cuentas = tx.existe('cuentas.md') ? items(tx.doc('cuentas.md')) : [];
   const fotos = tx.rutas('cartera/valores/').map((r) => ({ fecha: r.slice(16, 26), filas: items(tx.doc(r)) }));
-  const archivados = tx.existe('cartera/activos.md') ? bloques(tx.doc('cartera/activos.md')).filter((b) => b.campos.archivado).map((b) => b.id) : [];
-  return { meses, cuentas, fotos, archivados, movimientos: meses.flatMap((m) => items(m.doc, 'Movimientos')) };
+  const activos = tx.existe('cartera/activos.md') ? bloques(tx.doc('cartera/activos.md')) : [];
+  const operaciones = tx.existe('cartera/operaciones.md') ? items(tx.doc('cartera/operaciones.md')) : [];
+  return { meses, cuentas, fotos, activos, operaciones, movimientos: meses.flatMap((m) => items(m.doc, 'Movimientos')) };
 }
 
 /**
