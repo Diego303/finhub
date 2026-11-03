@@ -125,3 +125,19 @@
 | 9 | **Rex y el progreso** | Los eventos del runner llegan por SSE (`claude`): inicio → piensa, texto → habla, fin → feliz o preocupado. La barra R1 solo se repinta si cambia lo que muestra (evita perder clics al cargar). |
 | 10 | **Prueba real con haiku** | `pnpm claude:probar --real` ejecutó los 9 tipos con la carpeta de ejemplo en memoria y `--model haiku` para gastar poco de tu cuota: 9/9 válidos tras dos ajustes de formato (ayudas del esquema y longitud de nombres). Con `--modelo config` usa los modelos de `claude_modelo`. |
 
+## F10 · 2026-11-03
+| # | Decisión | Detalle |
+|---|---|---|
+| 1 | **Tareas y roles: texto en Markdown, contrato en código** | `tareas/*.md` y `roles/*.md` (los de `semilla/` y los de tu carpeta, que mandan) ponen la instrucción y el rol. El trabajo y el esquema de salida de las tareas conocidas los fija `src/claude/tareas.js`: una tarea no puede cambiar las banderas R1 ni su contrato. Una tarea tuya que el código no conoce usa el esquema por defecto de su trabajo (chat en privado). |
+| 2 | **Parámetros los monta el servidor** | El navegador elige tarea, rol y mezcla; los datos (rangos de la mezcla, cifras de Tu año, borrador, análisis previo, texto de CONTEXTO) los pone el servidor. La ingesta lee el fichero de CONTEXTO en el servidor y lo pasa a `CONTEXTO/procesados/<fuente>/` al guardar (nunca se borra). |
+| 3 | **Escenarios** | Las probabilidades las pone Claude (enteras, 5–90, suman 100); los rangos (p5–p25, p25–p75, p75–p95) y el peor caso los calcula el código. El rango base se registra como predicción de finhub (`cartera twr hoy→+1 año en a…b`) para la calibración. |
+| 4 | **Comparar mezclas** | Dos ejecuciones seguidas con la misma tarea (una con tu mezcla y otra con la elegida); se enseñan lado a lado con el cambio del escenario pesimista. |
+| 5 | **Chat de Rex** | Cada conversación es un fichero en `chat/privado/` o `chat/web/` con su `sesion`; al reanudar, el servidor comprueba el par sesión→trabajo. Si la sesión ya no vale (otro equipo, caducada), se empieza una nueva y el historial sigue en el fichero. El modo web lleva el aviso fijo y solo ve la base pública. Las citas pueden ser ids de nota o, en el modo web, URL. |
+| 6 | **Explícame** | El «?» abre Rex «Mis finanzas» con la cifra; «Explícamelo con mis números» crea una conversación con la tarea `explicame`. |
+| 7 | **Pausa de 48 h** | Rex (privado) escribe 3–5 preguntas; la decisión se guarda en el diario con «estado: pausa-48h», «vuelve» en 48 h y «## Preguntas de Rex». Vuelve sola a Pendientes. |
+| 8 | **Resumen semanal y quiz** | `conocimiento` (sin internet ni Mis notas): el resumen agrupa las notas de Mundo de la semana ISO y se guarda en `conocimiento/mundo/semana-AAAA-Www.md`; el quiz sale de notas de la Base barajadas con la semilla del día y cada respuesta va a `quiz/progreso.md`. |
+| 9 | **Precios** | Claude propone el último precio por ISIN; si conoces las participaciones (FIFO completo) y la divisa es la del activo, finhub calcula el valor; si no, te enseña el precio y escribes tú el valor. Nada se guarda sin pulsar «Guardar valores» (origen «precio AAAA-MM-DD · Claude» si no lo cambias). |
+| 10 | **Revisión de la cartera base** | Opcional al crear el borrador: un análisis privado (`analisis/…-revisar-cartera-base.md`) enlazado desde `revisado_claude: sí · <ruta>`; no cambia pesos. Se ve al abrir el borrador. |
+| 11 | **El Claude falso elige respuesta por trabajo y tarea** | El sistema empieza por `[finhub:<trabajo>:<tarea>]` (sin datos); `test/fake-claude.js --respuestas <dir>` usa `<trabajo>-<tarea>.txt`. Así cada flujo se prueba de punta a punta. |
+| 12 | **Prueba real** | `pnpm claude:probar --real --tareas …` con haiku: las 10 tareas nuevas dieron salidas válidas a la primera. |
+

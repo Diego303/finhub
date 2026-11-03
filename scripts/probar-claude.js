@@ -14,6 +14,8 @@ import { Sesiones } from '../src/claude/registro.js';
 import { parseManifiesto } from '../src/core/datos.js';
 import { fechaLocal } from '../src/core/fechas.js';
 import { readFileSync } from 'node:fs';
+import { ServicioClaude } from '../src/server/claude.js';
+import { trabajo as trabajoDe } from '../src/claude/trabajos/index.js';
 
 const args = process.argv.slice(2);
 const opt = (k, d = null) => (args.includes(`--${k}`) ? args[args.indexOf(`--${k}`) + 1] : d);
@@ -21,7 +23,9 @@ if (!args.includes('--real')) {
   console.error('Esto llama al Claude REAL (gasta uso de tu cuenta). Añade --real para confirmarlo.');
   process.exit(2);
 }
-const elegidos = (opt('trabajos') ?? TRABAJOS.map((t) => t.id).join(',')).split(',');
+const elegidos = (opt('trabajos') ?? (opt('tareas') ? '' : TRABAJOS.map((t) => t.id).join(','))).split(',').filter(Boolean);
+// --tareas escenarios-12m,quiz… : privado y conocimiento con su tarea, con los parámetros que monta el servidor
+const tareasElegidas = (opt('tareas') ?? '').split(',').filter(Boolean);
 const modeloElegido = opt('modelo', 'haiku');
 const HOY = fechaLocal();
 const M = construirModelo(Object.fromEntries([...generar()].filter(([r]) => r.endsWith('.md')).map(([r, texto]) => [r, { texto, version: 'v' }])));
@@ -53,6 +57,24 @@ try {
     const s = Math.round((Date.now() - t0) / 1000);
     console.log(`${r.estado}${r.codigo ? ` (${r.codigo})` : ''} en ${s} s`);
     filas.push({ trabajo: t.id, estado: r.estado, modelo: r.registro.modelo, herramientas: (r.registro.herramientas ?? []).map((h) => h.nombre).join(' ') || '—', turnos: r.registro.turnos, segundos: s, coste: r.registro.coste, detalle: r.estado === 'ok' ? `${Object.entries(r.json).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : typeof v === 'string' ? `${v.length} car.` : '…'}`).join(', ')}${r.avisos.length ? ` · avisos: ${r.avisos.join(' | ')}` : ''}` : (r.motivo ?? r.mensaje ?? '') });
+  }
+  const servicio2 = new ServicioClaude({ env: process.env, almacen: { textos: () => [] } });
+  const { tareas } = servicio2.tareasYRoles();
+  const extra = { 'revisar-cartera-base': { borrador: 'cartera/borradores/2026-10-20-equilibrada.md' }, 'abogado-diablo': { analisis: 'analisis/2026-11-03-escenarios-12m.md' }, explicame: { pregunta: 'Explícame «tasa de ahorro»' }, 'pausa-48h': { pregunta: 'Subir el ETF Nasdaq 100 al 10 %' }, 'opinan-canales': { pregunta: '¿Está cara la bolsa estadounidense?', fuentes: M.fuentes.map((f) => f.id) }, 'resumen-semanal': { semana: '2026-11-02' }, quiz: { quiz: 6 } };
+  for (const id of tareasElegidas) {
+    const tt = tareas.get(id);
+    if (!tt) {
+      console.log(`· ${id}: no existe`);
+      continue;
+    }
+    const t = trabajoDe(tt.trabajo);
+    process.stdout.write(`· ${tt.trabajo}/${id}… `);
+    const t0 = Date.now();
+    const params = servicio2.parametrosTarea(tt.trabajo, { tarea: id, ...(extra[id] ?? {}) }, M);
+    const r = await ejecutarTrabajo({ trabajo: t, modelo: M, params, hoy: HOY, servicio, sesiones, runner: { comando: ['claude'], sandboxBase: join(dir, 'sandbox'), persistir: false }, modeloClaude: modeloElegido === 'config' ? t.modelo : modeloElegido });
+    const s = Math.round((Date.now() - t0) / 1000);
+    console.log(`${r.estado} en ${s} s`);
+    filas.push({ trabajo: `${tt.trabajo}/${id}`, estado: r.estado, modelo: r.registro.modelo, herramientas: '—', turnos: r.registro.turnos, segundos: s, coste: r.registro.coste, detalle: r.estado === 'ok' ? `${Object.entries(r.json).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : typeof v === 'string' ? `${v.length} car.` : '…'}`).join(', ')}${r.avisos.length ? ` · avisos: ${r.avisos.join(' | ')}` : ''}` : (r.motivo ?? r.mensaje ?? '') });
   }
 } finally {
   await rm(dir, { recursive: true, force: true });

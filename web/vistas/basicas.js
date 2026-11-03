@@ -4,12 +4,6 @@ import { html } from '../esc.js';
 import { proximamente } from '../componentes/proximamente.js';
 
 
-export function analisis(e) {
-  const m = e.modelo;
-  return html`<div style="display:grid;grid-template-columns:240px minmax(0,1fr);gap:8px"><div class="box"><div class="lab">1 · Tarea</div>${m.tareas.map((t) => html`<div class="mut" style="font-size:11.5px;padding:3px 0">${t.titulo}</div>`)}<div class="lab" style="margin-top:12px">2 · Rol experto</div>${m.roles.map((r) => html`<div class="mut" style="font-size:11.5px">${r.titulo}</div>`)}<div class="mut" style="font-size:10.5px;margin:8px 0">🔒 Trabajo <b style="font-weight:500;color:var(--text-primary)">privado</b>: tus datos y tu base · sin internet</div><button type="button" class="pri" style="width:100%" disabled>Analizar con Claude</button></div>
-    ${proximamente('Análisis', 'F10', ['Tarea, rol y mezcla de fuentes', 'Escenarios con probabilidad subjetiva y rangos calculados por código', 'Ideas para estudiar con etiqueta y citas', 'Calibración e historial'])}</div>`;
-}
-
 export function descubrimientos(e) {
   const m = e.modelo;
   const col = { alcista: 'var(--verde)', neutral: 'var(--gris)', bajista: 'var(--rojo)' };

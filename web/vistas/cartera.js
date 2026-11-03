@@ -1,18 +1,19 @@
 // Pestaña Cartera (§5, maqueta: cartera()) y sus modales: operación, activo, valores, Generar cartera base,
 // borradores y el editor «Activos y objetivo». Cálculos: /core/cartera*.js, /core/rentabilidad.js, /core/reparto.js.
 import { html } from '../esc.js';
-import { accion, cambio, formulario } from '../acciones.js';
+import { accion, cambio, formulario, entrada } from '../acciones.js';
 import { op, obtener } from '../api.js';
 import { abrir, cerrar, confirmar, repintarModal } from '../componentes/modal.js';
 import { toast } from '../componentes/toast.js';
 import { graficoLineas } from '../graficos/linea.js';
 import { graficoTreemap } from '../graficos/treemap.js';
+import { ejecutarCon, nuevoProgreso, progresoHtml, errorHtml } from '../componentes/claude.js';
 import { resumenCartera } from '/core/cartera-resumen.js';
 import { formatearEuros, formatearPct, formatearImporte, formatearPorcentaje, parseImporte, parsePorcentaje, parseDecimal, formatearDecimal } from '/core/dinero.js';
 import { textoCorto, MESES_CORTOS, esFecha } from '/core/fechas.js';
 import { slugUnico, validarIsin } from '/core/ids.js';
 import { leer } from '/core/formato/index.js';
-import { items } from '/core/formato/motor.js';
+import { items, cabeceras, textoSeccion } from '/core/formato/motor.js';
 import { TIPOS_ACTIVO, TIPOS_OPERACION, GRUPOS_CLASE, activos as fActivos } from '/core/formato/cartera.js';
 
 const eur = (c, d = 0) => formatearEuros(c, d);
@@ -163,16 +164,30 @@ export function abrirActivo(estado, id = null) {
   });
 }
 
-export function abrirValores(estado) {
-  const r = datosCartera(estado);
+// valores: lo escrito se conserva al repintar; los precios de Claude se proponen y tú guardas
+const vp = { escritos: {}, propuestos: {}, prog: nuevoProgreso(), fecha: null };
+function cuerpoValores() {
+  const e = est();
+  const r = datosCartera(e);
   const filas = [...r.estado.porActivo.values()].filter((p) => !p.archivado);
-  abrir({
-    titulo: 'Actualizar el valor de tu cartera',
-    cuerpo: html`<div class="mut" style="font-size:11px;margin:6px 0 10px">Escribe el valor que ves en tu banco o bróker. (Pedir el último precio público a Claude, solo con los ISIN y confirmándolo tú, llega en la fase F10.)</div>
-      <form data-form="valores"><label style="font-size:11.5px">fecha <input class="inp" name="fecha" value="${estado.ahora.fecha}" style="width:96px"></label>
-      <table class="tb" style="margin-top:6px"><thead><tr><th>activo</th><th class="n">antes</th><th class="n">valor hoy</th></tr></thead><tbody>${filas.map((p) => html`<tr><td>${p.nombre}</td><td class="n mut">${eur(p.valor)}${p.valorado ? '' : ' (aportado)'}</td><td class="n"><label class="sr-only" for="val-${p.id}">Valor de ${p.nombre}</label><input class="inp" id="val-${p.id}" name="v:${p.id}" placeholder="${formatearImporte(p.valor)}" style="width:96px;text-align:right"> €</td></tr>`)}</tbody></table>
-      <div class="entre" style="margin-top:12px"><button type="button" disabled title="Llega en F10">Buscar precios con Claude</button><button type="submit" class="pri">Guardar valores</button></div></form>`,
-  });
+  vp.fecha ??= e.ahora.fecha;
+  const conIsin = filas.filter((p) => p.isin);
+  return html`<div class="mut" style="font-size:11px;margin:6px 0 10px">Escribe el valor que ves en tu banco o bróker, o pide a Claude el último precio público (trabajo aislado: solo recibe los ISIN y nombres, devuelve precios y tú los confirmas).</div>
+    <form data-form="valores"><label style="font-size:11.5px">fecha <input class="inp" name="fecha" value="${vp.fecha}" data-entrada-texto="valores-fecha" style="width:96px"></label>
+    <table class="tb" style="margin-top:6px"><thead><tr><th>activo</th><th class="n">antes</th><th class="n">valor hoy</th></tr></thead><tbody>${filas.map((p) => {
+      const pr = vp.propuestos[p.id];
+      return html`<tr><td>${p.nombre}${pr ? html`<div class="mut" style="font-size:10px" data-precio="${p.id}">precio ${formatearDecimal(Math.round(pr.precio * 1e6))} ${pr.divisa} del ${textoCorto(pr.fecha)} · <a href="${pr.url}" target="_blank" rel="noopener noreferrer">fuente</a>${pr.valor === null ? ` · ${pr.motivo}` : ''}</div>` : ''}</td><td class="n mut">${eur(p.valor)}${p.valorado ? '' : ' (aportado)'}</td><td class="n"><label class="sr-only" for="val-${p.id}">Valor de ${p.nombre}</label><input class="inp" id="val-${p.id}" name="v:${p.id}" value="${vp.escritos[p.id] ?? ''}" data-entrada-texto="valor-activo" data-id="${p.id}" placeholder="${formatearImporte(p.valor)}" style="width:96px;text-align:right"> €</td></tr>`;
+    })}</tbody></table>
+    ${progresoHtml(vp.prog, { que: 'Claude está buscando precios…' })}${vp.prog.fase === 'hecho' ? errorHtml(vp.prog.resultado) : ''}
+    <div class="entre" style="margin-top:12px"><button type="button" data-accion="precios-buscar" ${conIsin.length && vp.prog.fase !== 'trabajando' ? '' : 'disabled'} title="${conIsin.length ? `Solo envía ${conIsin.length} ISIN y sus nombres` : 'Ningún activo tiene ISIN'}">Buscar precios con Claude</button><button type="submit" class="pri">Guardar valores</button></div></form>`;
+}
+
+export function abrirValores() {
+  vp.escritos = {};
+  vp.propuestos = {};
+  vp.fecha = null;
+  if (vp.prog.fase !== 'trabajando') vp.prog = nuevoProgreso();
+  abrir({ titulo: 'Actualizar el valor de tu cartera', cuerpo: cuerpoValores });
 }
 
 async function plantillas(m) {
@@ -183,6 +198,8 @@ async function plantillas(m) {
 }
 
 let perfilElegido = null;
+let revisarBase = false;
+const revisionBase = { prog: nuevoProgreso() };
 export async function abrirGenerar(estado) {
   let lista;
   try {
@@ -199,7 +216,7 @@ export async function abrirGenerar(estado) {
     return html`<div class="mut" style="font-size:11px;margin:6px 0 10px">Un punto de partida con fondos indexados típicos que luego retocas a mano. Sin IA: plantillas de cartera/plantillas/.</div>
       <div>${lista.map((p) => html`<button type="button" class="chip ${perfil(p.doc) === perfilElegido ? 'on' : ''}" data-accion="generar-perfil" data-perfil="${perfil(p.doc)}">${p.doc.titulo.replace(/^Plantilla · /, '')}</button>`)}</div>
       <div style="margin-top:10px">${filas.map((f) => html`<div style="display:grid;grid-template-columns:1fr 120px 40px;gap:8px;align-items:center;font-size:11.5px;padding:3px 0"><span>${f.nombre}</span><div class="bar" style="height:7px"><i style="width:${f.peso / 100}%;background:#7F77DD"></i></div><span class="mut">${formatearPorcentaje(f.peso)} %</span></div>`)}</div>
-      <div class="tg" style="border:0;margin-top:8px;opacity:.6" title="Llega en F10"><span class="sw"></span><span style="font-size:11px">Pedir a Claude que la revise con tu conocimiento activo antes de crearla <span class="mut">(opcional · fase F10)</span></span></div>
+      <label class="tg" style="border:0;margin-top:8px"><input type="checkbox" data-cambio="generar-revisar" ${revisarBase ? 'checked' : ''}><span style="font-size:11px">Pedir a Claude que la revise con tu conocimiento activo <span class="mut">(opcional · trabajo privado, sin internet; no cambia los pesos)</span></span></label>
       <div class="mut" style="font-size:10.5px;margin-top:10px">Se crea como borrador en cartera/borradores/ · tu cartera actual no se toca hasta que la aceptes.</div>
       <div style="text-align:right;margin-top:10px"><button type="button" class="pri" data-accion="generar-crear">Crear borrador</button></div>`;
   };
@@ -207,11 +224,19 @@ export async function abrirGenerar(estado) {
   contexto.plantillas = { lista, perfil };
 }
 
+function revisionDe(estado, d) {
+  const enlace = /^sí · (analisis\/[^\s]+\.md)$/.exec(cabeceras(d).revisado_claude ?? '')?.[1];
+  const a = enlace ? estado.modelo.doc(enlace) : null;
+  if (!a) return '';
+  return html`<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--surface-1)" data-revision-base><div class="lab">Revisión de Rex · ${enlace}</div><div style="font-size:11.5px;line-height:1.7;white-space:pre-wrap">${textoSeccion(a, 'Resultado')}</div></div>`;
+}
+
 function abrirBorrador(estado, ruta) {
   const d = estado.modelo.doc(ruta);
   abrir({
     titulo: d.titulo,
     cuerpo: html`<table class="tb" style="margin-top:6px"><thead><tr><th>activo</th><th>clase</th><th class="n">peso</th></tr></thead><tbody>${items(d).map((f) => html`<tr><td>${f.nombre} <span class="mut">· ${f.id}</span></td><td class="mut">${f.clase ?? '—'}</td><td class="n">${formatearPorcentaje(f.peso)} %</td></tr>`)}</tbody></table>
+      ${revisionDe(estado, d)}
       <div class="mut" style="font-size:10.5px;margin-top:6px">Aceptar crea los activos que no tengas y fija tu objetivo con estos pesos. Tus operaciones y valores no cambian. Puedes editar el borrador a mano en ${ruta}.</div>
       <div class="fila" style="justify-content:flex-end;margin-top:10px"><button type="button" data-accion="borrador-descartar" data-ruta="${ruta}">Descartar</button><button type="button" class="pri" data-accion="borrador-aceptar" data-ruta="${ruta}">Aceptar</button></div>`,
   });
@@ -320,7 +345,34 @@ export function registrarAccionesCartera() {
     else r = await op('bloque.crear', { ruta: 'cartera/activos.md', id: slugUnico(d.nombre, m.activos.map((a) => a.id)), titulo: d.nombre.trim(), campos: Object.fromEntries(Object.entries(campos).filter(([, v]) => v !== null)) }, { mensaje: 'Activo creado' });
     if (r) cerrar();
   });
-  accion('valores-form', () => abrirValores(est()));
+  accion('valores-form', () => abrirValores());
+  entrada('valor-activo', (el) => (vp.escritos[el.dataset.id] = el.value));
+  entrada('valores-fecha', (el) => (vp.fecha = el.value));
+  accion('precios-buscar', async () => {
+    const e = est();
+    const r = await ejecutarCon(vp.prog, 'precios', {});
+    if (r?.estado !== 'ok') return;
+    const porActivo = datosCartera(e).estado.porActivo;
+    let rellenados = 0;
+    for (const pr of r.resultado.json.precios) {
+      const a = e.modelo.activos.find((x) => x.campos.isin === pr.isin);
+      if (!a) continue;
+      const p = porActivo.get(a.id);
+      let valor = null;
+      let motivo = '';
+      if (pr.divisa !== (a.campos.divisa ?? 'EUR')) motivo = `en ${pr.divisa}: escribe tú el valor en euros`;
+      else if (!p?.unidades) motivo = 'sin participaciones registradas: escribe tú el valor';
+      else valor = Math.round((pr.valor * p.unidades) / 1e4);
+      vp.propuestos[a.id] = { precio: pr.valor, divisa: pr.divisa, fecha: pr.fecha, url: pr.origen, valor, motivo };
+      if (valor !== null) {
+        vp.escritos[a.id] = formatearImporte(valor);
+        rellenados++;
+      }
+    }
+    if (r.resultado.json.precios.length) vp.fecha = r.resultado.json.precios.map((x) => x.fecha).sort().at(-1);
+    repintarModal();
+    toast(`${r.resultado.json.precios.length} precios propuestos${rellenados ? ` · ${rellenados} valores calculados con tus participaciones` : ''}: revísalos y guarda`);
+  });
   formulario('valores', async (f, d) => {
     if (!esFecha(d.fecha.trim())) return toast('Fecha AAAA-MM-DD', { tipo: 'error' });
     const filas = [];
@@ -328,7 +380,8 @@ export function registrarAccionesCartera() {
       if (!k.startsWith('v:') || !v.trim()) continue;
       const r = parseImporte(v);
       if (!r.ok || r.valor < 0) return toast(`Valor no válido en ${k.slice(2)}`, { tipo: 'error' });
-      filas.push({ activo: k.slice(2), valor: r.valor, origen: 'manual' });
+      const pr = vp.propuestos[k.slice(2)];
+      filas.push({ activo: k.slice(2), valor: r.valor, origen: pr && pr.valor === r.valor ? `precio ${pr.fecha} · Claude` : 'manual' });
     }
     if (!filas.length) return toast('Escribe al menos un valor', { tipo: 'error' });
     const r = await op('valores.guardar', { fecha: d.fecha.trim(), filas }, { mensaje: `Valores guardados en cartera/valores/${d.fecha.trim()}.md` });
@@ -343,8 +396,18 @@ export function registrarAccionesCartera() {
     const { lista, perfil } = contexto.plantillas;
     const sel = lista.find((p) => perfil(p.doc) === perfilElegido);
     const r = await op('borrador.crear', { plantilla: { perfil: perfilElegido, titulo: sel.doc.titulo.replace(/^Plantilla · /, ''), filas: items(sel.doc) }, fecha: est().ahora.fecha }, { mensaje: `Borrador «${sel.doc.titulo.replace(/^Plantilla · /, '')}» creado · revísalo en Cartera → Borradores` });
-    if (r) cerrar();
+    if (!r) return;
+    cerrar();
+    if (!revisarBase) return;
+    // revisión opcional: un análisis privado enlazado desde el borrador (revisado_claude)
+    const ruta = r.resultado.ruta;
+    toast('Rex está revisando el borrador…');
+    const rv = await ejecutarCon(revisionBase.prog, 'privado', { tarea: 'revisar-cartera-base', borrador: ruta }, { repintar: () => {} });
+    if (rv?.estado !== 'ok') return toast(`La revisión no se pudo hacer: ${rv?.resultado?.mensaje ?? 'error'}`, { tipo: 'error' });
+    const a = await op('analisis.guardar', { fecha: est().ahora.fecha, tarea: 'revisar-cartera-base', titulo: 'Revisión de la cartera base', mezcla: rv.resultado.fuentes ?? [], ejecucion: rv.resultado.ejecucion, modelo: rv.resultado.modelo, cifras: rv.resultado.cifras, resultado_md: rv.resultado.json.respuesta_md, json: rv.resultado.json, avisos: rv.resultado.avisos }, { silencioso: true });
+    if (a) await op('borrador.revisado', { ruta, analisis: a.resultado.ruta }, { mensaje: 'Revisión de Rex lista: la verás al abrir el borrador' });
   });
+  cambio('generar-revisar', (el) => (revisarBase = el.checked));
   accion('borrador-ver', (el) => abrirBorrador(est(), el.dataset.ruta));
   accion('borrador-aceptar', async (el) => {
     if (!(await confirmar('Aceptar el borrador crea los activos que te falten y sustituye tu objetivo por sus pesos. Tus operaciones y valores no cambian. ¿Seguir?', { si: 'Aceptar' }))) return;

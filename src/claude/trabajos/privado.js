@@ -1,7 +1,8 @@
 // Privado (§0.2): tus datos + notas de la mezcla + cifras calculadas; SIN internet ni herramientas.
-// Análisis, Rex «Mis finanzas», Explícame, Pausa 48 h, Tu año y revisión de la cartera base.
+// Análisis (con tarea y rol), Rex «Mis finanzas», Explícame, Pausa 48 h, Tu año y revisión de la cartera base.
 import { CHAT, eur, pct } from './comun.js';
 import { bloque, notasParaTrabajo, bloquesNotas } from '../contexto.js';
+import { esquemaDe } from '../tareas.js';
 import { kpisPanel, flujoDelMes } from '../../core/panel.js';
 import { progresoMetas } from '../../core/metas.js';
 
@@ -17,10 +18,13 @@ export default {
   maxTurns: 2,
   sesion: true, // los chats de Rex se reanudan (solo con el mismo trabajo)
   recibe: 'tus datos + tu base + cifras calculadas',
-  escribe: ['analisis/', 'chat/privado/', 'decisiones/'],
+  escribe: ['analisis/', 'chat/privado/', 'decisiones/', 'tu-ano/'],
   rol: 'Eres Rex, el asistente de finanzas personales de finhub. Explicas las finanzas del usuario con sus números (los de <cifras>) y su base de conocimiento, con calma, sin jerga y sin recomendar comprar o vender nada concreto.',
   esquema: CHAT,
-  entrada(modelo, { pregunta, temas = [], hoy }) {
+  /**
+   * params: {pregunta, tarea?: {id, instrucciones, esquema}, rol?: {texto}, fuentes?, temas?, cifrasExtra?, bloquesExtra?}
+   */
+  entrada(modelo, { pregunta = null, tarea = null, rol = null, fuentes = null, temas = [], cifrasExtra = [], bloquesExtra = [], hoy }) {
     const k = kpisPanel(modelo, hoy);
     const f = flujoDelMes(modelo, hoy);
     const cifras = [
@@ -32,9 +36,19 @@ export default {
       { nombre: 'rentabilidad TWR 12 meses', valor: k.cartera ? `${(k.cartera.twr * 100).toFixed(1).replace('.', ',')} %` : 'sin datos' },
       { nombre: 'entradas del mes', valor: eur(f.entradas) },
       ...f.partes.map((p) => ({ nombre: `${p.nombre.toLowerCase()} del mes`, valor: eur(p.valor) })),
+      ...cifrasExtra,
     ];
     const metas = progresoMetas(modelo, hoy).filter((x) => x.estado === 'activa').map((x) => `${x.titulo}: ${eur(x.llevas)} de ${eur(x.objetivo)}${x.fechaEstimada ? `, llegaría en ${x.fechaEstimada.slice(0, 7)}` : ''}`);
-    const sel = notasParaTrabajo(modelo, this, { temas, hoy });
-    return { tarea: 'Responde a la pregunta del usuario sobre sus finanzas con sus cifras y sus notas.', cifras, bloques: [bloque('tus metas', 'privado', metas.join('\n') || 'sin metas activas'), ...bloquesNotas(sel.notas, modelo)], pregunta, seleccion: sel };
+    const sel = notasParaTrabajo(modelo, this, { temas, hoy, fuentes });
+    return {
+      tarea: tarea?.instrucciones || 'Responde a la pregunta del usuario sobre sus finanzas con sus cifras y sus notas.',
+      tareaId: tarea?.id ?? null,
+      rol: rol?.texto ?? null,
+      esquema: esquemaDe(tarea?.esquema ?? 'chat', this),
+      cifras,
+      bloques: [bloque('tus metas', 'privado', metas.join('\n') || 'sin metas activas'), ...bloquesExtra, ...bloquesNotas(sel.notas, modelo)],
+      pregunta,
+      seleccion: sel,
+    };
   },
 };

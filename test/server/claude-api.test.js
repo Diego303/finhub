@@ -89,14 +89,14 @@ test('trabajo «datos»: estado de las series, propuesta revisada y guardado con
 
 test('salida inválida a cuarentena (visible en la API); cancelar; solo un trabajo igual a la vez', async () => {
   app.claude.comando = [process.execPath, FAKE];
-  const { id } = (await api('POST', '/api/claude/ejecutar', { trabajo: 'ingesta', params: { texto: 'x', fichero: 'a.txt', fuente: 'pizarra' } })).json;
+  const { id } = (await api('POST', '/api/claude/ejecutar', { trabajo: 'ingesta', params: { fichero: 'pizarra-andres-nov.txt', fuente: 'pizarra' } })).json;
   const r = await terminar(id);
   assert.equal(r.estado, 'cuarentena');
   const q = (await api('GET', '/api/claude/cuarentena')).json.ficheros;
   assert.ok(q.some((f) => f.trabajo === 'ingesta' && /formato/.test(f.motivo)));
   app.claude.comando = [process.execPath, FAKE, '--escenario', 'colgado-tras-init'];
-  const a = (await api('POST', '/api/claude/ejecutar', { trabajo: 'ingesta', params: { texto: 'x', fichero: 'b.txt', fuente: 'pizarra' } })).json;
-  assert.equal((await api('POST', '/api/claude/ejecutar', { trabajo: 'ingesta', params: { texto: 'y', fichero: 'c.txt', fuente: 'pizarra' } })).estado, 409);
+  const a = (await api('POST', '/api/claude/ejecutar', { trabajo: 'ingesta', params: { fichero: 'pizarra-andres-nov.txt', fuente: 'pizarra' } })).json;
+  assert.equal((await api('POST', '/api/claude/ejecutar', { trabajo: 'ingesta', params: { fichero: 'entrevista-gestora.md', fuente: 'gestoras' } })).estado, 409);
   assert.equal((await api('POST', '/api/claude/cancelar', { id: a.id })).json.cancelado, true);
   const c = await terminar(a.id);
   assert.equal(c.estado, 'error');

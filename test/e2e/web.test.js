@@ -131,7 +131,8 @@ test('Gestión ▾, modales accesibles (Esc, ×, foco), R1 y Ajustes', async (t)
   await p.keyboard.press('Escape');
   assert.equal(await p.$('[role=dialog]'), null, 'Esc cierra el modal');
   await p.click('[data-accion=abrir-r1]');
-  assert.equal(await p.$$eval('[role=dialog] tbody tr', (x) => x.length), 9, 'R1: los 9 trabajos del plan');
+  await p.waitForSelector('[data-matriz-r1] tbody tr');
+  assert.equal(await p.$$eval('[data-matriz-r1] tbody tr', (x) => x.length), 9, 'R1: los 9 trabajos del plan');
   await p.click('[data-cerrar-modal]');
   assert.equal(await p.evaluate(() => document.activeElement?.dataset.accion), 'abrir-r1', 'el foco vuelve al botón');
   await p.click('[data-accion=abrir-ajustes]');

@@ -5,5 +5,6 @@ import './catalogos.js';
 import './cartera.js';
 import './metas.js';
 import './conocimiento.js';
+import './ia.js';
 
 export { aplicarOp, operaciones, ErrorOp } from './motor.js';

@@ -30,13 +30,13 @@ function normalizarTemas(x) {
     }
 }
 
-export function procesarSalida(trabajo, texto, { prompt, params, modelo, bloques }) {
+export function procesarSalida(trabajo, texto, { prompt, params, modelo, bloques, esquema = trabajo.esquema, comprobar = trabajo.comprobar }) {
   const { json, texto: visible, error } = extraerJson(texto);
   if (error) return { ok: false, motivo: error };
   normalizarTemas(json);
-  const errores = validar(json, trabajo.esquema);
+  const errores = validar(json, esquema);
   if (errores.length) return { ok: false, motivo: `no cumple el formato: ${errores.slice(0, 5).join(' · ')}` };
-  const reglas = trabajo.comprobar?.(json, { params, modelo }) ?? [];
+  const reglas = comprobar?.call(trabajo, json, { params, modelo }) ?? [];
   if (reglas.length) return { ok: false, motivo: reglas.slice(0, 5).join(' · ') };
   const probs = revisarProbabilidades(probabilidadesDe(json));
   if (probs.length) return { ok: false, motivo: probs.join(' · '), reintentar: true };
@@ -88,7 +88,9 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
       return fin({ estado: 'rechazado', mensaje: e.message });
     }
   }
-  const prompt = montarPrompt(trabajo, { ...entrada, bloques, hoy });
+  const esquema = entrada.esquema ?? trabajo.esquema;
+  linea.tarea = entrada.tareaId ?? null;
+  const prompt = montarPrompt(trabajo, { ...entrada, bloques, hoy, esquema });
   alEvento({ tipo: 'inicio', id, trabajo: trabajo.id, seleccion: entrada.seleccion ? { usadas: entrada.seleccion.usadas, total: entrada.seleccion.total } : null });
   let intento = 0;
   for (;;) {
@@ -96,8 +98,8 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
     Object.assign(linea, { modelo: r.init?.modelo ?? null, version: r.init?.version ?? null, herramientas: r.herramientas, turnos: r.resultado?.turnos ?? null, coste: r.resultado?.coste ?? null, sesion: trabajo.sesion ? r.sesion : null });
     if (r.estado !== 'ok') return fin({ estado: 'error', codigo: r.codigo, mensaje: r.mensaje, motivo: [r.mensaje, ...(r.motivos ?? [])].filter(Boolean).join(' · ') });
     if (trabajo.sesion && r.sesion) await sesiones.guardar(r.sesion, trabajo.id).catch(() => {});
-    const p = procesarSalida(trabajo, r.texto, { prompt, params: { ...params, hoy }, modelo, bloques });
-    if (p.ok) return fin({ estado: 'ok', json: p.json, texto: p.texto, avisos: p.avisos, sesion: trabajo.sesion ? r.sesion : null, seleccion: entrada.seleccion ? { usadas: entrada.seleccion.usadas, total: entrada.seleccion.total } : null });
+    const p = procesarSalida(trabajo, r.texto, { prompt, params: { ...params, hoy }, modelo, bloques, esquema, comprobar: entrada.comprobar ?? trabajo.comprobar });
+    if (p.ok) return fin({ estado: 'ok', json: p.json, texto: p.texto, avisos: p.avisos, cifras: prompt.cifras, modeloUsado: r.init?.modelo ?? null, sesion: trabajo.sesion ? r.sesion : null, seleccion: entrada.seleccion ? { usadas: entrada.seleccion.usadas, total: entrada.seleccion.total } : null });
     if (p.reintentar && intento++ === 0) continue;
     const rel = await aCuarentena(servicio, { id, trabajo: trabajo.id, inicio, motivo: p.motivo, texto: r.texto, json: null }).catch(() => null);
     return fin({ estado: 'cuarentena', motivo: p.motivo, mensaje: `La salida de Claude no pasó la validación (${p.motivo}): está en .finhub/${rel ?? 'cuarentena/'} y no ha tocado tus datos.` });

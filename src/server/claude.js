@@ -9,6 +9,12 @@ import { Sesiones, leerRegistro } from '../claude/registro.js';
 import { carpetasLocales } from './rutas.js';
 import { construirModelo } from '../core/modelo.js';
 import { parseManifiesto, revisarFilas } from '../core/datos.js';
+import { leerTareas, leerRoles } from '../claude/tareas.js';
+import { rangos12m, filasCartera, historicoMezcla, componentesDe } from '../core/herramientas.js';
+import { tuAnio, tarjetas } from '../core/tu-ano.js';
+import { items, textoSeccion } from '../core/formato/motor.js';
+import { limitesSemana } from '../core/fechas.js';
+import { readdirSync } from 'node:fs';
 import { fechaLocal, mesDe } from '../core/fechas.js';
 
 const RAIZ_REPO = join(import.meta.dirname, '..', '..');
@@ -36,6 +42,37 @@ export class ServicioClaude {
     return construirModelo(ficheros);
   }
 
+  /** Tareas y roles: los del repo (semilla/) y los de tu carpeta, que mandan si se llaman igual. */
+  tareasYRoles() {
+    const semilla = (tipo) => {
+      const dir = join(RAIZ_REPO, 'semilla', tipo);
+      return Object.fromEntries(readdirSync(dir).filter((n) => n.endsWith('.md')).map((n) => [n, readFileSync(join(dir, n), 'utf8')]));
+    };
+    const carpeta = (tipo) => Object.fromEntries([...this.app.almacen.textos(`${tipo}/`)].filter((e) => e.legible).map((e) => [e.ruta.slice(tipo.length + 1), e.texto]));
+    return { tareas: leerTareas({ semilla: semilla('tareas'), carpeta: carpeta('tareas') }), roles: leerRoles({ semilla: semilla('roles'), carpeta: carpeta('roles') }) };
+  }
+
+  /** Texto de un fichero de CONTEXTO (la bandeja de la carpeta), solo para la ingesta. */
+  async leerContexto(fichero) {
+    if (!/^[^/]+$/.test(fichero ?? '') || fichero.startsWith('.')) throw Object.assign(new Error('fichero de CONTEXTO no válido'), { estado: 400 });
+    if (!this.app.almacen.otros.contexto.includes(`CONTEXTO/${fichero}`)) throw Object.assign(new Error(`no está en CONTEXTO: ${fichero}`), { estado: 404 });
+    return this.app.almacen.fs.readFile(join(this.app.almacen.raiz, 'CONTEXTO', fichero), 'utf8');
+  }
+
+  /** Mueve un fichero procesado a CONTEXTO/procesados/<fuente>/ (no se borra nada). */
+  async archivarContexto(fichero, fuente) {
+    if (!/^[^/]+$/.test(fichero ?? '') || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fuente ?? '')) throw Object.assign(new Error('datos no válidos'), { estado: 400 });
+    const a = this.app.almacen;
+    const origen = join(a.raiz, 'CONTEXTO', fichero);
+    const dir = join(a.raiz, 'CONTEXTO', 'procesados', fuente);
+    await a.fs.mkdir(dir, { recursive: true });
+    let destino = join(dir, fichero);
+    for (let n = 2; await a.fs.stat(destino).then(() => true, () => false); n++) destino = join(dir, fichero.replace(/(\.[^.]+)?$/, `-${n}$1`));
+    await a.fs.rename(origen, destino);
+    await a.barrer();
+    return { destino: destino.slice(a.raiz.length + 1) };
+  }
+
   manifiesto() {
     return parseManifiesto(readFileSync(join(RAIZ_REPO, 'semilla', 'datos-manifiesto.md'), 'utf8'));
   }
@@ -57,6 +94,11 @@ export class ServicioClaude {
       if (!series.length) throw Object.assign(new Error('elige al menos una serie que no sea sintética'), { estado: 400 });
       return { series };
     }
+    if (id === 'privado' || id === 'conocimiento') return this.parametrosTarea(id, params, modelo);
+    if (id === 'pulso') {
+      const activos = params.misActivos ? modelo.activos.filter((a) => !a.campos.archivado).map((a) => a.titulo) : null;
+      return { fecha: params.fecha, temas: params.temas ?? [], activos };
+    }
     if (id === 'precios') {
       const ids = new Set(params.ids ?? []);
       const activos = modelo.activos.filter((a) => a.campos.isin && !a.campos.archivado && (!ids.size || ids.has(a.id))).map((a) => ({ isin: a.campos.isin, nombre: a.titulo }));
@@ -66,13 +108,48 @@ export class ServicioClaude {
     return params;
   }
 
+  /** Tarea, rol y contexto extra de privado y conocimiento (los monta el servidor con tus datos). */
+  parametrosTarea(id, params, modelo) {
+    const hoy = fechaLocal();
+    const { tareas, roles } = this.tareasYRoles();
+    const t = params.tarea ? tareas.get(params.tarea) : null;
+    if (params.tarea && (!t || t.trabajo !== id)) throw Object.assign(new Error(`la tarea «${params.tarea}» no es del trabajo «${id}»`), { estado: 400 });
+    const r = params.rol ? roles.get(params.rol) : null;
+    if (params.rol && (!r || r.trabajo !== id)) throw Object.assign(new Error(`el rol «${params.rol}» no es del trabajo «${id}»`), { estado: 400 });
+    const p = { pregunta: params.pregunta ?? null, fuentes: Array.isArray(params.fuentes) ? params.fuentes : null, temas: params.temas ?? [], tarea: t ? { id: t.id, instrucciones: t.instrucciones, esquema: t.esquema } : null, rol: r ? { texto: r.texto } : null, cifrasExtra: [], bloquesExtra: [] };
+    const pct = (pb) => `${pb > 0 ? '+' : ''}${(pb / 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
+    if (t?.rangos) {
+      const rg = rangos12m(historicoMezcla(componentesDe(filasCartera(modelo), modelo.clases), (x) => modelo.serie(x)));
+      if (!rg.error) p.cifrasExtra.push({ nombre: 'rango 12 m pesimista (p5–p25)', valor: `${pct(rg.pesimista[0])} … ${pct(rg.pesimista[1])}` }, { nombre: 'rango 12 m base (p25–p75)', valor: `${pct(rg.base[0])} … ${pct(rg.base[1])}` }, { nombre: 'rango 12 m optimista (p75–p95)', valor: `${pct(rg.optimista[0])} … ${pct(rg.optimista[1])}` }, { nombre: 'peor caso histórico a 12 m', valor: pct(rg.peor) });
+    }
+    if (t?.id === 'tu-ano') for (const c of tarjetas(tuAnio(modelo, +hoy.slice(0, 4), hoy))) p.cifrasExtra.push({ nombre: c.titulo, valor: `${c.valor} (${c.sub})` });
+    if (params.borrador) {
+      const d = modelo.doc(params.borrador);
+      if (!d || d.tipo !== 'borrador') throw Object.assign(new Error('borrador no válido'), { estado: 400 });
+      p.bloquesExtra.push({ origen: 'borrador de cartera', nivel: 'publico', contenido: `${d.titulo}\n${items(d).map((f) => `${f.nombre} (${f.clase ?? 'sin clase'}): ${(f.peso / 100).toLocaleString('es-ES')} %`).join('\n')}` });
+    }
+    if (params.analisis) {
+      const d = modelo.doc(params.analisis);
+      if (!d || d.tipo !== 'analisis') throw Object.assign(new Error('análisis no válido'), { estado: 400 });
+      p.bloquesExtra.push({ origen: `análisis ${params.analisis}`, nivel: 'privado', contenido: textoSeccion(d, 'Resultado') ?? '' });
+    }
+    if (params.idea) p.bloquesExtra.push({ origen: 'idea a revisar', nivel: id === 'privado' ? 'privado' : 'publico', contenido: String(params.idea).slice(0, 4000) });
+    if (params.semana) Object.assign(p, limitesSemana(params.semana));
+    if (params.quiz) p.quiz = Math.min(8, Math.max(3, +params.quiz || 6));
+    return p;
+  }
+
   /** Lanza un trabajo. → {id} · el progreso llega por SSE («claude») y el resultado con resultado(id). */
-  lanzar({ trabajo: id, params = {}, desclasificar = false, resume = null }) {
+  async lanzar({ trabajo: id, params = {}, desclasificar = false, resume = null }) {
     const t = trabajoDe(id);
     if (!t) throw Object.assign(new Error(`trabajo desconocido «${id}»`), { estado: 400 });
     if ([...this.ejecuciones.values()].some((e) => e.estado === 'en_curso' && e.trabajo === id)) throw Object.assign(new Error(`ya hay un trabajo «${id}» en marcha`), { estado: 409 });
     const modelo = this.modelo();
-    const p = this.parametros(id, params, modelo);
+    let p;
+    if (id === 'ingesta') {
+      if (!modelo.fuentes.some((f) => f.id === params.fuente) || ['mundo', 'datos', 'base'].includes(params.fuente)) throw Object.assign(new Error('elige la fuente del documento'), { estado: 400 });
+      p = { texto: await this.leerContexto(params.fichero), fichero: params.fichero, fuente: params.fuente };
+    } else p = this.parametros(id, params, modelo);
     const ac = new AbortController();
     const hoy = fechaLocal();
     const ej = { id: null, trabajo: id, estado: 'en_curso', inicio: new Date().toISOString(), ac, texto: '' };
@@ -111,7 +188,7 @@ export class ServicioClaude {
 
   /** Resultado para la web. Para «datos», las filas ya revisadas (lo que se guardaría si confirmas). */
   propuesta(id, r, params, modelo) {
-    const base = { estado: r.estado, mensaje: r.mensaje ?? null, motivo: r.motivo ?? null, avisos: r.avisos ?? [], texto: r.texto ?? '', seleccion: r.seleccion ?? null, sesion: r.sesion ?? null };
+    const base = { estado: r.estado, mensaje: r.mensaje ?? null, motivo: r.motivo ?? null, avisos: r.avisos ?? [], texto: r.texto ?? '', seleccion: r.seleccion ?? null, sesion: r.sesion ?? null, cifras: r.cifras ?? [], modelo: r.modeloUsado ?? null, ejecucion: r.registro?.id ?? null, fuentes: params.fuentes ?? null };
     if (r.estado !== 'ok') return base;
     if (id === 'datos') {
       const mesActual = mesDe(fechaLocal());

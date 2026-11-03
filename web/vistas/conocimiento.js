@@ -8,6 +8,7 @@ import { abrir, cerrar, confirmar } from '../componentes/modal.js';
 import { toast } from '../componentes/toast.js';
 import { graficoLineas } from '../graficos/linea.js';
 import * as K from '/core/conocimiento.js';
+import { fuenteSugerida } from '../componentes/ingesta.js';
 import { TIPOS_NOTA, POSTURAS, FUENTES_FIJAS } from '/core/formato/conocimiento.js';
 import { formatearDecimal } from '/core/dinero.js';
 import { textoCorto, sumarDias, esFecha, MESES_CORTOS } from '/core/fechas.js';
@@ -115,13 +116,17 @@ function cajaPulsos(estado) {
   return html`<div class="box"><div class="lab">Pulsos · últimos 14 días</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">${dias.map((f) => {
     const n = porDia.get(f) ?? 0;
     return html`<div title="${textoCorto(f)}: ${n} noticias" role="img" aria-label="${textoCorto(f)}: ${n} noticias" style="height:18px;border-radius:3px;${n ? `background:rgba(29,158,117,${0.2 + Math.min(1, n / 6) * 0.7})` : 'border:.5px dashed var(--border-strong)'}"></div>`;
-  })}</div><div class="mut" style="font-size:10.5px;margin-top:5px">${dias.filter((f) => !porDia.get(f)).length} días sin pulso · el pulso con Claude llega en F10</div></div>`;
+  })}</div><div class="mut" style="font-size:10.5px;margin-top:5px">${dias.filter((f) => !porDia.get(f)).length} días sin pulso</div><button type="button" class="go" style="margin-top:6px" data-accion="abrir-pulso">hacer un pulso</button></div>`;
 }
 
 function cajaContexto(estado) {
-  const lista = estado.servidor?.contexto ?? [];
-  return html`<div class="box" style="margin-top:8px"><div class="lab">CONTEXTO · ${lista.length} texto(s)</div>${lista.map((f) => html`<div style="padding:4px 0;border-top:.5px solid var(--border);font-size:11px;word-break:break-all">${f.replace(/^CONTEXTO\//, '')}</div>`)}
-    <button type="button" class="go" style="margin-top:6px" disabled title="Llega en F10">procesar</button><div class="mut" style="font-size:10.5px;margin-top:6px">🔒 Trabajo <b style="font-weight:500">ingesta</b>: sin internet · solo escribe en conocimiento/ (F10).</div></div>`;
+  const lista = (estado.servidor?.contexto ?? []).map((r) => r.replace(/^CONTEXTO\//, ''));
+  const fuentes = estado.modelo.fuentes.filter((f) => !['base', 'datos', 'mundo'].includes(f.id));
+  return html`<div class="box" style="margin-top:8px"><div class="lab">CONTEXTO · ${lista.length} texto(s)</div>${lista.map((f) => {
+    const sug = fuenteSugerida(f, estado.modelo.fuentes);
+    return html`<div style="padding:5px 0;border-top:.5px solid var(--border);font-size:11px"><div style="word-break:break-all">${f}</div><div class="fila" style="margin-top:3px"><label class="sr-only" for="ctx-${f}">Fuente de ${f}</label><select class="inp" id="ctx-${f}" data-fuente-contexto="${f}" style="font-size:10.5px;flex:1"><option value="">fuente…</option>${fuentes.map((x) => html`<option value="${x.id}" ${x.id === sug ? 'selected' : ''}>${x.nombre}</option>`)}</select><button type="button" class="go" data-accion="ingesta" data-fichero="${f}">procesar</button></div></div>`;
+  })}
+    <div class="mut" style="font-size:10.5px;margin-top:6px">🔒 Trabajo <b style="font-weight:500">ingesta</b>: sin internet ni datos tuyos · tú revisas las notas antes de guardarlas.</div></div>`;
 }
 
 function cajaBuscador(estado, d) {

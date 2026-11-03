@@ -179,7 +179,9 @@ export class Almacen {
     for (const rel of ficheros) {
       const c = this.clasificar(rel, existentes);
       if (c.clase === 'dato') datos.push(rel);
-      else if (c.clase === 'contexto') otros.contexto.push(rel);
+      else if (c.clase === 'contexto') {
+        if (!rel.startsWith('CONTEXTO/procesados/')) otros.contexto.push(rel); // lo procesado ya no está pendiente
+      }
       else if (c.clase === 'conflicto') otros.conflictos.push({ ruta: rel, base: c.base, patron: c.patron, descripcion: c.descripcion });
       else if (c.clase === 'ajeno') otros.ajenos.push(rel);
     }

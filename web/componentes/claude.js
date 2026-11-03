@@ -35,8 +35,8 @@ export async function refrescarInfo() {
 }
 
 /** Lanza un trabajo y sigue su progreso. → Promise<resultado de /api/claude/ejecucion> */
-export async function lanzar(trabajo, params, { alProgreso = () => {}, desclasificar = false } = {}) {
-  const { id } = await pedir('POST', '/api/claude/ejecutar', { trabajo, params, desclasificar });
+export async function lanzar(trabajo, params, { alProgreso = () => {}, desclasificar = false, resume = null } = {}) {
+  const { id } = await pedir('POST', '/api/claude/ejecutar', { trabajo, params, desclasificar, resume });
   return new Promise((resolver) => {
     const f = async (ev) => {
       if (ev.id !== id) return;
@@ -50,6 +50,51 @@ export async function lanzar(trabajo, params, { alProgreso = () => {}, desclasif
     alProgreso({ tipo: 'lanzado', id });
   });
 }
+
+// ---------- progreso reutilizable ----------
+/** Estado de una ejecución para pintar: {fase: listo|trabajando|hecho, texto, herramientas, id, resultado} */
+export const nuevoProgreso = () => ({ fase: 'listo', texto: '', herramientas: [], id: null, resultado: null });
+
+/** Ejecuta un trabajo actualizando `prog` y repintando. → resultado de la ejecución (o {estado:'error'}) */
+export async function ejecutarCon(prog, trabajo, params, { repintar = repintarModal, desclasificar = false, resume = null } = {}) {
+  Object.assign(prog, nuevoProgreso(), { fase: 'trabajando' });
+  repintar();
+  try {
+    prog.resultado = await lanzar(trabajo, params, {
+      desclasificar,
+      resume,
+      alProgreso: (ev) => {
+        if (ev.tipo === 'lanzado') prog.id = ev.id;
+        if (ev.tipo === 'texto') prog.texto += ev.delta;
+        if (ev.tipo === 'herramienta') prog.herramientas.push(ev);
+        if (ev.tipo === 'inicio' && ev.seleccion) prog.seleccion = ev.seleccion;
+        repintar();
+      },
+    });
+  } catch (e) {
+    prog.resultado = { estado: 'error', resultado: { mensaje: e.message } };
+  }
+  prog.fase = 'hecho';
+  repintar();
+  return prog.resultado;
+}
+
+/** Bloque de progreso: spinner, herramientas usadas, texto que llega y «cancelar». */
+export function progresoHtml(prog, { que = 'Claude está trabajando…' } = {}) {
+  if (prog.fase !== 'trabajando') return '';
+  return html`<div class="progreso-claude" data-progreso><div class="fila"><span class="spinner" aria-hidden="true"></span><b style="font-weight:500">${que}</b>${prog.seleccion ? html`<span class="mut" style="font-size:10.5px">se usaron ${prog.seleccion.usadas} de ${prog.seleccion.total} notas de tu mezcla</span>` : ''}<button type="button" class="go" data-accion="claude-cancelar" data-id="${prog.id ?? ''}" style="margin-left:auto">cancelar</button></div>
+    ${prog.herramientas.length ? html`<div class="mut" style="font-size:10.5px">${prog.herramientas.slice(-5).map((h) => html`<div>· ${h.nombre}: ${h.entrada}</div>`)}</div>` : ''}
+    ${prog.texto ? html`<div style="font-size:11.5px;white-space:pre-wrap;max-height:200px;overflow:auto;margin-top:4px" aria-live="polite">${prog.texto.replace(/```json[\s\S]*$/, '').slice(-2500)}</div>` : ''}</div>`;
+}
+
+/** Mensaje de error o cuarentena de una ejecución terminada (o '' si fue bien). */
+export function errorHtml(r) {
+  if (!r || r.estado === 'ok') return '';
+  return html`<div class="banda aviso" style="display:block;margin-top:8px">${r.resultado?.mensaje ?? r.resultado?.motivo ?? 'No se pudo completar.'}</div>`;
+}
+
+/** Avisos del verificador (cifras no verificadas, citas quitadas, lenguaje de recomendación). */
+export const avisosHtml = (avisos = []) => (avisos.length ? html`<div class="mut" style="font-size:10.5px;margin-top:6px">⚠ ${avisos.join(' · ')}</div>` : '');
 
 // ---------- modal «Datos de mercado» ----------
 const dm = { fase: 'elegir', series: [], elegidas: new Set(), progreso: { texto: '', herramientas: [], id: null }, resultado: null, guardar: new Set() };
@@ -123,6 +168,7 @@ export function registrarAccionesClaude() {
     repintarModal();
   });
   accion('datos-cancelar', () => dm.progreso.id && pedir('POST', '/api/claude/cancelar', { id: dm.progreso.id }));
+  accion('claude-cancelar', (el) => el.dataset.id && pedir('POST', '/api/claude/cancelar', { id: el.dataset.id }));
   accion('datos-volver', () => {
     dm.fase = 'elegir';
     repintarModal();

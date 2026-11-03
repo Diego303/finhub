@@ -11,7 +11,7 @@ export const ID_NOTA = T('texto', { patron: /^[A-Z]{1,4}-\d{2,6}(-\d{2})?$/, ayu
 export const TEMAS = L(ID, { max: 8 });
 export const POSTURA = T('enum', { v: POSTURAS });
 export const TIPO_NOTA = T('enum', { v: TIPOS_NOTA });
-export const CHAT = O({ respuesta_md: T('texto', { min: 1, max: 12000 }), citas: L(ID_NOTA, { max: 40 }), cifras_usadas: L(T('texto', { max: 120 }), { max: 40 }) });
+export const CHAT = O({ respuesta_md: T('texto', { min: 1, max: 12000 }), citas: L(T('texto', { min: 3, max: 300, ayuda: 'id de una nota de <datos> (p. ej. B-1001) o, si buscaste en internet, la URL' }), { max: 40 }), cifras_usadas: L(T('texto', { max: 120 }), { max: 40 }) });
 
 /** Importes en euros para el prompt (los privados): 1.234,56 €. */
 export const eur = (c) => `${(c / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;

@@ -10,11 +10,14 @@ import { abrirEntrada } from './componentes/gestion.js';
 import { cajaPendientes, abrirDestino } from './componentes/pendientes.js';
 import { barraR1, abrirR1 } from './componentes/r1.js';
 import { registrarAccionesClaude, refrescarInfo, abrirDatos } from './componentes/claude.js';
+import { registrarPulso, abrirPulso } from './componentes/pulso.js';
+import { registrarIngesta } from './componentes/ingesta.js';
 import { abrirAjustes } from './componentes/ajustes.js';
 import { abrirPapelera } from './componentes/papelera.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
 import * as basicas from './vistas/basicas.js';
-import { vistaRex, ponerModo, ponerExplicame, quitarExplicame } from './vistas/rex.js';
+import { vistaRex, ponerModo, ponerExplicame, quitarExplicame, iniciarRex, registrarAccionesRex } from './vistas/rex.js';
+import { vistaAnalisis, iniciarAnalisis, registrarAccionesAnalisis } from './vistas/analisis.js';
 import { vistaPanel } from './vistas/panel.js';
 import { vistaConocimiento, iniciarConocimiento, registrarAccionesConocimiento } from './vistas/conocimiento.js';
 import { vistaHerramientas, iniciarHerramientas, registrarAccionesHerramientas } from './vistas/herramientas.js';
@@ -31,7 +34,7 @@ export const PESTANAS = [
   ['cartera', 'Cartera', vistaCartera],
   ['metas', 'Metas', vistaMetas],
   ['herramientas', 'Herramientas', vistaHerramientas],
-  ['analisis', 'Análisis', basicas.analisis],
+  ['analisis', 'Análisis', vistaAnalisis],
   ['descubrimientos', '🔭 Descubrimientos', basicas.descubrimientos],
   ['conocimiento', 'Conocimiento', vistaConocimiento],
   ['rex', '🦖 Rex', vistaRex],
@@ -135,6 +138,7 @@ accion('pendiente', (el) => {
   if (d === 'cierre') return abrirCierre(estado);
   if (d === 'valores') return abrirValores(estado);
   if (d === 'datos') return abrirDatos();
+  if (d === 'pulso') return abrirPulso();
   if (d === 'pausas') ponerModo('pausa');
   if (vistas[d]) location.hash = vistas[d];
   else abrirDestino(d, estado);
@@ -206,10 +210,16 @@ iniciarMetas({ estado, render });
 registrarAccionesMetas();
 iniciarHerramientas({ estado, render });
 registrarAccionesHerramientas();
-registrarAccionesTuAnio(() => estado);
+registrarAccionesTuAnio(() => estado, () => render());
 iniciarConocimiento({ estado, render });
 registrarAccionesConocimiento();
 registrarAccionesClaude();
+registrarPulso(() => estado);
+registrarIngesta(() => estado);
+iniciarRex({ estado, render });
+registrarAccionesRex();
+iniciarAnalisis({ estado, render });
+registrarAccionesAnalisis();
 document.addEventListener('finhub:claude', () => render());
 iniciarEditores(() => estado);
 registrarEditores();

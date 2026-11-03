@@ -136,3 +136,13 @@ tr.editando td { vertical-align: top; }
 .spinner { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-strong); border-top-color: var(--naranja); display: inline-block; animation: girar .8s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+.progreso-claude { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--surface-1); font-size: 11.5px; }
+.dia-pulso { text-align: center; padding: 5px 0; border-radius: 6px; border: .5px solid var(--border); background: none; font: inherit; color: inherit; cursor: pointer; }
+.dia-pulso.on { border-color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--text-primary); }
+.nota-propuesta { padding: 6px 0; border-top: .5px solid var(--border); }
+/* Rex: conversaciones (F10) */
+.conv { display: flex; gap: 4px; align-items: center; padding: 4px; border-radius: 6px; font-size: 11px; }
+.conv.on { background: var(--surface-1); }
+.chat { display: flex; flex-direction: column; gap: 6px; flex: 1; overflow: auto; max-height: 460px; }
+.msg.u { align-self: flex-end; background: var(--surface-1); }
+.msg { white-space: pre-wrap; }

@@ -295,7 +295,7 @@ export class App {
       case 'POST /api/claude/ejecutar': {
         if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
         try {
-          return enviarJson(res, 202, this.claude.lanzar({ trabajo: cuerpo.trabajo, params: cuerpo.params ?? {}, desclasificar: !!cuerpo.desclasificar, resume: cuerpo.resume ?? null }));
+          return enviarJson(res, 202, await this.claude.lanzar({ trabajo: cuerpo.trabajo, params: cuerpo.params ?? {}, desclasificar: !!cuerpo.desclasificar, resume: cuerpo.resume ?? null }));
         } catch (e) {
           if (e.estado) throw new ErrorHttp(e.estado, e.message);
           throw e;
@@ -312,6 +312,20 @@ export class App {
         const mes = url.searchParams.get('mes') ?? fechaLocal().slice(0, 7);
         if (!/^\d{4}-\d{2}$/.test(mes)) throw new ErrorHttp(400, 'mes no válido');
         return enviarJson(res, 200, { mes, ejecuciones: await this.claude.registro(mes) });
+      }
+      case 'GET /api/claude/tareas': {
+        const { tareas, roles } = this.claude.tareasYRoles();
+        return enviarJson(res, 200, { tareas: [...tareas.values()].map(({ instrucciones, ...t }) => ({ ...t, instrucciones })), roles: [...roles.values()] });
+      }
+      case 'POST /api/contexto/procesado': {
+        if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+        try {
+          return enviarJson(res, 200, await this.claude.archivarContexto(String(cuerpo.fichero ?? ''), String(cuerpo.fuente ?? '')));
+        } catch (e) {
+          if (e.estado) throw new ErrorHttp(e.estado, e.message);
+          if (e.code === 'ENOENT') throw new ErrorHttp(404, 'ese fichero ya no está en CONTEXTO');
+          throw e;
+        }
       }
       case 'GET /api/claude/cuarentena':
         return enviarJson(res, 200, { ficheros: await this.claude.cuarentena() });

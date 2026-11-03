@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Claude Code falso para los tests (ningún test llama al Claude real). Emite stream-json como el real
 // (formato de test/grabaciones/) y deja una traza de lo que recibió: argumentos, entorno, directorio y stdin.
-// Uso: node test/fake-claude.js [--escenario X] [--traza f.json] [--respuesta f.txt] [--esperar ms] -p …(args de claude)
+// Uso: node test/fake-claude.js [--escenario X] [--traza f.json] [--respuesta f.txt | --respuestas dir] [--esperar ms] -p …(args de claude)
+// Con --respuestas, elige <dir>/<trabajo>-<tarea>.txt o <dir>/<trabajo>.txt según la 1.ª línea del sistema «[finhub:trabajo:tarea]».
 // Escenarios: respuesta (por defecto) · grabacion:<nombre> · herramienta:<Nombre> · colgado · colgado-tras-init · limite · sin-sesion
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
@@ -68,5 +69,11 @@ async function principal() {
     emitir({ type: 'rate_limit_event', rate_limit_info: { status: 'rejected', rateLimitType: 'five_hour', resetsAt: 1793944800 } });
     return esperar(60000);
   }
-  responder(propios.respuesta ? readFileSync(propios.respuesta, 'utf8') : 'Sin nada que decir.\n\n```json\n{}\n```');
+  let fichero = propios.respuesta ?? null;
+  if (propios.respuestas) {
+    const m = /^\[finhub:([a-z-]+)(?::([a-z0-9-]+))?\]/.exec(valor('--system-prompt') ?? '');
+    const candidatos = m ? [`${m[1]}-${m[2]}.txt`, `${m[1]}.txt`] : [];
+    fichero = candidatos.map((c) => join(propios.respuestas, c)).find((c) => existsSync(c)) ?? null;
+  }
+  responder(fichero ? readFileSync(fichero, 'utf8') : 'Sin nada que decir.\n\n```json\n{}\n```');
 }
