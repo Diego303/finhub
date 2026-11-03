@@ -2,7 +2,9 @@
 
 > Cada operación es una **función pura** `(modelo, args) → { modelo, inversa: {op, args}, ficheros: [rutas], avisos: [] }`.
 > El servidor comprueba la versión de cada fichero tocado (409 si no coincide), serializa, escribe de forma atómica y guarda la inversa (30 por sesión, deshacer de 10 s).
-> **Deshacer:** se aplica la inversa solo si los ficheros siguen en la versión que dejó la operación. Si no, «no se puede deshacer: el fichero cambió después». Propiedad testeada en F1–F2: `aplicar(op)` y luego `aplicar(inversa)` deja los ficheros **idénticos byte a byte**.
+> **Deshacer (implementado en F2):** la inversa que devuelve el motor es siempre `ficheros.restaurar` con el contenido exacto anterior de cada fichero tocado; el servidor solo la aplica si esos ficheros siguen como los dejó la operación (si no, 409 «cambió después»). Las inversas «semánticas» de las tablas describen el efecto; la restauración exacta lo garantiza byte a byte (propiedad testeada). Ver `docs/DECISIONES.md` F2.
+>
+> **Implementadas en F2:** `mov.crear | editar | borrar`, `rec.confirmar | saltar | desmarcar`, `pres.fijar`, `lista.crear | editar | borrar` (cuentas, grupos, etiquetas, recurrentes, hitos, operaciones, objetivo, clases, valores, plantillas, borradores, familias, fuentes, mezclas, predicciones), `bloque.crear | editar | borrar` (metas, activos, notas, descubrimientos), `ajustes.fijar | quitar`, `fichero.borrar`, `papelera.restaurar` y `ficheros.restaurar`. Las de cierre de mes, cartera, metas, conocimiento… llegan en sus fases, sobre estas mismas piezas.
 > **Borrar** = mover a la papelera (§2.5). Su inversa es `papelera.restaurar`.
 
 ## Mes (`ops/mes.js`)

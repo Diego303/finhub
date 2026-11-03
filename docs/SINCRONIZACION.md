@@ -59,3 +59,9 @@
 ## 5. Scripts usados
 
 En el scratchpad de la sesión, no en el repo: `fsbench.mjs` (banco; aborta si la carpeta ya existe), `fsdesglose.mjs` (desglose de latencias), `estres-sync.mjs` (reescrituras durante la sincronización) y `limpieza-segura.mjs` (borrado solo de nombres conocidos; informa y no borra lo inesperado). En F2 los tests de carpeta y sincronización usarán directorios temporales que simulan estos casos, sin tocar `D:\GoogleDrive`.
+
+## 6. Implementado en F2
+- `src/server/almacen.js`: índice en memoria, sondeo rápido cada 2 s (carpetas + conjunto caliente) y barrido completo concurrente cada 30 s; escritura atómica con `.finhub-tmp-*` en la misma carpeta; limpieza de huérfanos al arrancar; reintentos (200, 600 y 1.500 ms) y marca «nube»/«ilegible» sin vaciar nunca el fichero; patrones de conflicto.
+- `src/server/candado.js`: `.finhub/abierto.lock` con latido cada 30 s; < 2 min de otro equipo → solo lectura; «tomar el control»; el otro lo detecta en su siguiente latido.
+- `src/server/carpeta.js`: validar, crear, usar, copiar y mover (verificado por hash; si se interrumpe, se deshace lo copiado).
+- Tests en `test/server/` con directorios temporales que simulan la carpeta sincronizada: conflictos, fichero ilegible, temporal huérfano, dos equipos, mover interrumpido. Ninguno toca `D:\GoogleDrive`.

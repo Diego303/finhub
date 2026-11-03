@@ -20,7 +20,9 @@ Tu dinero en local: gastos, cartera, metas, herramientas, descubrimientos y una 
 ```bash
 pnpm install && pnpm link --global
 finhub                    # servidor en localhost:4747 y abre el navegador
-finhub carpeta "C:\Users\Diego\OneDrive\FINANZAS"   # o D:\FINANZAS · se puede cambiar cuando quieras
+finhub carpeta "D:\GoogleDrive\FINANZAS" --crear   # la primera vez (o --usar si ya tiene datos)
+finhub carpeta "E:\Otra" --mover | --copiar | --usar # cambiarla cuando quieras
+finhub --ejemplo          # prueba con datos inventados (copia temporal)
 finhub stop | status
 ```
 
@@ -29,7 +31,7 @@ Node ≥ 20 y **pnpm**, sin dependencias de runtime.
 ```bash
 pnpm test        # node:test (solo *.test.js) · ningún test llama al Claude real
 pnpm check       # sintaxis, imports solo node:/relativos, sin dependencias, HTML solo vía esc()
-pnpm dev         # finhub --ejemplo (datos inventados) · disponible desde F2
+pnpm dev         # finhub --ejemplo --primer-plano (datos inventados; Ctrl+C para parar)
 pnpm ejemplo     # regenera ejemplo/ (determinista, datos inventados y series sintéticas)
 ```
 Verificaciones de F0: [`docs/CLAUDE-CLI.md`](docs/CLAUDE-CLI.md) (aislamiento de Claude Code) y [`docs/SINCRONIZACION.md`](docs/SINCRONIZACION.md) (carpeta sincronizada desde WSL).

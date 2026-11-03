@@ -12,7 +12,7 @@
   },
   "packageManager": "pnpm@12.6.0",
   "scripts": {
-    "dev": "node bin/finhub.js --ejemplo",
+    "dev": "node bin/finhub.js --ejemplo --primer-plano",
     "start": "node bin/finhub.js",
     "test": "node scripts/test.js",
     "test:r1": "node scripts/test.js test/r1",
