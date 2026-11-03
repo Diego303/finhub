@@ -82,6 +82,8 @@ Cabecera `# Ajustes`, `esquema: 1` y una lista `- clave: valor`. Claves (todas o
 | `conflictos` 🆕 | patrones separados por ` \| ` | patrones genéricos (§2.6) + los de Google Drive cuando se verifiquen |
 | `claude_modelo` 🆕 | `trabajo=modelo` separados por `, ` (modelo: `opus` \| `sonnet` \| `haiku` \| nombre completo) | `pulso=sonnet, precios=haiku, datos=haiku, ingesta=sonnet, conocimiento=sonnet, rex-web=sonnet, privado=opus, encaje=opus, descubrir=opus` |
 | `nombre` 🆕 | texto (para el saludo del resumen al abrir) | — |
+| `umbral_desviacion` 🆕 | porcentaje (aviso de clases frente a objetivo) | `1` |
+| `sectores_efectos` 🆕 | lista de ids de sectores del mapa de efectos | los 7 de la maqueta |
 | `contexto_max` | `60 notas · 60000 car.` | del plan |
 
 ✓ Válido
@@ -115,7 +117,7 @@ Tipos: `corriente`, `ahorro`, `inversion`, `efectivo`, `deuda`.
 ✗ `- ocio | Ocio` → ✗ sin naturaleza · `- comida | Comida | naturaleza: gasto` → ✗ naturaleza desconocida (los movimientos van a «sin grupo» con ⚠, §9.2)
 
 ### `etiquetas.md` 🆕 (el plan solo lo nombra)
-`- <etiqueta-sin-#> | descripción [| color: <#hex>]`. Las etiquetas existen aunque no estén aquí: este fichero solo da descripción y orden, y sirve para renombrarlas.
+`- <etiqueta-sin-#> [| descripción]`. Las etiquetas existen aunque no estén aquí: este fichero solo da descripción y orden, y sirve para renombrarlas.
 
 ✓ `- suscripción | Pagos recurrentes de servicios`
 ✗ `- #social | …` → ⚠ se quita la `#` al guardar
@@ -239,7 +241,7 @@ Cabeceras `fecha`, `estado` (`pausa-48h` \| `lista` \| `decidida` \| `descartada
 ✗ `medir: sp500 baja mucho` → ⚠ no medible automáticamente (resolución manual)
 
 ### Notas (`base/*.md`, `<fuente>/AAAA-MM-DD-<slug>.md`, `mundo/AAAA-MM-DD.md`, `mias/*.md`)
-Uno o varios bloques `## <id-nota> · título` + campos: `tipo` (`dato|hecho|consenso|opinión|especulación`), `fecha`, `fuente`, `origen`, `temas` (lista), `activos` (lista), `postura` (`alcista|neutral|bajista`), `efectos` 🆕 (`sector:▲, sector:▼, sector:•`, solo en Mundo), `caduca`, `pulso` (hora), `hash`, `editada` (bool), `verificar` (año, obligatorio en fiscalidad), y un **cuerpo** de 2–6 líneas.
+Cabeceras opcionales del fichero: `fuente`, `fecha`, `origen`, `pulsos` (lista de horas, en Mundo) y `documento`. Uno o varios bloques `## <id-nota> · título` + campos: `tipo` (`dato|hecho|consenso|opinión|especulación`), `fecha`, `fuente`, `origen`, `temas` (lista), `activos` (lista), `postura` (`alcista|neutral|bajista`), `efectos` 🆕 (`sector:▲, sector:▼, sector:•`, solo en Mundo), `caduca`, `pulso` (hora), `hash`, `editada` (bool), `verificar` (año, obligatorio en fiscalidad), y un **cuerpo** de 2–6 líneas.
 ✗ nota de Base con `tipo: opinión` → ⚠ «Base solo admite hechos, datos y consenso» · nota sin cuerpo → ⚠ · `postura: muy alcista` → ✗ · id repetido en la carpeta → ✗ (la segunda se marca)
 
 ### `conocimiento/mundo/semana-AAAA-Www.md`
@@ -303,7 +305,15 @@ Una línea del cuerpo que empiece por `## ` se escribe `\## ` para no romper los
 | `.finhub/copias/AAAA-MM-DD/` | copia del día (14 últimas) |
 | `~/.config/finhub/config.json` | `{"esquema":1,"carpeta":"/mnt/d/GoogleDrive/FINANZAS","recientes":[…]}` (fuera de la carpeta) |
 
-## 6. Novedades respecto al plan (aprobadas en F0, ver `docs/DECISIONES.md`)
+## 6. Reglas generales concretadas en F1
+- **Cabecera obligatoria ausente** (p. ej. `modo:` en un chat, `descubrimiento:` en un encaje, `trabajo:` en un rol) → ✗ error del fichero.
+- **Valor inválido en un campo opcional** → ⚠: el texto se conserva tal cual al guardar y se usa el valor por defecto.
+- **Valor inválido en un campo posicional o requerido** → ✗: la línea se conserva tal cual y no entra en los cálculos.
+- **Duplicados** (ids, meses de una serie, activos de una foto…) → ✗ el segundo; salvo el `id:` de un movimiento repetido, que solo avisa y se reasigna al guardar.
+- **Escapes:** en celdas `\|`, `\#` y `\\`; en valores de campo, `\#` tras dos espacios y `\\` antes de `#` o `\`. En chats, `\## ` al principio de una línea de mensaje.
+- **Migraciones:** `formato/migraciones.js` transforma texto → texto paso a paso; un fichero sin `esquema:` se trata como 1 y recibe la línea antes de migrar. Con el esquema 1 actual aún no hay pasos registrados.
+
+## 7. Novedades respecto al plan (aprobadas en F0, ver `docs/DECISIONES.md`)
 1. `id: xxxx` en los movimientos (§1.2).
 2. Ids de Mundo con año (`M-261103-01`), Datos `DT-`, Mis notas `N-`.
 3. Sección `## Recurrentes` en el mes, para registrar «confirmado» o «saltado».

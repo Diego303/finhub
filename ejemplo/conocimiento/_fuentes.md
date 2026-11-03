@@ -1,0 +1,37 @@
+# Fuentes
+esquema: 1
+- base | Base | familia: fija | prefijo: B | privada: no | activa_por_defecto: sí
+- datos | Datos | familia: fija | prefijo: DT | privada: no | activa_por_defecto: sí
+- mundo | Mundo · pulsos | familia: prensa | prefijo: M | privada: no | activa_por_defecto: sí
+- pizarra | La pizarra de Andrés | familia: yt | prefijo: P | privada: no | activa_por_defecto: no
+- indexado | Indexado Tranquilo | familia: yt | prefijo: IND | privada: no | activa_por_defecto: sí
+- sinprisa | Bolsa sin Prisa | familia: yt | prefijo: BSP | privada: no | activa_por_defecto: no
+- dividendo | Dividendo a Dividendo | familia: yt | prefijo: DAD | privada: no | activa_por_defecto: no
+- lento | El Inversor Lento | familia: yt | prefijo: IL | privada: no | activa_por_defecto: no
+- value | Value en Español | familia: yt | prefijo: VAL | privada: no | activa_por_defecto: no
+- ingenieros | Finanzas para Ingenieros | familia: yt | prefijo: FPI | privada: no | activa_por_defecto: no
+- permanente | Cartera Permanente | familia: yt | prefijo: CP | privada: no | activa_por_defecto: no
+- etflab | ETF Lab | familia: yt | prefijo: ETF | privada: no | activa_por_defecto: no
+- cabeza | Ahorro con Cabeza | familia: yt | prefijo: AC | privada: no | activa_por_defecto: no
+- aldia | Mercados al Día | familia: yt | prefijo: MAD | privada: no | activa_por_defecto: no
+- compuesto | Crecimiento Compuesto | familia: yt | prefijo: CC | privada: no | activa_por_defecto: no
+- m10 | Macro en 10 minutos | familia: macro | prefijo: MDZ | privada: no | activa_por_defecto: no
+- bce | El Banco Central Explicado | familia: macro | prefijo: BCE | privada: no | activa_por_defecto: no
+- ciclos | Ciclos y Deuda | familia: macro | prefijo: CYD | privada: no | activa_por_defecto: no
+- bolsillo | Economía de Bolsillo | familia: macro | prefijo: EDB | privada: no | activa_por_defecto: no
+- tipos | Datos y Tipos | familia: macro | prefijo: DYT | privada: no | activa_por_defecto: no
+- geo | Geopolítica y Mercados | familia: macro | prefijo: GEO | privada: no | activa_por_defecto: no
+- infl | Inflación Hoy | familia: macro | prefijo: IH | privada: no | activa_por_defecto: no
+- europa | Europa Económica | familia: macro | prefijo: EE | privada: no | activa_por_defecto: no
+- charlas | Charlas de Inversión | familia: pod | prefijo: CI | privada: no | activa_por_defecto: no
+- patrimonio | Podcast Patrimonio | familia: pod | prefijo: PP | privada: no | activa_por_defecto: no
+- cafe | El Café Financiero | familia: pod | prefijo: CF | privada: no | activa_por_defecto: no
+- riesgo | Riesgo y Retorno | familia: pod | prefijo: RYR | privada: no | activa_por_defecto: no
+- largo | Largo Plazo FM | familia: pod | prefijo: LP | privada: no | activa_por_defecto: no
+- racional | Inversión Racional | familia: pod | prefijo: IR | privada: no | activa_por_defecto: no
+- prensa | Resúmenes de prensa económica | familia: prensa | prefijo: PRE | privada: no | activa_por_defecto: no
+- bancos | Notas de bancos centrales | familia: prensa | prefijo: NBC | privada: no | activa_por_defecto: no
+- gestoras | Informes de gestoras | familia: prensa | prefijo: IG | privada: no | activa_por_defecto: no
+- news | Newsletter Mercados | familia: prensa | prefijo: NM | privada: no | activa_por_defecto: no
+- semanal | Resumen semanal de bolsa | familia: prensa | prefijo: RSB | privada: no | activa_por_defecto: no
+- mias | Mis notas | familia: mias | prefijo: N | privada: sí | activa_por_defecto: sí

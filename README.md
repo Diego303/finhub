@@ -30,6 +30,7 @@ Node ≥ 20 y **pnpm**, sin dependencias de runtime.
 pnpm test        # node:test (solo *.test.js) · ningún test llama al Claude real
 pnpm check       # sintaxis, imports solo node:/relativos, sin dependencias, HTML solo vía esc()
 pnpm dev         # finhub --ejemplo (datos inventados) · disponible desde F2
+pnpm ejemplo     # regenera ejemplo/ (determinista, datos inventados y series sintéticas)
 ```
 Verificaciones de F0: [`docs/CLAUDE-CLI.md`](docs/CLAUDE-CLI.md) (aislamiento de Claude Code) y [`docs/SINCRONIZACION.md`](docs/SINCRONIZACION.md) (carpeta sincronizada desde WSL).
 
