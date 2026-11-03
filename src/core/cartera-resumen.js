@@ -89,7 +89,7 @@ export function resumenCartera(modelo, hoy, { indices = [], aportacion = null } 
   const mesesIp = Array.from({ length: mesesEntre(desdeIp, mesFin) + 1 }, (_, i) => sumarMesesMes(desdeIp, i)).filter((m) => componentes.every((c) => !c.serie || c.serie.get(m)));
   const ip = componentes.length && mesesIp.length ? indicePropio(componentes, mesesIp) : null;
   const baseIp = ip?.get(meses[0]) ?? null;
-  const propio = ip ? { valores: arrastrar(meses.map((m) => (baseIp && ip.get(m) ? (ip.get(m) / baseIp) * 100 : null))), tendrias: comparar(new Map(mesesIp.map((m) => [m, { valor: ip.get(m), interpolado: false }]))), sinIndice: componentes.filter((c) => !c.serie).map((c) => c.activo) } : null;
+  const propio = ip ? { tasaVentana: mesesIp.length > 1 ? ip.get(mesesIp.at(-1)) / ip.get(mesesIp[0]) - 1 : null, valores: arrastrar(meses.map((m) => (baseIp && ip.get(m) ? (ip.get(m) / baseIp) * 100 : null))), tendrias: comparar(new Map(mesesIp.map((m) => [m, { valor: ip.get(m), interpolado: false }]))), sinIndice: componentes.filter((c) => !c.serie).map((c) => c.activo) } : null;
 
   // reparto de la aportación: por defecto, la aportación mensual de los recurrentes de inversión
   const aporta = aportacion ?? (aportacionMensualInversion(modelo) || 60000);

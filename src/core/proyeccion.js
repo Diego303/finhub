@@ -93,7 +93,7 @@ export function percentil(ordenado, q) {
  * Simulación genérica: `bloque(prng)` devuelve 12 rentabilidades mensuales (ya reales o nominales).
  * La aportación se suma al final de cada mes. → {anios, p10, p50, p90, puesto} (céntimos, índice = año).
  */
-function simular({ inicial, aportacion, anios, caminos, semilla, bloque }) {
+function simular({ inicial, aportacion, anios, caminos, semilla, bloque, pausa = 0 }) {
   const prng = crearPrng(semilla);
   const porAnio = Array.from({ length: anios + 1 }, () => new Float64Array(caminos));
   for (let c = 0; c < caminos; c++) {
@@ -101,7 +101,7 @@ function simular({ inicial, aportacion, anios, caminos, semilla, bloque }) {
     porAnio[0][c] = v;
     for (let a = 1; a <= anios; a++) {
       const rs = bloque(prng);
-      for (let k = 0; k < 12; k++) v = v * (1 + rs[k]) + aportacion;
+      for (let k = 0; k < 12; k++) v = v * (1 + rs[k]) + ((a - 1) * 12 + k < pausa ? 0 : aportacion);
       porAnio[a][c] = v;
     }
   }
@@ -114,7 +114,7 @@ function simular({ inicial, aportacion, anios, caminos, semilla, bloque }) {
     p50.push(Math.round(percentil(vals, 0.5)));
     p90.push(Math.round(percentil(vals, 0.9)));
   }
-  return { anios: Array.from({ length: anios + 1 }, (_, i) => i), p10, p50, p90, puesto: Array.from({ length: anios + 1 }, (_, i) => inicial + aportacion * 12 * i) };
+  return { anios: Array.from({ length: anios + 1 }, (_, i) => i), p10, p50, p90, puesto: Array.from({ length: anios + 1 }, (_, i) => inicial + aportacion * Math.max(0, 12 * i - pausa)) };
 }
 
 const limitarAnios = (n) => Math.min(MAX_ANIOS, Math.max(1, Math.round(Number(n) || 1)));
@@ -123,7 +123,7 @@ const limitarAnios = (n) => Math.min(MAX_ANIOS, Math.max(1, Math.round(Number(n)
  * Bootstrap por bloques de 12 meses consecutivos del histórico de la mezcla (§4.4).
  * historico: de historicoMezcla · real: descuenta el IPC del mismo mes del bloque.
  */
-export function proyectarHistorico({ inicial, aportacion, anios, historico, real = true, caminos = CAMINOS, semilla = SEMILLA }) {
+export function proyectarHistorico({ inicial, aportacion, anios, historico, real = true, caminos = CAMINOS, semilla = SEMILLA, pausa = 0 }) {
   const n = historico.r.length;
   if (n < 12) return { error: 'hace falta al menos un año de histórico en las series del grupo «Datos»' };
   const descontar = real && historico.ipc;
@@ -133,7 +133,7 @@ export function proyectarHistorico({ inicial, aportacion, anios, historico, real
     for (let k = 0; k < 12; k++) buf[k] = descontar ? (1 + historico.r[ini + k]) / (1 + historico.ipc[ini + k]) - 1 : historico.r[ini + k];
     return buf;
   };
-  return { ...simular({ inicial, aportacion, anios: limitarAnios(anios), caminos, semilla, bloque }), modo: 'datos', real: !!descontar, desde: historico.meses[0], hasta: historico.meses.at(-1) };
+  return { ...simular({ inicial, aportacion, anios: limitarAnios(anios), caminos, semilla, bloque, pausa }), modo: 'datos', real: !!descontar, desde: historico.meses[0], hasta: historico.meses.at(-1) };
 }
 
 /**
@@ -141,7 +141,7 @@ export function proyectarHistorico({ inicial, aportacion, anios, historico, real
  * Mezcla: media y volatilidad ponderadas por peso (como si estuvieran perfectamente correlacionadas:
  * prudente). Mixto = mitad rv, mitad rf. Nominal = real + inflación media de la serie de IPC (o 2 %).
  */
-export function proyectarManual({ inicial, aportacion, anios, componentes, supuestos, real = true, inflacion = INFLACION_POR_DEFECTO, caminos = CAMINOS, semilla = SEMILLA }) {
+export function proyectarManual({ inicial, aportacion, anios, componentes, supuestos, real = true, inflacion = INFLACION_POR_DEFECTO, caminos = CAMINOS, semilla = SEMILLA, pausa = 0 }) {
   const avisos = [];
   const de = (g) => supuestos[g] ?? (g === 'mixto' && supuestos.rv && supuestos.rf ? { mu: (supuestos.rv.mu + supuestos.rf.mu) / 2, sigma: (supuestos.rv.sigma + supuestos.rf.sigma) / 2 } : null);
   let mu = 0;
@@ -163,7 +163,7 @@ export function proyectarManual({ inicial, aportacion, anios, componentes, supue
     for (let k = 0; k < 12; k++) buf[k] = Math.max(-0.95, prng.normal(muM, sgM));
     return buf;
   };
-  return { ...simular({ inicial, aportacion, anios: limitarAnios(anios), caminos, semilla, bloque }), modo: 'manual', real, mu, sigma, avisos };
+  return { ...simular({ inicial, aportacion, anios: limitarAnios(anios), caminos, semilla, bloque, pausa }), modo: 'manual', real, mu, sigma, avisos };
 }
 
 /** Inflación anual media de una serie de IPC ([{mes, valor}]) o null. */

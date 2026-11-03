@@ -25,6 +25,7 @@ export const AJUSTES_DEFECTO = {
   copias: 'carpeta',
   claude_modelo: { pulso: 'sonnet', precios: 'haiku', datos: 'haiku', ingesta: 'sonnet', conocimiento: 'sonnet', 'rex-web': 'sonnet', privado: 'opus', encaje: 'opus', descubrir: 'opus' },
   contexto_max: '60 notas · 60000 car.',
+  crisis_periodos: '2000-03..2003-03 Puntocom | 2007-10..2009-02 Crisis financiera | 2020-01..2020-03 Covid | 2021-12..2022-09 Inflación y tipos',
 };
 
 export const ajustes = definirFormato({
@@ -51,6 +52,7 @@ export const ajustes = definirFormato({
       contexto_max: T.texto(),
       umbral_desviacion: T.porcentaje(),
       sectores_efectos: T.lista(T.texto()),
+      crisis_periodos: T.texto(),
     },
   }),
 });

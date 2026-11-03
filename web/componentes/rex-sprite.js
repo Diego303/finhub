@@ -6,6 +6,8 @@ const NARANJA = '#D85A30';
 const COLOR = { '#': NARANJA, o: '#4A1B0C', y: '#EF9F27' };
 const CUERPO = ['....####.....', '....#o####...', '....######...', '....####.....', '#..######....', '########.....', '.######......', '..#..#.......', '..#..#.......'];
 export const ESTADOS = ['quieto', 'piensa', 'habla', 'feliz', 'preocupado'];
+/** Los píxeles de Rex, para dibujarlo fuera del SVG (p. ej. el PNG de Tu año). */
+export const PIXELES_REX = { cuerpo: CUERPO, color: COLOR };
 const NOMBRES = { quieto: 'tranquilo', piensa: 'pensando', habla: 'hablando', feliz: 'contento', preocupado: 'preocupado' };
 
 const pixeles = unir(CUERPO.flatMap((fila, y) => [...fila].map((c, x) => (c === '.' ? '' : html`<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${COLOR[c]}"/>`))));

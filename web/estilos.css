@@ -125,3 +125,7 @@ tr.editando td { vertical-align: top; }
 .carga { padding: 40px; text-align: center; }
 @media (max-width: 900px) { .rejilla, .grid2 { grid-template-columns: 1fr; } .kpis, .kpis.cinco { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .rex, .think::after { animation: none; } }
+/* Herramientas: lista lateral (F7) */
+.herr { display: block; width: 100%; text-align: left; border: 0; border-left: 2px solid transparent; background: none; padding: 7px 8px; border-radius: 6px; margin-bottom: 2px; color: inherit; font: inherit; }
+.herr:hover { background: var(--surface-1); }
+.herr.on { background: var(--surface-1); border-left-color: var(--naranja); }

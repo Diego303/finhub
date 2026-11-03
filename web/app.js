@@ -13,7 +13,10 @@ import { abrirAjustes } from './componentes/ajustes.js';
 import { abrirPapelera } from './componentes/papelera.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
 import * as basicas from './vistas/basicas.js';
-import { vistaRex, ponerModo } from './vistas/rex.js';
+import { vistaRex, ponerModo, ponerExplicame, quitarExplicame } from './vistas/rex.js';
+import { vistaPanel } from './vistas/panel.js';
+import { vistaHerramientas, iniciarHerramientas, registrarAccionesHerramientas } from './vistas/herramientas.js';
+import { vistaTuAnio, registrarAccionesTuAnio } from './vistas/tu-ano.js';
 import { muestrario } from './vistas/muestrario.js';
 import { vistaMes, iniciarMes, registrarAccionesMes, enDobleClic, abrirRecurrentes, abrirCierre } from './vistas/mes.js';
 import { iniciarEditores, registrarEditores } from './componentes/editores.js';
@@ -21,16 +24,16 @@ import { vistaMetas, iniciarMetas, registrarAccionesMetas } from './vistas/metas
 import { vistaCartera, iniciarCartera, registrarAccionesCartera, abrirValores, abrirActivosObjetivo } from './vistas/cartera.js';
 
 export const PESTANAS = [
-  ['panel', 'Panel', basicas.panel],
+  ['panel', 'Panel', vistaPanel],
   ['mes', 'Mes', vistaMes],
   ['cartera', 'Cartera', vistaCartera],
   ['metas', 'Metas', vistaMetas],
-  ['herramientas', 'Herramientas', basicas.herramientas],
+  ['herramientas', 'Herramientas', vistaHerramientas],
   ['analisis', 'Análisis', basicas.analisis],
   ['descubrimientos', '🔭 Descubrimientos', basicas.descubrimientos],
   ['conocimiento', 'Conocimiento', basicas.conocimiento],
   ['rex', '🦖 Rex', vistaRex],
-  ['tuano', '✦ Tu año', basicas.tuano],
+  ['tuano', '✦ Tu año', vistaTuAnio],
 ];
 const OCULTAS = { muestrario };
 const SIN_LATERAL = new Set(['rex', 'tuano']);
@@ -133,6 +136,15 @@ accion('pendiente', (el) => {
   if (vistas[d]) location.hash = vistas[d];
   else abrirDestino(d, estado);
 });
+accion('explicame', (el) => {
+  ponerExplicame({ cifra: el.dataset.cifra, valor: el.dataset.valor, detalle: el.dataset.detalle });
+  if (location.hash === '#rex') render();
+  else location.hash = 'rex';
+});
+accion('explicame-quitar', () => {
+  quitarExplicame();
+  render();
+});
 accion('rex-modo', (el) => {
   ponerModo(el.dataset.modo);
   render();
@@ -189,6 +201,9 @@ iniciarCartera({ estado, render });
 registrarAccionesCartera();
 iniciarMetas({ estado, render });
 registrarAccionesMetas();
+iniciarHerramientas({ estado, render });
+registrarAccionesHerramientas();
+registrarAccionesTuAnio(() => estado);
 iniciarEditores(() => estado);
 registrarEditores();
 document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));

@@ -22,12 +22,13 @@ export function perfiles(modelo, plantillas = []) {
  * opciones: {perfil (id), plantillas, aportacion (céntimos/mes), anios, real}
  * → {metas, consumo, perfiles, perfil, proyeccion | {error}, libertad, inicial, aportacion, anios, real, avisos}
  */
-export function resumenMetas(modelo, hoy, { perfil = null, plantillas = [], aportacion = null, anios = 20, real = true } = {}) {
+export function resumenMetas(modelo, hoy, { perfil = null, plantillas = [], aportacion = null, anios = 20, real = true, inicial: inicialForzado = null, pausa = 0, consumoExtra = 0 } = {}) {
   const metas = progresoMetas(modelo, hoy);
-  const consumo = consumo12(modelo, hoy);
+  const c12 = consumo12(modelo, hoy);
+  const consumo = consumoExtra && c12.consumo !== null ? { ...c12, consumo: c12.consumo + consumoExtra } : c12;
   const ps = perfiles(modelo, plantillas);
   const elegido = ps.find((p) => p.id === perfil) ?? ps[0] ?? null;
-  const inicial = estadoCartera({ activos: modelo.activos, operaciones: modelo.operaciones, fotos: modelo.fotos, hasta: hoy }).valor;
+  const inicial = inicialForzado ?? estadoCartera({ activos: modelo.activos, operaciones: modelo.operaciones, fotos: modelo.fotos, hasta: hoy }).valor;
   const aporta = aportacion ?? aportacionMensualInversion(modelo);
   const base = { metas, consumo, perfiles: ps, perfil: elegido, inicial, aportacion: aporta, anios, real };
   if (!elegido) return { ...base, proyeccion: { error: 'sin perfil: fija un objetivo en Cartera o añade plantillas' }, libertad: null, avisos: [] };
@@ -38,13 +39,13 @@ export function resumenMetas(modelo, hoy, { perfil = null, plantillas = [], apor
     const supuestos = parseSupuestos(modelo.ajustes.proyeccion_manual);
     if (supuestos.error) proyeccion = { error: `supuestos de proyección en Ajustes: ${supuestos.error}` };
     else {
-      proyeccion = proyectarManual({ inicial, aportacion: aporta, anios, componentes, supuestos, real, inflacion: inflacionMedia(modelo.serie(SERIE_IPC)) ?? undefined });
+      proyeccion = proyectarManual({ inicial, aportacion: aporta, anios, componentes, supuestos, real, pausa, inflacion: inflacionMedia(modelo.serie(SERIE_IPC)) ?? undefined });
       avisos = proyeccion.avisos;
     }
   } else {
     const historico = historicoMezcla(componentes, (id) => modelo.serie(id));
     avisos = historico.avisos;
-    proyeccion = proyectarHistorico({ inicial, aportacion: aporta, anios, historico, real });
+    proyeccion = proyectarHistorico({ inicial, aportacion: aporta, anios, historico, real, pausa });
   }
   const libertad = proyeccion.error ? null : libertadFinanciera(proyeccion, consumo.consumo, modelo.ajustes.libertad_multiplicador ?? 25);
   return { ...base, proyeccion, libertad, avisos };

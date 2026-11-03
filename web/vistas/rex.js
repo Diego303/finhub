@@ -6,6 +6,15 @@ export const MODOS = [['chat', 'Chat'], ['opinan', '¿Qué opinan mis canales?']
 let modo = 'chat';
 export const ponerModo = (m) => (modo = MODOS.some((x) => x[0] === m) ? m : 'chat');
 
+// «?» Explícame (§5 Global): abre Rex «Mis finanzas» con el contexto de una cifra. Hasta F10, en blanco.
+let explicame = null;
+export function ponerExplicame(x) {
+  explicame = x;
+  modo = 'chat';
+}
+export const quitarExplicame = () => (explicame = null);
+export const explicameActual = () => explicame;
+
 function cuerpoModo(e) {
   const m = e.modelo;
   const aviso = (t) => html`<div class="mut" style="padding:30px 0;text-align:center;font-size:11.5px">${t}<br><span style="font-size:10.5px">Rex hablará con Claude en la fase F10.</span></div>`;
@@ -13,6 +22,7 @@ function cuerpoModo(e) {
     case 'chat':
       return html`<div class="fila" style="padding-bottom:6px"><span class="chip on">Mis finanzas + conocimiento</span><span class="chip">Conocimiento + internet</span></div>
         <div class="mut" style="font-size:10.5px;padding:6px 0">🔒 Ve tus gastos, cartera y base · <b style="font-weight:500">sin internet</b> · regla R1</div>
+        ${explicame ? html`<div class="banda" style="display:block;margin-bottom:6px" data-explicame><div class="entre"><b style="font-weight:500">«?» Explícame: ${explicame.cifra}</b><button type="button" class="go" data-accion="explicame-quitar" aria-label="Quitar el contexto">×</button></div><div style="font-size:11.5px">${explicame.valor}${explicame.detalle ? html` <span class="mut">· ${explicame.detalle}</span>` : ''}</div><div class="mut" style="font-size:10.5px;margin-top:4px">Rex te lo explicará con tus números y tus notas cuando le des luz verde (trabajo privado, sin internet). Llega en la fase F10.</div></div>` : ''}
         <div class="msg r">¡Hola! Soy Rex. Pregúntame por tus gastos, tu cartera, tus metas o el mundo. Cito las notas y los ficheros en los que me baso, y si no tengo evidencia te digo <b>no concluyente</b>.</div>
         <div class="fila" style="margin-top:6px"><label class="sr-only" for="pregunta-rex">Pregúntale a Rex</label><input class="inp" id="pregunta-rex" placeholder="Pregúntale a Rex…" style="flex:1;padding:8px 10px;font-size:12.5px" disabled><button type="button" class="pri" disabled>Enviar</button></div>`;
     case 'opinan':

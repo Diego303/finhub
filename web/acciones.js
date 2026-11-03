@@ -38,4 +38,14 @@ export function delegar(raiz) {
     ev.preventDefault();
     formularios.get(f.dataset.form)?.(f, Object.fromEntries(new FormData(f)), ev);
   });
+  // elementos que no son botones (p. ej. un hito del gráfico, role="button"): Enter y espacio los activan
+  raiz.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    const el = ev.target.closest('[data-accion][role="button"]');
+    if (!el || el.tagName === 'BUTTON') return;
+    const fn = acciones.get(el.dataset.accion);
+    if (!fn) return;
+    ev.preventDefault();
+    fn(el, ev);
+  });
 }
