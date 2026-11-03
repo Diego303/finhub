@@ -4,6 +4,13 @@ import { registrar, ErrorOp } from './motor.js';
 import { CLAVE_LISTA, specItems, seccionDe, buscarItem, existeItem, validarEntidad, validarKv, nodoItem, lineaDe, buscarBloque, textoBloque } from './comun.js';
 import { detectar, leer as leerFormato } from '../formato/index.js';
 import { fijarKv } from '../formato/motor.js';
+import { recalcularCierres } from './mes.js';
+
+// Editar cuentas.md (p. ej. un saldo inicial) cambia los saldos: se recalculan las fotos de los meses cerrados.
+const tocarLista = (tx, ruta) => {
+  tx.tocar(ruta);
+  if (ruta === 'cuentas.md' && tx.ctx.rutas) tx.alFinal('cierres-cuentas', () => recalcularCierres(tx));
+};
 
 function claveDe(doc) {
   const c = CLAVE_LISTA[doc.tipo];
@@ -21,7 +28,7 @@ registrar({
     const canon = validarEntidad(spec, valor, 'la entrada');
     if (existeItem(doc, seccion, clave, canon[clave])) throw new ErrorOp('invalida', `ya existe «${canon[clave]}» en ${ruta}`);
     seccionDe(doc, seccion, { crear: true }).nodos.push(nodoItem(canon));
-    tx.tocar(ruta);
+    tocarLista(tx, ruta);
     return { [clave]: canon[clave] };
   },
 
@@ -39,7 +46,7 @@ registrar({
       else nuevo[k] = v;
     }
     nodo.valor = validarEntidad(specItems(doc, seccion), nuevo, `«${valorClave}»`);
-    tx.tocar(ruta);
+    tocarLista(tx, ruta);
   },
 
   /** {ruta, clave, seccion?, que?} → a la papelera */
@@ -49,7 +56,7 @@ registrar({
     const { sec, nodo, indice } = buscarItem(doc, seccion, clave, valorClave);
     tx.aPapelera({ que: que ?? `${valorClave} (${ruta})`, ruta, tipo: 'entidad', seccion, indice, contenido: lineaDe(doc, seccion, nodo) });
     sec.nodos.splice(indice, 1);
-    tx.tocar(ruta);
+    tocarLista(tx, ruta);
   },
 
   /** {ruta, id, titulo, campos, cuerpo?} */

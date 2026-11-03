@@ -23,10 +23,19 @@ export function abrirAjustes(estado) {
       <div id="validacion-carpeta" class="mut" style="font-size:10.5px;margin-top:4px" aria-live="polite"></div>
       <div class="lab" style="margin-top:10px">Otros ajustes</div>
       <div style="font-size:11px;line-height:1.9" class="fila">
-        <label>Mes financiero: <select class="inp" disabled title="Cambiarlo reparte los movimientos: llega en F4"><option>${aj.mes_inicio_dia === 1 ? 'mes natural (día 1)' : `del ${aj.mes_inicio_dia} al ${aj.mes_inicio_dia - 1}`}</option></select></label>
+        <label>Mes financiero: <select class="inp" data-mes-inicio>${Array.from({ length: 28 }, (_, i) => i + 1).map((d) => html`<option value="${d}" ${aj.mes_inicio_dia === d ? 'selected' : ''}>${d === 1 ? 'mes natural (día 1)' : `del ${d} al ${d - 1}`}</option>`)}</select></label>
         <label>Tema: <select class="inp" data-tema>${[['auto', 'automático'], ['claro', 'claro'], ['oscuro', 'oscuro']].map(([v, t]) => html`<option value="${v}" ${aj.tema === v ? 'selected' : ''}>${t}</option>`)}</select></label>
       </div>
       <div class="mut" style="font-size:11px">Impuestos del ahorro, supuestos de proyección, Pendientes y su frecuencia, humor y accesorios de Rex: en la fase F12.</div>`,
+  });
+
+  dialogo.querySelector('[data-mes-inicio]').addEventListener('change', async (ev) => {
+    const dia = Number(ev.target.value);
+    const cerrados = estado.modelo.meses.filter((m) => estado.modelo.mes(m).estado.estado === 'cerrado').length;
+    const si = await confirmar(`Cambiar el mes financiero ${dia === 1 ? 'al mes natural' : `a «del ${dia} al ${dia - 1}»`} reparte TODOS tus movimientos en sus nuevos meses (el fichero se llama por el mes que termina).${cerrados ? ` Los meses cerrados afectados se marcarán «editados tras cierre» y se recalculará su foto (tienes ${cerrados}).` : ''} Se puede deshacer.`, { si: 'Cambiar y repartir' });
+    if (!si) return abrirAjustes(estado);
+    const r = await op('mes.cambiarInicio', { dia }, { mensaje: 'Mes financiero cambiado y movimientos repartidos' });
+    if (r?.avisos?.length) setTimeout(() => toast(r.avisos.join(' · ')), 3300);
   });
 
   dialogo.querySelector('[data-tema]').addEventListener('change', async (ev) => {

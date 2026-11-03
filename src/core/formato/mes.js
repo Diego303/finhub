@@ -71,7 +71,7 @@ export const mes = definirFormato({
     const movs = nodosItems(sec);
     for (const n of movs) {
       if (n.valor.id && !/^[a-z0-9]{4}$/.test(n.valor.id)) aviso(n, `id de movimiento «${n.valor.id}» no válido (4 letras o números)`);
-      if (n.valor.grupo === null) aviso(n, 'movimiento sin grupo: va a «sin grupo»');
+      if (n.valor.grupo === null && !n.valor.naturaleza) aviso(n, 'movimiento sin grupo: va a «sin grupo»');
       if (n.valor.importe === 0) aviso(n, 'importe 0');
     }
     const vistos = new Set();

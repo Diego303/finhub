@@ -2,6 +2,7 @@
 import { html } from '../esc.js';
 import { abrir } from './modal.js';
 import { formatearEuros, formatearPorcentaje } from '/core/dinero.js';
+import { EDITORES, abrirEditor } from './editores.js';
 
 export const ENTRADAS = [
   ['cuentas', 'Cuentas', 'Corriente, remunerada, efectivo… con su saldo', 'F4'],
@@ -55,6 +56,7 @@ function vista(id, m) {
 }
 
 export function abrirEntrada(id, modelo) {
+  if (EDITORES[id]) return abrirEditor(id);
   const e = ENTRADAS.find((x) => x[0] === id);
   abrir({
     titulo: e[1],

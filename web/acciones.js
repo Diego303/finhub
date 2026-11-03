@@ -2,11 +2,17 @@
 // Sin manejadores en línea: la CSP (script-src 'self') no los permitiría.
 const acciones = new Map();
 const cambios = new Map();
+const formularios = new Map();
+const entradas = new Map();
 
 /** accion('abrir-r1', (el, ev) => …) */
 export const accion = (nombre, fn) => acciones.set(nombre, fn);
 /** cambio('tema', (el, ev) => …) para <select>/<input data-cambio="…"> */
 export const cambio = (nombre, fn) => cambios.set(nombre, fn);
+/** formulario('anotar', (form, datos) => …) para <form data-form="…"> (Enter envía). */
+export const formulario = (nombre, fn) => formularios.set(nombre, fn);
+/** entrada('borrador', (el, ev) => …) para <input data-entrada-texto="…"> (cada tecla). */
+export const entrada = (nombre, fn) => entradas.set(nombre, fn);
 
 export function delegar(raiz) {
   raiz.addEventListener('click', (ev) => {
@@ -21,5 +27,15 @@ export function delegar(raiz) {
     const el = ev.target.closest('[data-cambio]');
     if (!el) return;
     cambios.get(el.dataset.cambio)?.(el, ev);
+  });
+  raiz.addEventListener('input', (ev) => {
+    const el = ev.target.closest('[data-entrada-texto]');
+    if (el) entradas.get(el.dataset.entradaTexto)?.(el, ev);
+  });
+  raiz.addEventListener('submit', (ev) => {
+    const f = ev.target.closest('form[data-form]');
+    if (!f) return;
+    ev.preventDefault();
+    formularios.get(f.dataset.form)?.(f, Object.fromEntries(new FormData(f)), ev);
   });
 }

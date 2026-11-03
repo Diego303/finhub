@@ -102,7 +102,7 @@ export class App {
 
   ctxOps() {
     const ajustes = this.ajustesDe(this.almacen);
-    return { ajustes, formato: { diaInicio: ajustes.mes_inicio_dia }, prng: crearPrng(randomInt(1, 2 ** 31)), hoy: fechaLocal() };
+    return { ajustes, formato: { diaInicio: ajustes.mes_inicio_dia }, prng: crearPrng(randomInt(1, 2 ** 31)), hoy: fechaLocal(), rutas: [...this.almacen.ficheros.keys()] };
   }
 
   // ---------- operaciones ----------

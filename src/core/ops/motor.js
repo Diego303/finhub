@@ -36,8 +36,9 @@ function crearTx(leer, ctx) {
   const escribir = new Map(); // ruta → texto | null
   const papelera = [];
   const avisos = [];
+  const finales = new Map();
   const tx = {
-    ctx,
+    ctx: ctx ?? {},
     /** Documento parseado de una ruta; `crear` da uno vacío si no existe. */
     doc(ruta, { crear = false, ctxFormato = {} } = {}) {
       if (docs.has(ruta)) return docs.get(ruta).doc;
@@ -55,7 +56,12 @@ function crearTx(leer, ctx) {
       docs.set(ruta, { doc, original: original ?? null });
       return doc;
     },
-    existe: (ruta) => (docs.has(ruta) ? !docs.get(ruta).borrado : leer(ruta) !== null && leer(ruta) !== undefined),
+    existe: (ruta) => (docs.has(ruta) ? !docs.get(ruta).borrado && (docs.get(ruta).doc !== null || docs.get(ruta).texto !== null || docs.get(ruta).original !== null) : leer(ruta) !== null && leer(ruta) !== undefined),
+    /** Rutas de datos existentes con un prefijo (ctx.rutas + las creadas en esta operación − las borradas). */
+    rutas(prefijo = '') {
+      const todas = new Set([...(ctx.rutas ?? []), ...docs.keys()]);
+      return [...todas].filter((r) => r.startsWith(prefijo) && tx.existe(r)).sort();
+    },
     texto: (ruta) => leer(ruta),
     /** Marca un documento como modificado (se serializa al final). */
     tocar(ruta) {
@@ -81,16 +87,25 @@ function crearTx(leer, ctx) {
     },
     aPapelera: (entrada) => papelera.push(entrada),
     aviso: (m) => avisos.push(m),
+    /** Tarea que se ejecuta una vez al final de la operación (la última registrada con esa clave). */
+    alFinal: (clave, fn) => finales.set(clave, fn),
+    /** Ejecuta otra operación registrada dentro de ESTA transacción (mismos documentos). */
+    sub(nombre, args) {
+      const fn = REGISTRO.get(nombre);
+      if (!fn) throw new ErrorOp('invalida', `operación desconocida «${nombre}»`);
+      return fn(tx, args ?? {}, tx.ctx) ?? null;
+    },
   };
-  return { tx, docs, escribir, papelera, avisos };
+  return { tx, docs, escribir, papelera, avisos, finales };
 }
 
 /** Aplica una operación. Puro: mismo (textos, args, ctx) → mismo resultado. */
 export function aplicarOp(leer, nombre, args = {}, ctx = {}) {
   const fn = REGISTRO.get(nombre);
   if (!fn) throw new ErrorOp('invalida', `operación desconocida «${nombre}»`);
-  const { tx, docs, escribir, papelera, avisos } = crearTx(leer, ctx);
+  const { tx, docs, escribir, papelera, avisos, finales } = crearTx(leer, ctx);
   const resultado = fn(tx, args ?? {}, ctx) ?? null;
+  for (const f of finales.values()) f();
   const salida = {};
   const anterior = {};
   for (const ruta of escribir.keys()) {

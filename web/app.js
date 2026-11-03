@@ -4,7 +4,7 @@ import { estado, alCambiar, cargar, sincronizar, ponerRex } from './estado.js';
 import { accion, delegar } from './acciones.js';
 import { pedir } from './api.js';
 import { toast } from './componentes/toast.js';
-import { abrir, confirmar, hayModal } from './componentes/modal.js';
+import { abrir, confirmar, hayModal, repintarModal } from './componentes/modal.js';
 import { cabecera, bandas } from './componentes/cabecera.js';
 import { abrirEntrada } from './componentes/gestion.js';
 import { cajaPendientes, abrirDestino } from './componentes/pendientes.js';
@@ -15,10 +15,12 @@ import { arrancarAnimacion } from './componentes/rex-sprite.js';
 import * as basicas from './vistas/basicas.js';
 import { vistaRex, ponerModo } from './vistas/rex.js';
 import { muestrario } from './vistas/muestrario.js';
+import { vistaMes, iniciarMes, registrarAccionesMes, enDobleClic, abrirRecurrentes, abrirCierre } from './vistas/mes.js';
+import { iniciarEditores, registrarEditores } from './componentes/editores.js';
 
 export const PESTANAS = [
   ['panel', 'Panel', basicas.panel],
-  ['mes', 'Mes', basicas.mes],
+  ['mes', 'Mes', vistaMes],
   ['cartera', 'Cartera', basicas.cartera],
   ['metas', 'Metas', basicas.metas],
   ['herramientas', 'Herramientas', basicas.herramientas],
@@ -53,6 +55,7 @@ function contenido() {
 export function render() {
   const t0 = performance.now();
   const activo = document.activeElement;
+  const cursor = activo && typeof activo.selectionStart === 'number' ? activo.selectionStart : null;
   const clave = activo?.id || (activo?.dataset?.accion ? `${activo.dataset.accion}|${activo.dataset.vista ?? activo.dataset.destino ?? activo.dataset.modo ?? ''}` : null);
   const marco = document.getElementById('marco');
   pintar(
@@ -65,7 +68,9 @@ export function render() {
     const [acc, dato] = clave.split('|');
     const el = dato !== undefined ? marco.querySelector(`[data-accion="${acc}"][data-vista="${dato}"], [data-accion="${acc}"][data-destino="${dato}"], [data-accion="${acc}"][data-modo="${dato}"], [data-accion="${acc}"]`) : document.getElementById(clave);
     el?.focus({ preventScroll: true });
+    if (el && cursor !== null && el.setSelectionRange && el.id === activo.id) el.setSelectionRange(cursor, cursor);
   }
+  repintarModal();
   const ms = Math.round(performance.now() - t0);
   estado.tiempos.render = ms;
   marco.dataset.renderMs = String(ms);
@@ -114,6 +119,8 @@ accion('conflictos', () =>
 accion('pendiente', (el) => {
   const d = el.dataset.destino;
   const vistas = { mes: 'mes', descubrimientos: 'descubrimientos', predicciones: 'conocimiento', contexto: 'conocimiento', pausas: 'rex' };
+  if (d === 'recurrentes') return abrirRecurrentes(estado);
+  if (d === 'cierre') return abrirCierre(estado);
   if (d === 'pausas') ponerModo('pausa');
   if (vistas[d]) location.hash = vistas[d];
   else abrirDestino(d, estado);
@@ -168,6 +175,11 @@ window.addEventListener('hashchange', () => {
 });
 estado.vista = vistaDesdeHash();
 delegar(document.getElementById('app'));
+iniciarMes({ estado, render });
+registrarAccionesMes();
+iniciarEditores(() => estado);
+registrarEditores();
+document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));
 alCambiar(render);
 render();
 arrancarAnimacion();
