@@ -2,7 +2,7 @@
 // Prueba REAL de los trabajos de Claude (F9, «una ejecución real de cada tipo con datos de ejemplo»).
 // Usa la carpeta de ejemplo en memoria (datos INVENTADOS), sandbox y registro en un temporal que se borra,
 // y nunca escribe en el repo ni en una carpeta de datos. Solo llama a Claude con --real.
-// Uso: node scripts/probar-claude.js --real [--trabajos pulso,datos] [--modelo haiku|config]
+// Uso: node scripts/probar-claude.js --real [--trabajos pulso,datos] [--tareas quiz,…] [--casos descubrir-pulso,descubrir-seguimiento,encaje] [--modelo haiku|config]
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -23,9 +23,11 @@ if (!args.includes('--real')) {
   console.error('Esto llama al Claude REAL (gasta uso de tu cuenta). Añade --real para confirmarlo.');
   process.exit(2);
 }
-const elegidos = (opt('trabajos') ?? (opt('tareas') ? '' : TRABAJOS.map((t) => t.id).join(','))).split(',').filter(Boolean);
+const elegidos = (opt('trabajos') ?? (opt('tareas') || opt('casos') ? '' : TRABAJOS.map((t) => t.id).join(','))).split(',').filter(Boolean);
 // --tareas escenarios-12m,quiz… : privado y conocimiento con su tarea, con los parámetros que monta el servidor
 const tareasElegidas = (opt('tareas') ?? '').split(',').filter(Boolean);
+// --casos (F11): descubrir en sus modos y encaje, con los parámetros que monta el servidor
+const casosElegidos = (opt('casos') ?? '').split(',').filter(Boolean);
 const modeloElegido = opt('modelo', 'haiku');
 const HOY = fechaLocal();
 const M = construirModelo(Object.fromEntries([...generar()].filter(([r]) => r.endsWith('.md')).map(([r, texto]) => [r, { texto, version: 'v' }])));
@@ -75,6 +77,22 @@ try {
     const s = Math.round((Date.now() - t0) / 1000);
     console.log(`${r.estado} en ${s} s`);
     filas.push({ trabajo: `${tt.trabajo}/${id}`, estado: r.estado, modelo: r.registro.modelo, herramientas: '—', turnos: r.registro.turnos, segundos: s, coste: r.registro.coste, detalle: r.estado === 'ok' ? `${Object.entries(r.json).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : typeof v === 'string' ? `${v.length} car.` : '…'}`).join(', ')}${r.avisos.length ? ` · avisos: ${r.avisos.join(' | ')}` : ''}` : (r.motivo ?? r.mensaje ?? '') });
+  }
+  const CASOS = { 'descubrir-pulso': ['descubrir', { modo: 'pulso', periodo: '1m', profundidad: 'rapida', filtros: ['fondos indexados', 'ETF'] }], 'descubrir-nuevas': ['descubrir', { modo: 'nuevas', tema: 'salud', profundidad: 'rapida' }], 'descubrir-seguimiento': ['descubrir', { modo: 'seguimiento', id: 'D-007', periodo: '1m', profundidad: 'rapida' }], encaje: ['encaje', { descubrimiento: 'D-007', pct: 10, de: 'todo' }] };
+  for (const id of casosElegidos) {
+    if (!CASOS[id]) {
+      console.log(`· ${id}: no existe`);
+      continue;
+    }
+    const [tid, crudos] = CASOS[id];
+    const t = trabajoDe(tid);
+    process.stdout.write(`· ${id}… `);
+    const t0 = Date.now();
+    const params = servicio2.parametros(tid, crudos, M);
+    const r = await ejecutarTrabajo({ trabajo: t, modelo: M, params, hoy: HOY, servicio, sesiones, runner: { comando: ['claude'], sandboxBase: join(dir, 'sandbox'), persistir: false }, modeloClaude: modeloElegido === 'config' ? t.modelo : modeloElegido });
+    const s = Math.round((Date.now() - t0) / 1000);
+    console.log(`${r.estado} en ${s} s`);
+    filas.push({ trabajo: id, estado: r.estado, modelo: r.registro.modelo, herramientas: (r.registro.herramientas ?? []).map((h) => h.nombre).join(' ') || '—', turnos: r.registro.turnos, segundos: s, coste: r.registro.coste, detalle: r.estado === 'ok' ? `${Object.entries(r.json).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : typeof v === 'string' ? `${v.length} car.` : String(v)}`).join(', ')}${r.avisos.length ? ` · avisos: ${r.avisos.join(' | ')}` : ''}` : (r.motivo ?? r.mensaje ?? '') });
   }
 } finally {
   await rm(dir, { recursive: true, force: true });

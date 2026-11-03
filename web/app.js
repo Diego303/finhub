@@ -15,9 +15,9 @@ import { registrarIngesta } from './componentes/ingesta.js';
 import { abrirAjustes } from './componentes/ajustes.js';
 import { abrirPapelera } from './componentes/papelera.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
-import * as basicas from './vistas/basicas.js';
 import { vistaRex, ponerModo, ponerExplicame, quitarExplicame, iniciarRex, registrarAccionesRex } from './vistas/rex.js';
 import { vistaAnalisis, iniciarAnalisis, registrarAccionesAnalisis } from './vistas/analisis.js';
+import { vistaDescubrimientos, iniciarDescubrimientos, registrarAccionesDescubrimientos, abrirPreciosSeguimiento } from './vistas/descubrimientos.js';
 import { vistaPanel } from './vistas/panel.js';
 import { vistaConocimiento, iniciarConocimiento, registrarAccionesConocimiento } from './vistas/conocimiento.js';
 import { vistaHerramientas, iniciarHerramientas, registrarAccionesHerramientas } from './vistas/herramientas.js';
@@ -35,7 +35,7 @@ export const PESTANAS = [
   ['metas', 'Metas', vistaMetas],
   ['herramientas', 'Herramientas', vistaHerramientas],
   ['analisis', 'Análisis', vistaAnalisis],
-  ['descubrimientos', '🔭 Descubrimientos', basicas.descubrimientos],
+  ['descubrimientos', '🔭 Descubrimientos', vistaDescubrimientos],
   ['conocimiento', 'Conocimiento', vistaConocimiento],
   ['rex', '🦖 Rex', vistaRex],
   ['tuano', '✦ Tu año', vistaTuAnio],
@@ -139,6 +139,7 @@ accion('pendiente', (el) => {
   if (d === 'valores') return abrirValores(estado);
   if (d === 'datos') return abrirDatos();
   if (d === 'pulso') return abrirPulso();
+  if (d === 'seguimiento') return abrirPreciosSeguimiento();
   if (d === 'pausas') ponerModo('pausa');
   if (vistas[d]) location.hash = vistas[d];
   else abrirDestino(d, estado);
@@ -220,6 +221,8 @@ iniciarRex({ estado, render });
 registrarAccionesRex();
 iniciarAnalisis({ estado, render });
 registrarAccionesAnalisis();
+iniciarDescubrimientos({ estado, render });
+registrarAccionesDescubrimientos();
 document.addEventListener('finhub:claude', () => render());
 iniciarEditores(() => estado);
 registrarEditores();

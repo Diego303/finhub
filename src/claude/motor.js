@@ -94,7 +94,7 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
   alEvento({ tipo: 'inicio', id, trabajo: trabajo.id, seleccion: entrada.seleccion ? { usadas: entrada.seleccion.usadas, total: entrada.seleccion.total } : null });
   let intento = 0;
   for (;;) {
-    const r = await ejecutar(trabajo, { sistema: prompt.sistema, usuario: prompt.usuario, modelo: modeloClaude ?? trabajo.modelo, resume, ...runner, senal, alEvento: (e) => alEvento({ ...e, id }) });
+    const r = await ejecutar(trabajo, { sistema: prompt.sistema, usuario: prompt.usuario, modelo: modeloClaude ?? trabajo.modelo, resume, timeoutMs: entrada.timeoutMs ?? trabajo.timeoutMs, ...runner, maxTurns: Math.min(entrada.maxTurns ?? trabajo.maxTurns, 60), senal, alEvento: (e) => alEvento({ ...e, id }) });
     Object.assign(linea, { modelo: r.init?.modelo ?? null, version: r.init?.version ?? null, herramientas: r.herramientas, turnos: r.resultado?.turnos ?? null, coste: r.resultado?.coste ?? null, sesion: trabajo.sesion ? r.sesion : null });
     if (r.estado !== 'ok') return fin({ estado: 'error', codigo: r.codigo, mensaje: r.mensaje, motivo: [r.mensaje, ...(r.motivos ?? [])].filter(Boolean).join(' · ') });
     if (trabajo.sesion && r.sesion) await sesiones.guardar(r.sesion, trabajo.id).catch(() => {});

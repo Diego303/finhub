@@ -12,8 +12,16 @@ const NOMBRES = { quieto: 'tranquilo', piensa: 'pensando', habla: 'hablando', fe
 
 const pixeles = unir(CUERPO.flatMap((fila, y) => [...fila].map((c, x) => (c === '.' ? '' : html`<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${COLOR[c]}"/>`))));
 
+// Accesorio temporal (§5): la lupa mientras «descubrir» investiga. Los fijos (gafas, corbata…) llegan en F12.
+let accesorio = '';
+export function ponerAccesorioRex(a = '') {
+  accesorio = a;
+  document.querySelectorAll('[data-rex]').forEach((el) => (el.dataset.rexAccesorio = a));
+}
+export const accesorioRex = () => accesorio;
+
 /** Interior del SVG para un estado y un fotograma (la animación alterna fotogramas). */
-export function interior(estado, f = 0) {
+export function interior(estado, f = 0, acc = '') {
   const impar = f % 2 === 1;
   const partes = [pixeles];
   if (estado === 'habla' && impar) partes.push(html`<rect x="8" y="3" width="2" height="0.6" fill="${COLOR.o}"/>`);
@@ -24,13 +32,16 @@ export function interior(estado, f = 0) {
   }
   partes.push(html`<rect x="5.6" y="1.2" width="1.6" height="1.6" fill="none" stroke="#444441" stroke-width="0.25"/>`);
   const cy = 5.2 + (estado === 'feliz' && impar ? -1.2 : 0) + (estado === 'preocupado' ? 0.4 : 0);
-  partes.push(html`<circle cx="9.6" cy="${cy}" r="1.1" fill="${COLOR.y}"/><text x="9.6" y="${cy + 0.45}" font-size="1.4" text-anchor="middle" fill="#633806" font-family="monospace">€</text>`);
+  if (acc === 'lupa') {
+    const dx = impar ? 0.3 : 0;
+    partes.push(html`<line x1="${9.4 + dx}" y1="6.4" x2="${10.4 + dx}" y2="5.2" stroke="#444441" stroke-width="0.45"/><circle cx="${11.2 + dx}" cy="4.3" r="1.25" fill="#B5D4F4" fill-opacity="0.6" stroke="#444441" stroke-width="0.35"/>`);
+  } else partes.push(html`<circle cx="9.6" cy="${cy}" r="1.1" fill="${COLOR.y}"/><text x="9.6" y="${cy + 0.45}" font-size="1.4" text-anchor="middle" fill="#633806" font-family="monospace">€</text>`);
   return unir(partes);
 }
 
 /** <svg> de Rex. Se anima solo (ticker) y cambia con data-rex-estado. */
 export function rex(ancho, alto, estado = 'quieto') {
-  return html`<svg class="rex" data-rex data-rex-estado="${estado}" width="${ancho}" height="${alto}" viewBox="-1 -2 14 12" role="img" aria-label="Rex ${NOMBRES[estado] ?? estado}">${interior(estado, 0)}</svg>`;
+  return html`<svg class="rex" data-rex data-rex-estado="${estado}" data-rex-accesorio="${accesorio}" width="${ancho}" height="${alto}" viewBox="-1 -2 14 12" role="img" aria-label="Rex ${NOMBRES[estado] ?? estado}${accesorio === 'lupa' ? ' con la lupa' : ''}">${interior(estado, 0, accesorio)}</svg>`;
 }
 
 let fotograma = 0;
@@ -42,8 +53,9 @@ export function arrancarAnimacion() {
     fotograma++;
     document.querySelectorAll('[data-rex]').forEach((el) => {
       const e = el.dataset.rexEstado;
-      el.setAttribute('aria-label', `Rex ${NOMBRES[e] ?? e}`);
-      pintar(el, interior(e, reducido ? 0 : fotograma));
+      const a = el.dataset.rexAccesorio ?? '';
+      el.setAttribute('aria-label', `Rex ${NOMBRES[e] ?? e}${a === 'lupa' ? ' con la lupa' : ''}`);
+      pintar(el, interior(e, reducido ? 0 : fotograma, a));
     });
   }, 350);
 }

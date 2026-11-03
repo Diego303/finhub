@@ -108,8 +108,6 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space:
 .banda.aviso { background: var(--bg-warning); color: var(--text-warning); }
 .banda.error { background: var(--text-danger); color: #fff; }
 .r1bar { margin-top: 8px; padding: 6px 10px; border-radius: 6px; background: var(--surface-2); border: .5px solid var(--border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 11px; width: 100%; text-align: left; }
-.proximamente { padding: 22px 14px; text-align: center; }
-.proximamente ul { text-align: left; display: inline-block; margin: 8px 0 0; padding-left: 18px; font-size: 11.5px; line-height: 1.8; }
 .rex { image-rendering: pixelated; flex: none; animation: bob 2.4s ease-in-out infinite; }
 .enlace { border: 0; padding: 0; background: none; text-align: left; text-decoration: underline; font-size: inherit; color: inherit; font-family: inherit; }
 .mini-rex { margin-top: 8px; display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; font: inherit; color: inherit; }

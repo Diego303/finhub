@@ -15,7 +15,10 @@ import { tuAnio, tarjetas } from '../core/tu-ano.js';
 import { items, textoSeccion } from '../core/formato/motor.js';
 import { limitesSemana } from '../core/fechas.js';
 import { readdirSync } from 'node:fs';
-import { fechaLocal, mesDe } from '../core/fechas.js';
+import { fechaLocal, mesDe, sumarDias, esFecha } from '../core/fechas.js';
+import { isinsSeguidos } from '../core/descubrimientos.js';
+import { textoInforme } from '../claude/trabajos/encaje.js';
+import { MODOS_DESCUBRIR, PROFUNDIDAD } from '../claude/trabajos/descubrir.js';
 
 const RAIZ_REPO = join(import.meta.dirname, '..', '..');
 const CONSERVAR = 20; // ejecuciones terminadas que se recuerdan en memoria
@@ -99,6 +102,19 @@ export class ServicioClaude {
       const activos = params.misActivos ? modelo.activos.filter((a) => !a.campos.archivado).map((a) => a.titulo) : null;
       return { fecha: params.fecha, temas: params.temas ?? [], activos };
     }
+    if (id === 'precios' && params.seguimiento) {
+      const activos = isinsSeguidos(modelo);
+      if (!activos.length) throw Object.assign(new Error('no sigues ningún descubrimiento con ISIN de referencia'), { estado: 400 });
+      return { activos };
+    }
+    if (id === 'descubrir') return this.parametrosDescubrir(params, modelo);
+    if (id === 'encaje') {
+      const d = modelo.descubrimientos.find((x) => x.id === params.descubrimiento);
+      if (!d) throw Object.assign(new Error('elige un descubrimiento'), { estado: 400 });
+      const de = params.de === 'aportaciones' || (typeof params.de === 'string' && params.de.startsWith('activo:') && modelo.activos.some((a) => `activo:${a.id}` === params.de)) ? params.de : 'todo';
+      const t = this.tareasYRoles().tareas.get('encaje');
+      return { descubrimiento: d.id, pct: Math.min(50, Math.max(0, Number(params.pct) || 5)), de, tarea: t?.trabajo === 'encaje' ? { id: t.id, instrucciones: t.instrucciones } : null };
+    }
     if (id === 'precios') {
       const ids = new Set(params.ids ?? []);
       const activos = modelo.activos.filter((a) => a.campos.isin && !a.campos.archivado && (!ids.size || ids.has(a.id))).map((a) => ({ isin: a.campos.isin, nombre: a.titulo }));
@@ -106,6 +122,29 @@ export class ServicioClaude {
       return { activos };
     }
     return params;
+  }
+
+  /** Descubrir (§5 Descubrimientos): modo, periodo, tema, filtros, nombres de clases (si los activas) y profundidad. */
+  parametrosDescubrir(params, modelo) {
+    const hoy = fechaLocal();
+    const modo = MODOS_DESCUBRIR.includes(params.modo) ? params.modo : 'libre';
+    const t = this.tareasYRoles().tareas.get(`descubrir-${modo}`);
+    let anterior = null;
+    if (modo === 'seguimiento') {
+      const d = modelo.descubrimientos.find((x) => x.id === params.id);
+      if (!d || !d.versiones.length) throw Object.assign(new Error('elige el descubrimiento que quieres revisar'), { estado: 400 });
+      anterior = { id: d.id, titulo: d.titulo, version: d.versiones[0].id, fecha: d.versiones[0].titulo, texto: textoInforme(d) };
+    }
+    const DIAS = { hoy: 0, '1s': 7, '1m': 30, '3m': 91 };
+    let desde = null;
+    let hasta = null;
+    if (params.periodo === 'rango') {
+      if (!esFecha(params.desde) || !esFecha(params.hasta) || params.desde > params.hasta) throw Object.assign(new Error('el rango de fechas no es válido'), { estado: 400 });
+      ({ desde, hasta } = params);
+    } else if (params.periodo in DIAS) [desde, hasta] = [sumarDias(hoy, -DIAS[params.periodo]), hoy];
+    if (modo === 'libre' && !String(params.tema ?? '').trim()) throw Object.assign(new Error('escribe la pregunta'), { estado: 400 });
+    const filtros = (Array.isArray(params.filtros) ? params.filtros : []).filter((f) => typeof f === 'string' && f.trim()).map((f) => f.trim().slice(0, 60)).slice(0, 10);
+    return { modo, desde, hasta, tema: String(params.tema ?? '').slice(0, 2000), filtros, clases: params.misClases ? modelo.clases.map((c) => c.nombre) : null, profundidad: params.profundidad in PROFUNDIDAD ? params.profundidad : 'normal', tarea: t?.trabajo === 'descubrir' ? { id: t.id, instrucciones: t.instrucciones } : null, anterior };
   }
 
   /** Tarea, rol y contexto extra de privado y conocimiento (los monta el servidor con tus datos). */

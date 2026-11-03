@@ -76,7 +76,7 @@ test('pendientes hoy: estado de cada elemento, contador x/4 y próximos (§4.8)'
 });
 
 test('pendientes configurables y sin datos', () => {
-  assert.deepEqual([...pendientesActivos('pulso diario | valores semanal(dom)')].sort(), ['descubrimientos', 'pulso', 'valores']);
+  assert.deepEqual([...pendientesActivos('pulso diario | valores semanal(dom)')].sort(), ['descubrimientos', 'pulso', 'seguimiento', 'valores']);
   const m = construirModelo({ ...ficheros, 'ajustes.md': { texto: '# Ajustes\nesquema: 1\n- pendientes: pulso diario | valores semanal\n', version: 'v' } });
   assert.deepEqual(pendientes(m, { fecha: '2026-11-03' }).elementos.map((e) => e.id), ['pulso', 'valores']);
   const vacio = pendientes(construirModelo({}), { fecha: '2026-11-03' });

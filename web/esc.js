@@ -42,6 +42,15 @@ export function enlace(url) {
 }
 
 /** Pinta un fragmento seguro en un elemento. Un texto suelto se escapa siempre. */
+// Reentrada: al sustituir un innerHTML, el elemento con el foco se quita y dispara «blur» (y «change» si
+// estaba editado); si su manejador repinta, ese repintado se aplaza a cuando acabe el que está en curso.
+let pintando = 0;
 export function pintar(el, contenido) {
-  el.innerHTML = contenido instanceof Seguro ? contenido.texto : esc(contenido);
+  if (pintando) return void queueMicrotask(() => pintar(el, contenido));
+  pintando++;
+  try {
+    el.innerHTML = contenido instanceof Seguro ? contenido.texto : esc(contenido);
+  } finally {
+    pintando--;
+  }
 }

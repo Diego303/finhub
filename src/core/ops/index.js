@@ -6,5 +6,6 @@ import './cartera.js';
 import './metas.js';
 import './conocimiento.js';
 import './ia.js';
+import './descubrimientos.js';
 
 export { aplicarOp, operaciones, ErrorOp } from './motor.js';

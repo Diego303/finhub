@@ -7,10 +7,12 @@ import { pedir, obtener, op } from '../api.js';
 import { abrir, cerrar, repintarModal } from './modal.js';
 import { toast } from './toast.js';
 import { ponerRex, estado } from '../estado.js';
+import { ponerAccesorioRex } from './rex-sprite.js';
 
 const oyentes = new Set();
 /** El SSE de estado.js llama aquí con cada evento «claude». */
 export function eventoClaude(ev) {
+  if (ev.trabajo === 'descubrir') ponerAccesorioRex(ev.tipo === 'fin' ? '' : 'lupa');
   if (ev.tipo === 'inicio') ponerRex('piensa');
   else if (ev.tipo === 'texto') ponerRex('habla');
   else if (ev.tipo === 'fin') {

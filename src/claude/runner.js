@@ -49,9 +49,9 @@ const MENSAJES = {
 
 /**
  * Ejecuta un trabajo. → Promise<{estado: ok|error, codigo?, mensaje?, texto, sesion, init, herramientas, resultado, motivos?}>
- * opciones: {sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume, persistir, timeoutMs, initMs, senal, alEvento}
+ * opciones: {sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume, persistir, timeoutMs, initMs, senal, alEvento, maxTurns}
  */
-export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume = null, persistir = trabajo.sesion ?? false, timeoutMs = trabajo.timeoutMs, initMs = INIT_MS, senal = null, alEvento = () => {}, env = process.env }) {
+export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume = null, persistir = trabajo.sesion ?? false, timeoutMs = trabajo.timeoutMs, initMs = INIT_MS, senal = null, alEvento = () => {}, env = process.env, maxTurns = trabajo.maxTurns }) {
   const sandbox = await crearSandbox(sandboxBase);
   const herramientas = [];
   let texto = '';
@@ -60,7 +60,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
   let resultado = null;
   let limite = null;
   let fin = null; // {estado, codigo, motivos}
-  const args = argumentos(trabajo, { sistema, modelo, resume, persistir });
+  const args = argumentos(trabajo, { sistema, modelo, resume, persistir, maxTurns });
   try {
     return await new Promise((resolver) => {
       let hijo;

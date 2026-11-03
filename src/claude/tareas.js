@@ -33,6 +33,11 @@ export const TAREAS_CODIGO = {
   'opinan-canales': { trabajo: 'conocimiento', esquema: 'opinan' },
   'resumen-semanal': { trabajo: 'conocimiento', esquema: 'semana' },
   quiz: { trabajo: 'conocimiento', esquema: 'quiz' },
+  'descubrir-pulso': { trabajo: 'descubrir' },
+  'descubrir-nuevas': { trabajo: 'descubrir' },
+  'descubrir-seguimiento': { trabajo: 'descubrir' },
+  'descubrir-libre': { trabajo: 'descubrir' },
+  encaje: { trabajo: 'encaje' },
 };
 /** Esquema por defecto de cada trabajo para tareas propias del usuario. */
 export const ESQUEMA_DEFECTO = { privado: 'chat', conocimiento: 'opinan' };

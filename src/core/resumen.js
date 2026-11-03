@@ -1,6 +1,6 @@
 // «Pendientes hoy» (§4.8), calculado por código. Nada se ejecuta solo: cada elemento es tu luz verde.
 // El resumen al abrir y Tu año llegan en F7.
-import { mesFinanciero, periodoMes, diasEntre, sumarDias, textoCorto, MESES, partesMes } from './fechas.js';
+import { mesFinanciero, periodoMes, diasEntre, sumarDias, textoCorto, MESES, partesMes, mesDe, sumarMesesMes } from './fechas.js';
 import { recurrentesDelMes, proximos } from './recurrentes.js';
 import { formatearEuros } from './dinero.js';
 import { RE_MEDIR } from './formato/conocimiento.js';
@@ -10,7 +10,7 @@ const PRINCIPALES = ['pulso', 'movimientos', 'recurrentes', 'valores'];
 /** Qué elementos están activados en `ajustes.pendientes` ("pulso diario | movimientos 1d | …"). */
 export function pendientesActivos(texto) {
   const ids = String(texto ?? '').split('|').map((t) => t.trim().split(/\s+/)[0]).filter(Boolean);
-  return new Set([...ids, 'descubrimientos']);
+  return new Set([...ids, 'descubrimientos', 'seguimiento']);
 }
 
 const nombreMes = (mes) => MESES[partesMes(mes).m - 1];
@@ -54,7 +54,13 @@ export function pendientes(modelo, { fecha: hoy, hora = '00:00' }, { contexto = 
   // los demás solo aparecen cuando hay algo que hacer
   const revisar = modelo.descubrimientos.filter((d) => d.estado === 'siguiendo' && d.revisar && d.revisar <= hoy);
   if (revisar.length) anadir({ id: 'descubrimientos', titulo: 'Descubrimientos para revisar', hecho: false, detalle: revisar.map((d) => `«${d.titulo}» (${textoCorto(d.revisar)})`).join(' · '), accion: { texto: 'ver', destino: 'descubrimientos' } });
-  const viejas = modelo.series.filter((s) => !s.actualizado || s.actualizado < hoy.slice(0, 8) + '01');
+  // precios de lo que sigues (§4.9): referencias ISIN sin el cierre del mes pasado; los pide «precios» con tu luz verde
+  const RE_ISIN = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
+  const mesPasado = sumarMesesMes(mesDe(hoy), -1);
+  const sinPrecio = modelo.descubrimientos.filter((d) => d.estado === 'siguiendo' && RE_ISIN.test(d.referencia ?? '') && (modelo.serie(d.referencia.toLowerCase())?.at(-1)?.mes ?? '') < mesPasado);
+  if (sinPrecio.length) anadir({ id: 'seguimiento', titulo: 'Precios de lo que sigues', hecho: false, detalle: sinPrecio.map((d) => `«${d.titulo}» (${d.referencia})`).join(' · '), accion: { texto: 'actualizar', destino: 'seguimiento' } });
+  const esSeguimiento = (id) => /^[a-z]{2}[a-z0-9]{9}\d$/.test(id);
+  const viejas = modelo.series.filter((s) => !esSeguimiento(s.id) && (!s.actualizado || s.actualizado < hoy.slice(0, 8) + '01'));
   if (viejas.length || !modelo.series.length) anadir({ id: 'datos', titulo: `Datos de mercado (${nombreMes(mes).slice(0, 3)})`, hecho: false, detalle: modelo.series.length ? `${viejas.length} series sin actualizar este mes` : 'aún no hay series: créalas con tu luz verde', accion: { texto: 'actualizar', destino: 'datos' } });
   const diasParaFin = diasEntre(hoy, periodo.hasta);
   if (datosMes?.estado.estado !== 'cerrado' && (diasParaFin <= 3 || Number(hoy.slice(8)) >= 28)) anadir({ id: 'cierre', titulo: `Cerrar ${nombreMes(mes)}`, hecho: false, detalle: `el mes termina el ${textoCorto(periodo.hasta)}`, accion: { texto: 'cerrar', destino: 'cierre' } });

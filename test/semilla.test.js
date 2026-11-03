@@ -24,7 +24,8 @@ test('Base de finhub: al menos 150 notas válidas, sin ids repetidos ni con el e
 
 test('manifiesto de Datos: cubre todas las series del ejemplo y no trae valores', () => {
   const texto = readFileSync(join(import.meta.dirname, '../semilla/datos-manifiesto.md'), 'utf8');
-  const ids = [...generar().keys()].filter((r) => r.startsWith('conocimiento/datos/series/')).map((r) => r.slice(26, -3));
+  // las de precios de lo que sigues (id = ISIN en minúsculas) no son del manifiesto: las crea «precios»
+  const ids = [...generar().keys()].filter((r) => r.startsWith('conocimiento/datos/series/')).map((r) => r.slice(26, -3)).filter((id) => !/^[a-z]{2}[a-z0-9]{9}\d$/.test(id));
   for (const id of ids) assert.ok(texto.includes(`\`${id}\``), id);
   assert.doesNotMatch(texto, /^- \d{4}-\d{2} \|/m, 'sin filas de valores');
 });

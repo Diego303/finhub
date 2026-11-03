@@ -632,8 +632,8 @@ function generarConocimiento(prng) {
 
   // descubrimientos (públicos: sin cifras de la cartera)
   const DESC = [
-    ['D-007', 'Infraestructura eléctrica y redes', { tipo: 'tema', estado: 'siguiendo', postura: 'alcista', confianza: 'media', origen: 'pulso 2026-10-04 → 2026-11-03', descubierto: '2026-10-04', revisar: '2026-12-04', referencia: 'IE00BYX5NX33', vs: 'msci-world-nr-eur' },
-      [['v3', '2026-11-03', { cambios: '2 noticias nuevas a favor; confianza sin cambios', tesis: 'La demanda eléctrica de centros de datos y la electrificación aceleran la inversión en redes; varias notas del pulso apuntan a planes públicos.', saldria_bien_si: 'Que los planes de inversión anunciados se ejecuten y los tipos no suban más.', la_invalidaria: 'Recortes de inversión pública o una subida fuerte de tipos.', riesgos: 'Tipos altos encarecen la deuda del sector · regulación · ya ha subido mucho', vehiculos: 'ETF de infraestructura global (acumulación) · fondo indexado de utilities mundial', citas: ['M-261023-03', 'M-261029-03', 'web:https://example.com/redes'], predicciones: ['PR-0130'], afirmaciones: '[hecho] hay planes públicos de inversión en redes · [consenso] la demanda eléctrica crece · [especulación] el sector seguirá batiendo al índice' }],
+    ['D-007', 'Infraestructura eléctrica y redes', { tipo: 'tema', estado: 'siguiendo', postura: 'alcista', confianza: 'media', origen: 'pulso 2026-10-04 → 2026-11-03', descubierto: '2026-10-04', revisar: '2026-12-04', referencia: 'IE00FHINFRA9', vs: 'msci-world-nr-eur' },
+      [['v3', '2026-11-03', { cambios: '2 noticias nuevas a favor; confianza sin cambios', tesis: 'La demanda eléctrica de centros de datos y la electrificación aceleran la inversión en redes; varias notas del pulso apuntan a planes públicos.', saldria_bien_si: 'Que los planes de inversión anunciados se ejecuten y los tipos no suban más.', la_invalidaria: 'Recortes de inversión pública o una subida fuerte de tipos.', riesgos: 'Tipos altos encarecen la deuda del sector · regulación · ya ha subido mucho', vehiculos: 'ETF de infraestructura global ficticio (IE00FHINFRA9, TER 0,4 %, acumulación) · fondo indexado de utilities mundial', citas: ['M-261023-03', 'M-261029-03', 'web:https://example.com/redes'], predicciones: ['PR-0130'], afirmaciones: '[hecho] hay planes públicos de inversión en redes · [consenso] la demanda eléctrica crece · [especulación] el sector seguirá batiendo al índice' }],
        ['v2', '2026-10-20', { cambios: 'primera revisión: una noticia nueva a favor', tesis: 'La electrificación y los centros de datos empujan la inversión en redes.', citas: ['M-261023-03'] }],
        ['v1', '2026-10-04', { tesis: 'Posible tema de inversión ligado a la electrificación.', citas: ['web:https://example.com/redes'] }]]],
     ['D-011', 'Renta fija euro a corto tras la pausa del banco central', { tipo: 'clase de activo', estado: 'nuevo', postura: 'neutral', confianza: 'alta', origen: 'pulso 2026-10-27 → 2026-11-03', descubierto: '2026-11-03', revisar: '2026-12-03' },
@@ -656,6 +656,13 @@ function generarConocimiento(prng) {
 }
 
 // ---------------------------------------------------------------- series
+/** Precios del vehículo que sigues en D-007 (ISIN ficticio): derivados del índice mundial, sin tocar el PRNG. */
+function serieSeguimiento({ meses, niveles }) {
+  const w = niveles['msci-world-nr-eur'];
+  SERIES.push({ id: 'ie00fhinfra9', nombre: 'ETF infraestructura global ficticio IE00FHINFRA9 (sintética)' });
+  niveles['ie00fhinfra9'] = meses.map((m, i) => 20 * (w[i] / w[0]) * Math.exp(0.0009 * i + 0.04 * Math.sin(i / 9)));
+}
+
 function guardarSeries({ meses, niveles }) {
   for (const s of SERIES) {
     const d = doc('serie');
@@ -774,6 +781,7 @@ export function generar() {
   SERIES.splice(6);
   const prng = crearPrng(SEMILLA);
   const series = generarSeries(prng);
+  serieSeguimiento(series);
   generarConfig();
   const cartera = generarCartera(series);
   generarMeses(prng, cartera);
