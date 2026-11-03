@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+*.log
+.tmp-*/
+# copias temporales de ejemplo/ y carpetas de prueba
+.finhub-ejemplo-*/
+# por si alguien apunta --datos dentro del repo: nunca versionar datos reales
+.finhub/

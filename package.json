@@ -1,0 +1,31 @@
+{
+  "name": "finhub",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tu dinero en local: gastos, cartera, metas, herramientas, descubrimientos y una base de conocimiento financiero en Markdown, con Rex y Claude Code solo cuando tú das luz verde.",
+  "type": "module",
+  "bin": {
+    "finhub": "bin/finhub.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "dev": "node bin/finhub.js --ejemplo --primer-plano",
+    "start": "node bin/finhub.js",
+    "test": "node scripts/test.js",
+    "test:r1": "node scripts/test.js test/r1",
+    "test:cobertura": "node scripts/test.js --cobertura",
+    "check": "node scripts/check.js",
+    "ejemplo": "node scripts/generar-ejemplo.js",
+    "ejemplo:comprobar": "node scripts/generar-ejemplo.js --comprobar",
+    "test:e2e": "node scripts/test.js test/e2e",
+    "claude:probar": "node scripts/probar-claude.js",
+    "capturas": "node scripts/capturas.js",
+    "iconos": "node scripts/generar-iconos.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

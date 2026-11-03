@@ -1,0 +1,270 @@
+# Operaciones
+esquema: 1
+- OP-0001 | 2023-01-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,506
+- OP-0002 | 2023-01-02 | aportacion | emergentes | 100,00
+- OP-0003 | 2023-01-02 | aportacion | small-caps | 80,00
+- OP-0004 | 2023-01-02 | aportacion | rf-euro-corto | 80,00
+- OP-0005 | 2023-01-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0006 | 2023-02-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,4611
+- OP-0007 | 2023-02-02 | aportacion | emergentes | 100,00
+- OP-0008 | 2023-02-02 | aportacion | small-caps | 80,00
+- OP-0009 | 2023-02-02 | aportacion | rf-euro-corto | 80,00
+- OP-0010 | 2023-02-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0011 | 2023-03-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,7794
+- OP-0012 | 2023-03-02 | aportacion | emergentes | 100,00
+- OP-0013 | 2023-03-02 | aportacion | small-caps | 80,00
+- OP-0014 | 2023-03-02 | aportacion | rf-euro-corto | 80,00
+- OP-0015 | 2023-03-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0016 | 2023-04-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,3891
+- OP-0017 | 2023-04-02 | aportacion | emergentes | 100,00
+- OP-0018 | 2023-04-02 | aportacion | small-caps | 80,00
+- OP-0019 | 2023-04-02 | aportacion | rf-euro-corto | 80,00
+- OP-0020 | 2023-04-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0021 | 2023-05-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,2615
+- OP-0022 | 2023-05-02 | aportacion | emergentes | 100,00
+- OP-0023 | 2023-05-02 | aportacion | small-caps | 80,00
+- OP-0024 | 2023-05-02 | aportacion | rf-euro-corto | 80,00
+- OP-0025 | 2023-05-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0026 | 2023-06-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,671
+- OP-0027 | 2023-06-02 | aportacion | emergentes | 100,00
+- OP-0028 | 2023-06-02 | aportacion | small-caps | 80,00
+- OP-0029 | 2023-06-02 | aportacion | rf-euro-corto | 80,00
+- OP-0030 | 2023-06-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0031 | 2023-07-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,329
+- OP-0032 | 2023-07-02 | aportacion | emergentes | 100,00
+- OP-0033 | 2023-07-02 | aportacion | small-caps | 80,00
+- OP-0034 | 2023-07-02 | aportacion | rf-euro-corto | 80,00
+- OP-0035 | 2023-07-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0036 | 2023-08-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,2242
+- OP-0037 | 2023-08-02 | aportacion | emergentes | 100,00
+- OP-0038 | 2023-08-02 | aportacion | small-caps | 80,00
+- OP-0039 | 2023-08-02 | aportacion | rf-euro-corto | 80,00
+- OP-0040 | 2023-08-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0041 | 2023-09-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,873
+- OP-0042 | 2023-09-02 | aportacion | emergentes | 100,00
+- OP-0043 | 2023-09-02 | aportacion | small-caps | 80,00
+- OP-0044 | 2023-09-02 | aportacion | rf-euro-corto | 80,00
+- OP-0045 | 2023-09-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0046 | 2023-10-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,662
+- OP-0047 | 2023-10-02 | aportacion | emergentes | 100,00
+- OP-0048 | 2023-10-02 | aportacion | small-caps | 80,00
+- OP-0049 | 2023-10-02 | aportacion | rf-euro-corto | 80,00
+- OP-0050 | 2023-10-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0051 | 2023-11-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,5725
+- OP-0052 | 2023-11-02 | aportacion | emergentes | 100,00
+- OP-0053 | 2023-11-02 | aportacion | small-caps | 80,00
+- OP-0054 | 2023-11-02 | aportacion | rf-euro-corto | 80,00
+- OP-0055 | 2023-11-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0056 | 2023-12-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,0724
+- OP-0057 | 2023-12-02 | aportacion | emergentes | 100,00
+- OP-0058 | 2023-12-02 | aportacion | small-caps | 80,00
+- OP-0059 | 2023-12-02 | aportacion | rf-euro-corto | 80,00
+- OP-0060 | 2023-12-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0061 | 2024-01-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,0155
+- OP-0062 | 2024-01-02 | aportacion | emergentes | 100,00
+- OP-0063 | 2024-01-02 | aportacion | small-caps | 80,00
+- OP-0064 | 2024-01-02 | aportacion | rf-euro-corto | 80,00
+- OP-0065 | 2024-01-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0066 | 2024-02-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,7007
+- OP-0067 | 2024-02-02 | aportacion | emergentes | 100,00
+- OP-0068 | 2024-02-02 | aportacion | small-caps | 80,00
+- OP-0069 | 2024-02-02 | aportacion | rf-euro-corto | 80,00
+- OP-0070 | 2024-02-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0071 | 2024-03-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,2949
+- OP-0072 | 2024-03-02 | aportacion | emergentes | 100,00
+- OP-0073 | 2024-03-02 | aportacion | small-caps | 80,00
+- OP-0074 | 2024-03-02 | aportacion | rf-euro-corto | 80,00
+- OP-0075 | 2024-03-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0076 | 2024-04-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,4077
+- OP-0077 | 2024-04-02 | aportacion | emergentes | 100,00
+- OP-0078 | 2024-04-02 | aportacion | small-caps | 80,00
+- OP-0079 | 2024-04-02 | aportacion | rf-euro-corto | 80,00
+- OP-0080 | 2024-04-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0081 | 2024-05-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,5766
+- OP-0082 | 2024-05-02 | aportacion | emergentes | 100,00
+- OP-0083 | 2024-05-02 | aportacion | small-caps | 80,00
+- OP-0084 | 2024-05-02 | aportacion | rf-euro-corto | 80,00
+- OP-0085 | 2024-05-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0086 | 2024-06-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,0149
+- OP-0087 | 2024-06-02 | aportacion | emergentes | 100,00
+- OP-0088 | 2024-06-02 | aportacion | small-caps | 80,00
+- OP-0089 | 2024-06-02 | aportacion | etf-ndx | 40,00
+- OP-0090 | 2024-06-02 | aportacion | rf-euro-corto | 80,00
+- OP-0091 | 2024-06-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0092 | 2024-07-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,6769
+- OP-0093 | 2024-07-02 | aportacion | emergentes | 100,00
+- OP-0094 | 2024-07-02 | aportacion | small-caps | 80,00
+- OP-0095 | 2024-07-02 | aportacion | etf-ndx | 40,00
+- OP-0096 | 2024-07-02 | aportacion | rf-euro-corto | 80,00
+- OP-0097 | 2024-07-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0098 | 2024-08-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,5466
+- OP-0099 | 2024-08-02 | aportacion | emergentes | 100,00
+- OP-0100 | 2024-08-02 | aportacion | small-caps | 80,00
+- OP-0101 | 2024-08-02 | aportacion | etf-ndx | 40,00
+- OP-0102 | 2024-08-02 | aportacion | rf-euro-corto | 80,00
+- OP-0103 | 2024-08-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0104 | 2024-09-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,5224
+- OP-0105 | 2024-09-02 | aportacion | emergentes | 100,00
+- OP-0106 | 2024-09-02 | aportacion | small-caps | 80,00
+- OP-0107 | 2024-09-02 | aportacion | etf-ndx | 40,00
+- OP-0108 | 2024-09-02 | aportacion | rf-euro-corto | 80,00
+- OP-0109 | 2024-09-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0110 | 2024-10-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,7381
+- OP-0111 | 2024-10-02 | aportacion | emergentes | 100,00
+- OP-0112 | 2024-10-02 | aportacion | small-caps | 80,00
+- OP-0113 | 2024-10-02 | aportacion | etf-ndx | 40,00
+- OP-0114 | 2024-10-02 | aportacion | rf-euro-corto | 80,00
+- OP-0115 | 2024-10-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0116 | 2024-11-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,7403
+- OP-0117 | 2024-11-02 | aportacion | emergentes | 100,00
+- OP-0118 | 2024-11-02 | aportacion | small-caps | 80,00
+- OP-0119 | 2024-11-02 | aportacion | etf-ndx | 40,00
+- OP-0120 | 2024-11-02 | aportacion | rf-euro-corto | 80,00
+- OP-0121 | 2024-11-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0122 | 2024-12-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,8845
+- OP-0123 | 2024-12-02 | aportacion | emergentes | 100,00
+- OP-0124 | 2024-12-02 | aportacion | small-caps | 80,00
+- OP-0125 | 2024-12-02 | aportacion | etf-ndx | 40,00
+- OP-0126 | 2024-12-02 | aportacion | rf-euro-corto | 80,00
+- OP-0127 | 2024-12-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0128 | 2025-01-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,5314
+- OP-0129 | 2025-01-02 | aportacion | emergentes | 100,00
+- OP-0130 | 2025-01-02 | aportacion | small-caps | 80,00
+- OP-0131 | 2025-01-02 | aportacion | etf-ndx | 40,00
+- OP-0132 | 2025-01-02 | aportacion | rf-euro-corto | 80,00
+- OP-0133 | 2025-01-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0134 | 2025-02-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,6604
+- OP-0135 | 2025-02-02 | aportacion | emergentes | 100,00
+- OP-0136 | 2025-02-02 | aportacion | small-caps | 80,00
+- OP-0137 | 2025-02-02 | aportacion | etf-ndx | 40,00
+- OP-0138 | 2025-02-02 | aportacion | rf-euro-corto | 80,00
+- OP-0139 | 2025-02-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0140 | 2025-03-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,7224
+- OP-0141 | 2025-03-02 | aportacion | emergentes | 100,00
+- OP-0142 | 2025-03-02 | aportacion | small-caps | 80,00
+- OP-0143 | 2025-03-02 | aportacion | etf-ndx | 40,00
+- OP-0144 | 2025-03-02 | aportacion | rf-euro-corto | 80,00
+- OP-0145 | 2025-03-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0146 | 2025-04-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,1058
+- OP-0147 | 2025-04-02 | aportacion | emergentes | 100,00
+- OP-0148 | 2025-04-02 | aportacion | small-caps | 80,00
+- OP-0149 | 2025-04-02 | aportacion | etf-ndx | 40,00
+- OP-0150 | 2025-04-02 | aportacion | rf-euro-corto | 80,00
+- OP-0151 | 2025-04-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0152 | 2025-05-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 6,2263
+- OP-0153 | 2025-05-02 | aportacion | emergentes | 100,00
+- OP-0154 | 2025-05-02 | aportacion | small-caps | 80,00
+- OP-0155 | 2025-05-02 | aportacion | etf-ndx | 40,00
+- OP-0156 | 2025-05-02 | aportacion | rf-euro-corto | 80,00
+- OP-0157 | 2025-05-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0158 | 2025-06-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,8959
+- OP-0159 | 2025-06-02 | aportacion | emergentes | 100,00
+- OP-0160 | 2025-06-02 | aportacion | small-caps | 80,00
+- OP-0161 | 2025-06-02 | aportacion | etf-ndx | 40,00
+- OP-0162 | 2025-06-02 | aportacion | rf-euro-corto | 80,00
+- OP-0163 | 2025-06-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0164 | 2025-07-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,4884
+- OP-0165 | 2025-07-02 | aportacion | emergentes | 100,00
+- OP-0166 | 2025-07-02 | aportacion | small-caps | 80,00
+- OP-0167 | 2025-07-02 | aportacion | etf-ndx | 40,00
+- OP-0168 | 2025-07-02 | aportacion | rf-euro-corto | 80,00
+- OP-0169 | 2025-07-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0170 | 2025-08-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,3672
+- OP-0171 | 2025-08-02 | aportacion | emergentes | 100,00
+- OP-0172 | 2025-08-02 | aportacion | small-caps | 80,00
+- OP-0173 | 2025-08-02 | aportacion | etf-ndx | 40,00
+- OP-0174 | 2025-08-02 | aportacion | rf-euro-corto | 80,00
+- OP-0175 | 2025-08-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0176 | 2025-09-02 | aportacion | fondo-sp500 | 300,00 | participaciones: 5,5511
+- OP-0177 | 2025-09-02 | aportacion | emergentes | 100,00
+- OP-0178 | 2025-09-02 | aportacion | small-caps | 80,00
+- OP-0179 | 2025-09-02 | aportacion | etf-ndx | 40,00
+- OP-0180 | 2025-09-02 | aportacion | rf-euro-corto | 80,00
+- OP-0181 | 2025-09-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0182 | 2025-10-02 | aportacion | msci-world | 300,00 | participaciones: 8,4889
+- OP-0183 | 2025-10-02 | aportacion | emergentes | 100,00
+- OP-0184 | 2025-10-02 | aportacion | small-caps | 80,00
+- OP-0185 | 2025-10-02 | aportacion | etf-ndx | 40,00
+- OP-0186 | 2025-10-02 | aportacion | rf-euro-corto | 80,00
+- OP-0187 | 2025-10-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0188 | 2025-10-15 | traspaso | fondo-sp500 → msci-world | 10.213,20 | nota: traspaso entre fondos: no tributa
+- OP-0189 | 2025-11-02 | aportacion | msci-world | 300,00 | participaciones: 8,9861
+- OP-0190 | 2025-11-02 | aportacion | emergentes | 100,00
+- OP-0191 | 2025-11-02 | aportacion | small-caps | 80,00
+- OP-0192 | 2025-11-02 | aportacion | etf-ndx | 40,00
+- OP-0193 | 2025-11-02 | aportacion | rf-euro-corto | 80,00
+- OP-0194 | 2025-11-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0195 | 2025-12-02 | aportacion | msci-world | 300,00 | participaciones: 8,8925 | mov: 2025-12/zyvk
+- OP-0196 | 2025-12-02 | aportacion | emergentes | 100,00
+- OP-0197 | 2025-12-02 | aportacion | small-caps | 80,00
+- OP-0198 | 2025-12-02 | aportacion | etf-ndx | 40,00
+- OP-0199 | 2025-12-02 | aportacion | rf-euro-corto | 80,00
+- OP-0200 | 2025-12-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0201 | 2026-01-02 | aportacion | msci-world | 300,00 | participaciones: 8,2847 | mov: 2026-01/3shb
+- OP-0202 | 2026-01-02 | aportacion | emergentes | 100,00
+- OP-0203 | 2026-01-02 | aportacion | small-caps | 80,00
+- OP-0204 | 2026-01-02 | aportacion | etf-ndx | 40,00
+- OP-0205 | 2026-01-02 | aportacion | rf-euro-corto | 80,00
+- OP-0206 | 2026-01-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0207 | 2026-02-02 | aportacion | msci-world | 300,00 | participaciones: 7,994 | mov: 2026-02/ed8i
+- OP-0208 | 2026-02-02 | aportacion | emergentes | 100,00
+- OP-0209 | 2026-02-02 | aportacion | small-caps | 80,00
+- OP-0210 | 2026-02-02 | aportacion | etf-ndx | 40,00
+- OP-0211 | 2026-02-02 | aportacion | rf-euro-corto | 80,00
+- OP-0212 | 2026-02-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0213 | 2026-03-02 | aportacion | msci-world | 300,00 | participaciones: 7,6184 | mov: 2026-03/1qhv
+- OP-0214 | 2026-03-02 | aportacion | emergentes | 100,00
+- OP-0215 | 2026-03-02 | aportacion | small-caps | 80,00
+- OP-0216 | 2026-03-02 | aportacion | etf-ndx | 40,00
+- OP-0217 | 2026-03-02 | aportacion | rf-euro-corto | 80,00
+- OP-0218 | 2026-03-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0219 | 2026-04-02 | aportacion | msci-world | 300,00 | participaciones: 7,6506 | mov: 2026-04/cph9
+- OP-0220 | 2026-04-02 | aportacion | emergentes | 100,00
+- OP-0221 | 2026-04-02 | aportacion | small-caps | 80,00
+- OP-0222 | 2026-04-02 | aportacion | etf-ndx | 40,00
+- OP-0223 | 2026-04-02 | aportacion | rf-euro-corto | 80,00
+- OP-0224 | 2026-04-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0225 | 2026-05-02 | aportacion | msci-world | 300,00 | participaciones: 7,8135 | mov: 2026-05/1m3u
+- OP-0226 | 2026-05-02 | aportacion | emergentes | 100,00
+- OP-0227 | 2026-05-02 | aportacion | small-caps | 80,00
+- OP-0228 | 2026-05-02 | aportacion | etf-ndx | 40,00
+- OP-0229 | 2026-05-02 | aportacion | rf-euro-corto | 80,00
+- OP-0230 | 2026-05-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0231 | 2026-06-02 | aportacion | msci-world | 300,00 | participaciones: 7,6769 | mov: 2026-06/tle9
+- OP-0232 | 2026-06-02 | aportacion | emergentes | 100,00
+- OP-0233 | 2026-06-02 | aportacion | small-caps | 80,00
+- OP-0234 | 2026-06-02 | aportacion | etf-ndx | 40,00
+- OP-0235 | 2026-06-02 | aportacion | rf-euro-corto | 80,00
+- OP-0236 | 2026-06-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0237 | 2026-06-30 | comision | etf-ndx | -2,00 | nota: custodia del bróker
+- OP-0238 | 2026-07-02 | aportacion | msci-world | 300,00 | participaciones: 7,3112 | mov: 2026-07/lfhj
+- OP-0239 | 2026-07-02 | aportacion | emergentes | 100,00
+- OP-0240 | 2026-07-02 | aportacion | small-caps | 80,00
+- OP-0241 | 2026-07-02 | aportacion | etf-ndx | 40,00
+- OP-0242 | 2026-07-02 | aportacion | rf-euro-corto | 80,00
+- OP-0243 | 2026-07-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0244 | 2026-08-02 | aportacion | msci-world | 300,00 | participaciones: 7,2168 | mov: 2026-08/somy
+- OP-0245 | 2026-08-02 | aportacion | emergentes | 100,00
+- OP-0246 | 2026-08-02 | aportacion | small-caps | 80,00
+- OP-0247 | 2026-08-02 | aportacion | etf-ndx | 40,00
+- OP-0248 | 2026-08-02 | aportacion | rf-euro-corto | 80,00
+- OP-0249 | 2026-08-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0250 | 2026-09-02 | aportacion | msci-world | 300,00 | participaciones: 6,9245 | mov: 2026-09/zgpn
+- OP-0251 | 2026-09-02 | aportacion | emergentes | 100,00
+- OP-0252 | 2026-09-02 | aportacion | small-caps | 80,00
+- OP-0253 | 2026-09-02 | aportacion | etf-ndx | 40,00
+- OP-0254 | 2026-09-02 | aportacion | rf-euro-corto | 80,00
+- OP-0255 | 2026-09-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0256 | 2026-09-01 | venta | etf-ndx | 500,00 | participaciones: 0,2749
+- OP-0257 | 2026-10-02 | aportacion | msci-world | 300,00 | participaciones: 6,8182 | mov: 2026-10/4bb8
+- OP-0258 | 2026-10-02 | aportacion | emergentes | 100,00
+- OP-0259 | 2026-10-02 | aportacion | small-caps | 80,00
+- OP-0260 | 2026-10-02 | aportacion | etf-ndx | 40,00
+- OP-0261 | 2026-10-02 | aportacion | rf-euro-corto | 80,00
+- OP-0262 | 2026-10-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa
+- OP-0263 | 2026-11-02 | aportacion | msci-world | 300,00 | participaciones: 6,8182 | mov: 2026-11/wed9
+- OP-0264 | 2026-11-02 | aportacion | emergentes | 100,00
+- OP-0265 | 2026-11-02 | aportacion | small-caps | 80,00
+- OP-0266 | 2026-11-02 | aportacion | etf-ndx | 40,00
+- OP-0267 | 2026-11-02 | aportacion | rf-euro-corto | 80,00
+- OP-0268 | 2026-11-28 | aportacion | plan-empleo | 100,00 | nota: aportación de la empresa

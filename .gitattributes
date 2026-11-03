@@ -1,0 +1,4 @@
+# Siempre LF en el repo (los Markdown de datos se escriben en canónico con \n, §3.1)
+* text=auto eol=lf
+*.png binary
+*.ico binary
