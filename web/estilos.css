@@ -132,3 +132,7 @@ tr.editando td { vertical-align: top; }
 /* Conocimiento: filas del buscador (F8) */
 .nota-fila { display: block; width: 100%; text-align: left; border: 0; border-top: .5px solid var(--border); background: none; padding: 5px 0; font: inherit; font-size: 11.5px; color: inherit; cursor: pointer; }
 .nota-fila:hover { background: var(--surface-1); }
+/* Trabajos de Claude (F9) */
+.spinner { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-strong); border-top-color: var(--naranja); display: inline-block; animation: girar .8s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }

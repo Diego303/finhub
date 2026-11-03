@@ -146,3 +146,14 @@ claude auth status                  # authMethod: claude.ai · subscriptionType:
 ```
 
 Los transcripts de las sondas se borraron de `~/.claude/projects/` al terminar.
+
+## 10. Implementado en F9
+
+- **Código:** `src/claude/` → `trabajos/` (los 9, declarativos), `r1.js` (comprobaciones de la especificación y de la entrada), `runner.js` (argumentos de §1, entorno mínimo, sandbox, stream-json, guardia, timeouts, cancelación), `guardia.js` (§4), `contexto.js` (bloques `<datos>` con nivel y texto escapado, selección de notas), `validar.js` (esquemas y bloque ```json), `verificador.js` (§8.4 del plan), `registro.js` (registro, cuarentena y sesiones), `motor.js` (todo junto).
+- **Sandbox:** `~/.cache/finhub/sandbox/sbx-*` (fuera de la carpeta de datos), nuevo y vacío en cada ejecución y borrado al terminar.
+- **Sesiones:** `~/.local/share/finhub/sesiones.json` guarda `sesión → trabajo`; reanudar con otro trabajo se rechaza ANTES de llamar a Claude.
+- **Registro y cuarentena:** `FINANZAS/.finhub/registro/AAAA-MM.jsonl` y `FINANZAS/.finhub/cuarentena/*.json`.
+- **Entrada por niveles:** cada bloque `<datos>` lleva `nivel` (privado, metadato, publico, externo). Un trabajo con internet que reciba un bloque privado o Mis notas no llega a ejecutarse (estado `rechazado`).
+- **Tests:** `test/fake-claude.js` reproduce el stream-json (escenarios y grabaciones) y deja una traza de argumentos, entorno, directorio y stdin. `pnpm test:r1`.
+- **Prueba real:** `pnpm claude:probar --real [--trabajos …] [--modelo haiku|config]` con la carpeta de ejemplo en memoria; nada se escribe en el repo ni en una carpeta de datos.
+

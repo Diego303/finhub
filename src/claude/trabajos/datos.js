@@ -1,0 +1,34 @@
+// Datos de mercado (§7.3): internet sí, privado no. Entrada: el manifiesto de series y el último mes que
+// tienes de cada una. Salida: filas nuevas, que se validan y que tú confirmas antes de guardarlas.
+import { O, L, T } from './comun.js';
+import { bloque } from '../contexto.js';
+
+export default {
+  id: 'datos',
+  nombre: 'Datos de mercado',
+  internet: true,
+  privado: false,
+  externo: true,
+  herramientas: ['WebSearch', 'WebFetch'],
+  modelo: 'haiku',
+  timeoutMs: 300000,
+  maxTurns: 30,
+  recibe: 'el manifiesto de series y el último dato que tienes',
+  escribe: ['conocimiento/datos/series/ (tú confirmas)'],
+  rol: 'Construyes series mensuales para calcular (índices vía ETF de acumulación, IPC del INE, tipos y cambios del BCE) desde fuentes públicas y gratuitas, siguiendo exactamente el método del manifiesto. Un valor por mes: el último dato del mes.',
+  esquema: O({ series: L(O({ id: T('texto', { patron: /^[a-z0-9]+(-[a-z0-9]+)*$/ }), filas: L(O({ mes: T('mes'), valor: T('numero', { min: 0 }) }), { max: 400 }), origen: T('texto', { min: 5, max: 300 }) }), { max: 20 }) }),
+  comprobar(json, { params }) {
+    const pedidas = new Map(params.series.map((s) => [s.id, s]));
+    const e = [];
+    for (const [i, s] of json.series.entries()) {
+      const p = pedidas.get(s.id);
+      if (!p) e.push(`series[${i}]: «${s.id}» no se pidió`);
+      if (!/https?:\/\//.test(s.origen)) e.push(`series[${i}]: el origen debe llevar la URL`);
+    }
+    return e;
+  },
+  entrada(modelo, { series, hoy }) {
+    const lineas = series.map((s) => `${s.id} · ${s.que} · unidad: ${s.unidad} · proxy/fuente: ${s.proxy} · método: ${s.metodo} · ${s.ultimo ? `tienes hasta ${s.ultimo}: trae solo los meses posteriores` : 'no tienes datos: trae los últimos 36 meses'}`);
+    return { tarea: `Para cada serie, devuelve las filas mensuales que faltan hasta el último mes completo anterior a ${hoy.slice(0, 7)}, siguiendo su método. Indica en «origen» la fuente y la URL. Si no encuentras datos fiables para una serie, no la incluyas.`, bloques: [bloque('manifiesto de series', 'publico', lineas.join('\n'))] };
+  },
+};

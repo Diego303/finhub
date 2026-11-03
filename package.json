@@ -20,7 +20,8 @@
     "check": "node scripts/check.js",
     "ejemplo": "node scripts/generar-ejemplo.js",
     "ejemplo:comprobar": "node scripts/generar-ejemplo.js --comprobar",
-    "test:e2e": "node scripts/test.js test/e2e"
+    "test:e2e": "node scripts/test.js test/e2e",
+    "claude:probar": "node scripts/probar-claude.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"

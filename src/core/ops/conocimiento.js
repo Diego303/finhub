@@ -226,6 +226,42 @@ registrar({
   },
 
   /**
+   * {series: [{id, titulo, unidad, divisa?, fuente, metodo, filas: [{mes, valor}]}]} · guarda las filas que
+   * propuso el trabajo «datos» y que tú confirmaste. Nunca mezcla datos reales con una serie sintética.
+   */
+  'datos.aplicar'(tx, { series = [] }) {
+    const escritas = [];
+    for (const s of series) {
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s.id ?? '')) throw new ErrorOp('invalida', `id de serie no válido «${s.id}»`);
+      const ruta = `conocimiento/datos/series/${s.id}.md`;
+      const existe = tx.existe(ruta);
+      const doc = tx.doc(ruta, { crear: true });
+      const cab = cabeceras(doc);
+      if (existe && cab.sintetica) throw new ErrorOp('invalida', `«${s.id}» es una serie sintética de ejemplo: no se completa con datos reales`);
+      if (!existe) {
+        doc.titulo = `Serie · ${s.titulo ?? s.id}`;
+        for (const [k, v] of [['id', s.id], ['unidad', s.unidad ?? 'indice'], ['frecuencia', 'mensual'], ['divisa', s.divisa ?? null], ['fuente', s.fuente], ['metodo', s.metodo], ['sintetica', false]]) if (v !== null && v !== undefined) fijarCabecera(doc, k, v);
+      }
+      const sec = seccionDe(doc, 'Filas', { crear: true });
+      const ultimo = items(doc, 'Filas').at(-1)?.mes ?? null;
+      let n = 0;
+      for (const f of [...s.filas].sort((a, b) => (a.mes < b.mes ? -1 : 1))) {
+        if (ultimo && f.mes <= ultimo) continue;
+        const valor = validarEntidad(doc.spec.secciones.Filas.items, { mes: f.mes, valor: Math.round(f.valor * 1e6) }, `la fila ${f.mes} de ${s.id}`);
+        sec.nodos.push(nodoItem(valor));
+        n++;
+      }
+      if (!n) continue;
+      fijarCabecera(doc, 'actualizado', tx.ctx.hoy);
+      if (existe && s.fuente) fijarCabecera(doc, 'fuente', s.fuente);
+      tx.tocar(ruta);
+      escritas.push({ id: s.id, filas: n });
+    }
+    if (!escritas.length) throw new ErrorOp('invalida', 'no hay filas nuevas que guardar');
+    return { series: escritas };
+  },
+
+  /**
    * {ficheros: {nombre: texto}} · trae a conocimiento/base/ las notas de la Base del repo que aún no están
    * en la carpeta (por id). Las que ya tienes (editadas o no) no se tocan. → {importadas, ficheros}
    */

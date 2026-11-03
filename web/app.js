@@ -9,6 +9,7 @@ import { cabecera, bandas } from './componentes/cabecera.js';
 import { abrirEntrada } from './componentes/gestion.js';
 import { cajaPendientes, abrirDestino } from './componentes/pendientes.js';
 import { barraR1, abrirR1 } from './componentes/r1.js';
+import { registrarAccionesClaude, refrescarInfo, abrirDatos } from './componentes/claude.js';
 import { abrirAjustes } from './componentes/ajustes.js';
 import { abrirPapelera } from './componentes/papelera.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
@@ -68,7 +69,7 @@ export function render() {
     marco,
     html`${cabecera(estado, { menuAbierto })}${bandas(estado)}${pestanas()}
       <main id="contenido" role="tabpanel" aria-labelledby="pestana-${estado.vista}">${contenido()}</main>
-      ${barraR1()}`,
+      ${barraR1(estado.claude)}`,
   );
   if (clave && !hayModal()) {
     const [acc, dato] = clave.split('|');
@@ -133,6 +134,7 @@ accion('pendiente', (el) => {
   if (d === 'recurrentes') return abrirRecurrentes(estado);
   if (d === 'cierre') return abrirCierre(estado);
   if (d === 'valores') return abrirValores(estado);
+  if (d === 'datos') return abrirDatos();
   if (d === 'pausas') ponerModo('pausa');
   if (vistas[d]) location.hash = vistas[d];
   else abrirDestino(d, estado);
@@ -207,10 +209,15 @@ registrarAccionesHerramientas();
 registrarAccionesTuAnio(() => estado);
 iniciarConocimiento({ estado, render });
 registrarAccionesConocimiento();
+registrarAccionesClaude();
+document.addEventListener('finhub:claude', () => render());
 iniciarEditores(() => estado);
 registrarEditores();
 document.getElementById('app').addEventListener('dblclick', (ev) => enDobleClic(ev));
 alCambiar(render);
 render();
 arrancarAnimacion();
-cargar().then(sincronizar);
+cargar().then(() => {
+  sincronizar();
+  refrescarInfo();
+});

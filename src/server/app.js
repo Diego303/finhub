@@ -11,6 +11,7 @@ import { Copias } from './copias.js';
 import { Deshacer } from './deshacer.js';
 import { CanalSSE, Difusor } from './sse.js';
 import { cambiarCarpeta, validarDestino, enviarAPapeleraSistema } from './carpeta.js';
+import { ServicioClaude } from './claude.js';
 import { fijarCarpeta } from './config.js';
 import { aRutaWindows, carpetasLocales } from './rutas.js';
 import { ErrorHttp, comprobarPeticion, leerJson, enviarJson, servirEstatico, rutasEstaticas, CABECERAS_SEGURIDAD } from './http.js';
@@ -34,8 +35,9 @@ export class App {
    * @param {number} [o.puerto] 0 = cualquiera libre (tests)
    * @param {boolean} [o.ejemplo] carpeta temporal de ejemplo: no se guarda en config
    */
-  constructor({ carpeta, puerto = 4747, ejemplo = false, env = process.env, sondeoMs = 2000, barridoMs = 30000, equipo, enviarAPapelera = enviarAPapeleraSistema, guardarConfig = !ejemplo, log = () => {} }) {
+  constructor({ carpeta, puerto = 4747, ejemplo = false, env = process.env, sondeoMs = 2000, barridoMs = 30000, equipo, enviarAPapelera = enviarAPapeleraSistema, guardarConfig = !ejemplo, log = () => {}, claude = {} }) {
     Object.assign(this, { carpeta, puertoPedido: puerto, ejemplo, env, sondeoMs, barridoMs, equipo, enviarAPapelera, guardarConfig, log });
+    this.claude = new ServicioClaude(this, claude);
     this.difusor = new Difusor();
     this.deshacer = new Deshacer();
     this.colaOps = Promise.resolve();
@@ -286,6 +288,33 @@ export class App {
         for (const n of (await fsp.readdir(dir).catch(() => [])).filter((x) => x.endsWith('.md')).sort()) ficheros[n] = await fsp.readFile(join(dir, n), 'utf8');
         return enviarJson(res, 200, { tipo, ficheros });
       }
+      case 'GET /api/claude':
+        return enviarJson(res, 200, await this.claude.info());
+      case 'GET /api/claude/datos':
+        return enviarJson(res, 200, { series: this.claude.estadoDatos() });
+      case 'POST /api/claude/ejecutar': {
+        if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+        try {
+          return enviarJson(res, 202, this.claude.lanzar({ trabajo: cuerpo.trabajo, params: cuerpo.params ?? {}, desclasificar: !!cuerpo.desclasificar, resume: cuerpo.resume ?? null }));
+        } catch (e) {
+          if (e.estado) throw new ErrorHttp(e.estado, e.message);
+          throw e;
+        }
+      }
+      case 'GET /api/claude/ejecucion': {
+        const r = this.claude.resultado(url.searchParams.get('id') ?? '');
+        if (!r) throw new ErrorHttp(404, 'No existe esa ejecución');
+        return enviarJson(res, 200, r);
+      }
+      case 'POST /api/claude/cancelar':
+        return enviarJson(res, 200, { cancelado: this.claude.cancelar(String(cuerpo.id ?? '')) });
+      case 'GET /api/claude/registro': {
+        const mes = url.searchParams.get('mes') ?? fechaLocal().slice(0, 7);
+        if (!/^\d{4}-\d{2}$/.test(mes)) throw new ErrorHttp(400, 'mes no válido');
+        return enviarJson(res, 200, { mes, ejecuciones: await this.claude.registro(mes) });
+      }
+      case 'GET /api/claude/cuarentena':
+        return enviarJson(res, 200, { ficheros: await this.claude.cuarentena() });
       case 'GET /api/carpeta':
         return enviarJson(res, 200, { ruta: this.carpeta, rutaWindows: aRutaWindows(this.carpeta), ejemplo: this.ejemplo });
       case 'POST /api/carpeta/validar':

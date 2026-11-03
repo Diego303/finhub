@@ -86,6 +86,7 @@ export function sincronizar() {
   });
   fuente.addEventListener('candado', recargarServidor);
   fuente.addEventListener('carpeta', cargar);
+  fuente.addEventListener('claude', (ev) => document.dispatchEvent(new CustomEvent('finhub:claude-evento', { detail: JSON.parse(ev.data) })));
   setInterval(async () => {
     try {
       const v = await obtener('/api/version');
