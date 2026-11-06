@@ -1,6 +1,6 @@
 // Estado de la página: datos del servidor parseados con /core/ (isomórfico) y sincronización.
 // Cambios: SSE (/api/eventos) y, de respaldo, sondeo de /api/version cada 2 s (§2).
-import { obtener, alRecargar } from './api.js';
+import { obtener, alRecargar, fijarVersionVista } from './api.js';
 import { construirModelo } from '/core/modelo.js';
 import { fechaLocal, horaLocal } from '/core/fechas.js';
 import { humorRex, huchaRex, accesoriosRex } from '/core/rex.js';
@@ -56,6 +56,7 @@ export function cargar() {
       estado.servidor = servidor;
       estado.modelo = construirModelo(datos.ficheros);
       estado.version = datos.version;
+      fijarVersionVista(datos.version);
       estado.ahora = { fecha: fechaLocal(), hora: horaLocal() };
       estado.tiempos.carga = Math.round(t1 - t0);
       estado.tiempos.modelo = Math.round(performance.now() - t1);

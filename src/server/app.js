@@ -154,12 +154,14 @@ export class App {
     if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
   }
 
-  async aplicar({ op, args = {}, versiones = {}, sesion = 'anonima' }) {
+  async aplicar({ op, args = {}, versiones = {}, base = null, sesion = 'anonima' }) {
     if (typeof op !== 'string') throw new ErrorHttp(400, 'falta «op»');
+    if (base !== null && (!Number.isInteger(base) || base < 0)) throw new ErrorHttp(400, '«base» no es una versión válida');
     if (op === 'ficheros.restaurar' || op === 'papelera.restaurar') throw new ErrorHttp(400, `«${op}» no se puede pedir directamente`);
     return this.enCola(async () => {
       await this.exigirEscritura();
       const res = aplicarOp((r) => this.almacen.texto(r), op, args, this.ctxOps());
+      if (base !== null) this.almacen.comprobarBase(Object.keys(res.escribir), base);
       return this.escribirResultado(res, { op, versiones, sesion });
     });
   }

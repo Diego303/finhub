@@ -63,6 +63,7 @@ export class Almacen {
     this.oyentes = new Set();
     this.colas = new Map();
     this.caliente = new Map(); // ruta → último uso (ms)
+    this.cambioEn = new Map(); // ruta → versión global en la que cambió por última vez
     this.contador = 0;
   }
 
@@ -74,6 +75,7 @@ export class Almacen {
   avisar(rutas, origen) {
     if (!rutas.length) return;
     this.version++;
+    for (const r of rutas) this.cambioEn.set(r, this.version);
     for (const fn of this.oyentes) fn({ version: this.version, rutas, origen });
   }
 
@@ -281,6 +283,12 @@ export class Almacen {
       await this.fs.unlink(tmp).catch(() => {});
       throw new ErrorAlmacen('disco', `no se pudo escribir «${basename(abs)}»: ${e.code ?? e.message}`);
     }
+  }
+
+  /** §2.4: ¿alguna de estas rutas cambió después de `base` (la versión con la que el cliente cargó los datos)? */
+  comprobarBase(rutas, base) {
+    const cambiada = base > this.version ? rutas[0] : rutas.find((r) => (this.cambioEn.get(r) ?? 0) > base);
+    if (cambiada) throw new ErrorAlmacen('conflicto_version', `«${cambiada}» ha cambiado desde que lo cargaste`, { ruta: cambiada, version: this.obtener(cambiada)?.version ?? null });
   }
 
   /** Compara el fichero con el índice. Si cambió por fuera lo recarga y lanza conflicto: nada se escribe. */
