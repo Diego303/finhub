@@ -25,6 +25,15 @@ function cadaMovimiento(tx, fn) {
 
 const sub = (tx, nombre, args) => tx.sub(nombre, args);
 
+/** Marca «editado tras cierre» los meses cerrados con algún movimiento afectado: sus totales ya no son los del cierre. */
+function marcarCerrados(tx, afecta) {
+  for (const { ruta, doc } of todosLosMeses(tx)) {
+    if (cabeceras(doc).estado?.estado !== 'cerrado' || !items(doc, 'Movimientos').some(afecta)) continue;
+    fijarKv(doc, 'Cierre', 'editado_tras_cierre', true);
+    tx.tocar(ruta);
+  }
+}
+
 registrar({
   /**
    * {id, cambios, aplicar: 'siguiente' | 'esteMes', mes} · «¿solo a partir del mes que viene o también este mes?»
@@ -78,6 +87,7 @@ registrar({
     if (anterior === naturaleza) return { movimientos: 0 };
     nodo.valor = validarEntidad(doc.spec.preambulo, { ...nodo.valor, naturaleza }, `el grupo «${id}»`);
     tx.tocar('grupos.md');
+    if (aplicarAMovimientos) marcarCerrados(tx, (m) => m.grupo === id && (!m.naturaleza || m.naturaleza === anterior));
     let n = 0;
     cadaMovimiento(tx, (m) => {
       if (m.grupo !== id) return false;
@@ -102,6 +112,7 @@ registrar({
     const doc = tx.doc('grupos.md');
     buscarItem(doc, null, 'id', id, 'el grupo');
     if (destino && !existeItem(doc, null, 'id', destino)) throw new ErrorOp('no_existe', `no existe el grupo destino «${destino}»`);
+    marcarCerrados(tx, (m) => m.grupo === id || m.compensa === id);
     let n = 0;
     if (destino) {
       cadaMovimiento(tx, (m) => {
