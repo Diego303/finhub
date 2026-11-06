@@ -13,6 +13,11 @@ import { twr } from './rentabilidad.js';
 const POSTURA = { alcista: 1, neutral: 0, bajista: -1 };
 export const VIDA_MEDIA_POSTURA = 90;
 
+/** R1 (§0.1): Mis notas son siempre privadas, diga lo que diga _fuentes.md; las demás, según su ficha. */
+export const esFuentePrivada = (f) => f.id === 'mias' || f.familia === 'mias' || !!f.privada;
+/** Ids de las fuentes privadas: siempre incluye «mias», aunque _fuentes.md no la tenga. */
+export const fuentesPrivadas = (modelo) => new Set(['mias', ...modelo.fuentes.filter(esFuentePrivada).map((f) => f.id)]);
+
 /** Fuente a la que pertenece una ruta de conocimiento/ (por su carpeta). */
 export function fuenteDeRuta(ruta) {
   const m = /^conocimiento\/([^/_][^/]*)\//.exec(ruta);
@@ -139,7 +144,7 @@ export function resumenFuentes(modelo, hoy, notas = indiceNotas(modelo)) {
       acierto: aciertos.get(f.id) ?? { aciertoPb: null, resueltas: 0, acertadas: 0 },
       ultima: ns.reduce((u, n) => (n.fecha && (!u || n.fecha > u) ? n.fecha : u), null),
       temas: [...temas].sort((a, b) => b[1] - a[1]).slice(0, 8),
-      privada: f.familia === 'mias' || !!f.privada,
+      privada: esFuentePrivada(f),
       activa: !!f.activa_por_defecto,
       fija: FUENTES_FIJAS.includes(f.id),
     };

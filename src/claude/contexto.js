@@ -1,7 +1,7 @@
 // Monta la entrada de cada trabajo (§0.3.1, §0.3.9, §6, §8.2): bloques <datos> con su nivel (privado,
 // metadato, público, externo), el texto de fuera escapado (nunca puede cerrar un bloque ni abrir otro),
 // selección de notas por relevancia con un máximo, y el prompt final (sistema + usuario).
-import { indiceNotas, caducada, resumenFuentes } from '../core/conocimiento.js';
+import { indiceNotas, caducada, resumenFuentes, fuentesPrivadas } from '../core/conocimiento.js';
 import { diasEntre } from '../core/fechas.js';
 import { describir } from './validar.js';
 
@@ -35,7 +35,7 @@ const textoNota = (n) => `[${n.id}] ${n.titulo} (${n.tipo}${n.fecha ? `, ${n.fec
  */
 export function notasParaTrabajo(modelo, trabajo, { fuentes = null, temas = [], activos = [], hoy, limite = limiteContexto(modelo.ajustes.contexto_max), soloFuentes = null, desde = null, hasta = null, orden = null } = {}) {
   const resumen = resumenFuentes(modelo, hoy);
-  const privadas = new Set(resumen.filter((r) => r.privada).map((r) => r.id));
+  const privadas = fuentesPrivadas(modelo);
   const elegidas = new Set(fuentes ?? resumen.filter((r) => r.activa).map((r) => r.id));
   let excluidasPrivadas = 0;
   const lista = indiceNotas(modelo).filter((n) => {
@@ -67,7 +67,7 @@ export function notasParaTrabajo(modelo, trabajo, { fuentes = null, temas = [], 
 
 /** Bloque de notas: las públicas (base, datos, mundo) como «publico»; las de fuentes externas como «externo». */
 export function bloquesNotas(notas, modelo) {
-  const privadas = new Set(modelo.fuentes.filter((f) => f.familia === 'mias' || f.privada).map((f) => f.id));
+  const privadas = fuentesPrivadas(modelo);
   const grupos = new Map();
   for (const n of notas) {
     const nivel = privadas.has(n.fuente) ? 'privado' : ['base', 'datos', 'mundo'].includes(n.fuente) ? 'publico' : 'externo';
