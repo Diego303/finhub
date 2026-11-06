@@ -83,10 +83,10 @@ export function procesarSalida(trabajo, texto, { prompt, params, modelo, bloques
 export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, desclasificar = false, resume = null, servicio, sesiones, runner, alEvento = () => {}, senal = null, modeloClaude = null }) {
   const id = randomBytes(4).toString('hex');
   const inicio = new Date().toISOString();
-  const t0 = Date.now();
+  const t0 = performance.now();
   const linea = { id, trabajo: trabajo.id, inicio, internet: trabajo.internet, privado: trabajo.privado, externo: trabajo.externo, destino: trabajo.escribe };
   const fin = async (r) => {
-    Object.assign(linea, { duracionMs: Date.now() - t0, estado: r.estado, codigo: r.codigo ?? null, motivo: r.motivo ?? r.mensaje ?? null, avisos: r.avisos ?? [] });
+    Object.assign(linea, { duracionMs: Math.round(performance.now() - t0), estado: r.estado, codigo: r.codigo ?? null, motivo: r.motivo ?? r.mensaje ?? null, avisos: r.avisos ?? [] });
     await registrar(servicio, linea).catch(() => {});
     alEvento({ tipo: 'fin', id, estado: r.estado });
     return { id, ...r, registro: linea };

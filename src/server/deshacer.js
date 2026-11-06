@@ -8,7 +8,7 @@ export const DURACION_MS = 10 * 1000; // §2.5: lo que dura el toast
 export const GRACIA_MS = 5 * 1000; // el viaje de ida y vuelta, con la máquina ocupada
 
 export class Deshacer {
-  constructor({ ahora = () => Date.now() } = {}) {
+  constructor({ ahora = () => performance.now() } = {}) {
     this.sesiones = new Map();
     this.ahora = ahora;
   }
