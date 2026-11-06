@@ -18,6 +18,7 @@
     "test:r1": "node scripts/test.js test/r1",
     "test:visual": "node scripts/test.js test/visual",
     "test:todo": "node scripts/test.js --todo",
+    "test:larga": "node scripts/test.js test/larga",
     "test:cobertura": "node scripts/test.js --cobertura",
     "check": "node scripts/check.js",
     "ejemplo": "node scripts/generar-ejemplo.js",
