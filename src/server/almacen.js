@@ -6,7 +6,7 @@
 import fsp from 'node:fs/promises';
 import { createHash, randomBytes } from 'node:crypto';
 import { join, dirname, basename } from 'node:path';
-import { rutaSegura } from './rutas.js';
+import { rutaSegura, dentroDe } from './rutas.js';
 import { detectar } from '../core/formato/index.js';
 
 export const ERRORES_NUBE = new Set(['EIO', 'ETIMEDOUT', 'EAGAIN', 'EBUSY', 'ENODATA', 'ECANCELED', 'EINTR', 'ENXIO']);
@@ -95,6 +95,7 @@ export class Almacen {
   async recorrer() {
     const ficheros = [];
     const dirs = [];
+    const externos = [];
     const visitar = async (rel) => {
       dirs.push(rel);
       let entradas;
@@ -109,12 +110,49 @@ export class Almacen {
         const r = rel ? `${rel}/${e.name}` : e.name;
         if (e.isDirectory()) {
           if (r !== '.finhub') subdirs.push(r);
-        } else if (e.isFile() || e.isSymbolicLink()) ficheros.push(r);
+        } else if (e.isFile()) ficheros.push(r);
+        else if (e.isSymbolicLink()) {
+          // un enlace solo vale si apunta a un fichero dentro de la carpeta (§2.2)
+          if (await this.enlaceDentro(join(this.raiz, r))) ficheros.push(r);
+          else externos.push(r);
+        }
       }
       await enParalelo(subdirs, 8, visitar);
     };
     await visitar('');
-    return { ficheros: ficheros.sort(), dirs: dirs.sort() };
+    return { ficheros: ficheros.sort(), dirs: dirs.sort(), externos: externos.sort() };
+  }
+
+  /** ¿Este enlace apunta a un fichero que está dentro de la carpeta? */
+  async enlaceDentro(abs) {
+    try {
+      const [real, raiz] = await Promise.all([this.fs.realpath(abs), this.fs.realpath(this.raiz)]);
+      return dentroDe(real, raiz) && (await this.fs.stat(real)).isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  /** Antes de escribir: ni el fichero ni la carpeta que lo contiene pueden salir por un enlace. */
+  async comprobarDentro(rel, abs) {
+    let raiz;
+    try {
+      raiz = await this.fs.realpath(this.raiz);
+    } catch {
+      return;
+    }
+    for (let p = abs; p.length >= this.raiz.length; p = dirname(p)) {
+      let real;
+      try {
+        real = await this.fs.realpath(p);
+      } catch (e) {
+        // un enlace colgando sí sale; lo que aún no existe, no
+        if (e.code === 'ENOENT' && (await this.fs.lstat(p).then((l) => l.isSymbolicLink(), () => false))) throw new ErrorAlmacen('ruta', `«${rel}» es un enlace que apunta fuera de la carpeta`, { ruta: rel });
+        continue;
+      }
+      if (!dentroDe(real, raiz)) throw new ErrorAlmacen('ruta', `«${rel}» es un enlace que apunta fuera de la carpeta`, { ruta: rel });
+      return;
+    }
   }
 
   /** Clasifica una ruta: 'dato' | 'conflicto' | 'contexto' | 'temporal' | 'ajeno'. */
@@ -175,10 +213,10 @@ export class Almacen {
 
   /** Barrido completo: stat concurrente de todo y lectura de lo que cambió. */
   async barrer() {
-    const { ficheros, dirs } = await this.recorrer();
+    const { ficheros, dirs, externos } = await this.recorrer();
     const existentes = new Set(ficheros);
     const datos = [];
-    const otros = { contexto: [], ajenos: [], conflictos: [] };
+    const otros = { contexto: [], ajenos: [...externos], conflictos: [] };
     for (const rel of ficheros) {
       const c = this.clasificar(rel, existentes);
       if (c.clase === 'dato') datos.push(rel);
@@ -302,7 +340,8 @@ export class Almacen {
 
   /** Compara el fichero con el índice. Si cambió por fuera lo recarga y lanza conflicto: nada se escribe. */
   async comprobarDisco(rel) {
-    const abs = rutaSegura(this.raiz, rel);
+    const abs = this.rutaDatos(rel);
+    await this.comprobarDentro(rel, abs);
     const e = this.ficheros.get(rel) ?? null;
     let st = null;
     try {
