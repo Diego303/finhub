@@ -87,8 +87,17 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
   }
   // el mínimo se busca dentro del periodo de la caída
   const finPeriodo = meses.indexOf(periodo.hasta);
+  // caída máxima: desde el pico, no desde el valor inicial (si sube antes de caer, la caída real es mayor)
   let iMin = 0;
-  for (let i = 1; i <= finPeriodo; i++) if (sin[i] < sin[iMin]) iMin = i;
+  let pico = sin[0];
+  let caida = 0;
+  for (let i = 1; i <= finPeriodo; i++) {
+    pico = Math.max(pico, sin[i]);
+    if (sin[i] / pico - 1 < caida) {
+      caida = sin[i] / pico - 1;
+      iMin = i;
+    }
+  }
   const recupera = (serie) => {
     let abajo = false;
     for (let i = 1; i < serie.length; i++) {
@@ -105,7 +114,7 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
     meses: meses.slice(0, corte),
     sin: sin.slice(0, corte),
     con: con.slice(0, corte),
-    caidaPb: Math.round((sin[iMin] / 100 - 1) * 10000),
+    caidaPb: Math.round(caida * 10000),
     valorMinimo: Math.round(valor * (sin[iMin] / 100)),
     mesMinimo: meses[iMin],
     recuperaSin,
