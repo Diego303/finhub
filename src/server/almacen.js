@@ -268,10 +268,10 @@ export class Almacen {
   }
 
   async escribirAtomico(abs, texto) {
-    await this.fs.mkdir(dirname(abs), { recursive: true });
     const tmp = join(dirname(abs), `.finhub-tmp-${process.pid}-${++this.contador}-${randomBytes(3).toString('hex')}`);
     let fh;
     try {
+      await this.fs.mkdir(dirname(abs), { recursive: true });
       fh = await this.fs.open(tmp, 'w');
       await fh.writeFile(texto, 'utf8');
       await fh.sync();
