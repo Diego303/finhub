@@ -45,7 +45,7 @@ async function pagina(app, vista = 'panel', { reloj = null } = {}) {
   return p;
 }
 async function hasta(fn, que, ms = 6000) {
-  const fin = Date.now() + ms;
+  const fin = performance.now() + ms;
   for (;;) {
     try {
       const v = await fn();
@@ -53,7 +53,7 @@ async function hasta(fn, que, ms = 6000) {
     } catch {
       /* aún no */
     }
-    if (Date.now() > fin) throw new Error(`no se cumplió: ${que}`);
+    if (performance.now() > fin) throw new Error(`no se cumplió: ${que}`);
     await esperar(50);
   }
 }
@@ -64,9 +64,9 @@ test('una edición a mano se ve en la web en ≤ 3 s, con el sondeo por defecto'
   const ruta = join(ent.datos, 'ajustes.md');
   await esperar(100);
   await fsp.writeFile(ruta, (await fsp.readFile(ruta, 'utf8')).replace(/^- nombre: .*$/m, '- nombre: Editado en el Bloc de notas'));
-  const t0 = Date.now();
+  const t0 = performance.now();
   await p.waitForFunction(() => document.querySelector('#contenido').textContent.includes('Editado en el Bloc de notas'), null, { timeout: 5000 });
-  assert.ok(Date.now() - t0 <= 3000, `${Date.now() - t0} ms`);
+  assert.ok(performance.now() - t0 <= 3000, `${Math.round(performance.now() - t0)} ms`);
   await p.context().close();
 });
 

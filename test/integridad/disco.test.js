@@ -267,7 +267,7 @@ test('el deshacer por HTTP: hecho, repetido y pasado de plazo; lo cambiado despu
     const d = await pedir(srv, 'POST', '/api/ops', { op: 'hito.crear', args: { fecha: '2026-11-06', texto: 'd' } }, h);
     const otra = await pedir(srv, 'POST', '/api/deshacer', { id: d.json.deshacer }, { 'X-Finhub-Sesion': 'otra' });
     assert.equal(otra.estado, 404, 'la de otra sesión, no');
-    app.deshacer.ahora = () => Date.now() + 60000;
+    { const real = app.deshacer.ahora; app.deshacer.ahora = () => real() + 60000; }
     assert.equal((await pedir(srv, 'POST', '/api/deshacer', { id: d.json.deshacer }, h)).estado, 404, 'pasado el plazo, no');
   }, { nombre: 'deshacer' });
 });

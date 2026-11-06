@@ -22,8 +22,8 @@ const vivo = (pid) => {
   }
 };
 async function hasta(fn, ms = 8000) {
-  const fin = Date.now() + ms;
-  while (Date.now() < fin) {
+  const fin = performance.now() + ms;
+  while (performance.now() < fin) {
     if (await fn()) return true;
     await esperar(50);
   }

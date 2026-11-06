@@ -27,7 +27,7 @@ test(`${MINUTOS} minutos de uso: sin fugas de memoria, temporizadores, listeners
   const app = await new App({ carpeta: ent.datos, puerto: 0, env: ent.env, guardarConfig: false, sondeoMs: 500, barridoMs: 3000 }).iniciar();
   const srv = { url: app.url.replace(/\/$/, ''), puerto: app.puerto };
   const prng = crearPrng(20261106);
-  const fin = Date.now() + MINUTOS * 60000;
+  const fin = performance.now() + MINUTOS * 60000;
   const muestras = [];
   let n = 0;
   let ids = [];
@@ -35,8 +35,8 @@ test(`${MINUTOS} minutos de uso: sin fugas de memoria, temporizadores, listeners
     await esperar(1000);
     const inicioHeap = heap();
     const recursos0 = activos();
-    let siguiente = Date.now() + 30000;
-    while (Date.now() < fin) {
+    let siguiente = performance.now() + 30000;
+    while (performance.now() < fin) {
       const c = prng.entero(0, 9);
       const fecha = `2026-${String(prng.entero(9, 12)).padStart(2, '0')}-${String(prng.entero(1, 28)).padStart(2, '0')}`;
       if (c < 5) {
@@ -64,8 +64,8 @@ test(`${MINUTOS} minutos de uso: sin fugas de memoria, temporizadores, listeners
       }
       n++;
       await esperar(60);
-      if (Date.now() > siguiente) {
-        siguiente = Date.now() + 30000;
+      if (performance.now() > siguiente) {
+        siguiente = performance.now() + 30000;
         muestras.push(heap());
       }
     }

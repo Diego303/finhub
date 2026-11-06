@@ -48,7 +48,7 @@ async function abrirApp(ficheros = EJEMPLO) {
   return { raiz, p, doc };
 }
 async function hasta(fn, que, ms = 6000) {
-  const fin = Date.now() + ms;
+  const fin = performance.now() + ms;
   for (;;) {
     try {
       const v = await fn();
@@ -56,7 +56,7 @@ async function hasta(fn, que, ms = 6000) {
     } catch {
       /* aún no */
     }
-    if (Date.now() > fin) throw new Error(`no se cumplió: ${que}`);
+    if (performance.now() > fin) throw new Error(`no se cumplió: ${que}`);
     await esperar(80);
   }
 }
