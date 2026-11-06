@@ -8,7 +8,7 @@ import { bloques, items, cabeceras, fijarCabecera, anadirBloque } from '../forma
 import { FUENTES_FIJAS } from '../formato/conocimiento.js';
 import { leer } from '../formato/index.js';
 import { esFecha } from '../fechas.js';
-import { resolverPrediccion, fuenteDeRuta } from '../conocimiento.js';
+import { resolverPrediccion, fuenteDeRuta, esFuentePrivada } from '../conocimiento.js';
 
 const FUENTES = 'conocimiento/_fuentes.md';
 const FAMILIAS = 'conocimiento/_familias.md';
@@ -92,6 +92,10 @@ registrar({
     const { sec, indice } = buscarBloque(origen, id, 'la nota');
     const actual = sec.nodos.find((n) => n.k === 'kv' && n.clave === 'fuente')?.valor ?? cabeceras(origen).fuente ?? fuenteDeRuta(ruta);
     if (actual === destino) throw new ErrorOp('invalida', 'la nota ya es de esa fuente');
+    // R1 (§0.3.7): sacar una nota de una fuente privada a otra que no lo es la blanquearía (llegaría a internet)
+    const fichas = items(tx.doc(FUENTES));
+    const privadaOrigen = esFuentePrivada(fichas.find((x) => x.id === actual) ?? { id: actual });
+    if (privadaOrigen && !esFuentePrivada(f)) throw new ErrorOp('invalida', `«${actual}» es privada y «${destino}» no: esta nota llegaría a los trabajos con internet (regla R1). Si quieres hacerla pública, escríbela de nuevo en esa fuente.`);
     const b = bloques(origen).find((x) => x.id === id);
     const { ruta: nueva, doc } = ficheroNuevo(tx, destino, b.campos.fecha ?? cabeceras(origen).fecha ?? tx.ctx.hoy, b.titulo, f.nombre);
     anadirBloque(doc, { id, titulo: b.titulo, campos: { ...b.campos, fuente: destino }, cuerpo: b.cuerpo });
