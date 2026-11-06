@@ -275,6 +275,28 @@ export class Almacen {
     }
   }
 
+  /** Compara el fichero con el índice. Si cambió por fuera lo recarga y lanza conflicto: nada se escribe. */
+  async comprobarDisco(rel) {
+    const abs = rutaSegura(this.raiz, rel);
+    const e = this.ficheros.get(rel) ?? null;
+    let st = null;
+    try {
+      st = await this.fs.stat(abs);
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw new ErrorAlmacen(ERRORES_NUBE.has(err.code) ? 'nube' : 'ilegible', `«${rel}» no se puede consultar ahora: no se sobrescribe`, { ruta: rel });
+    }
+    if (!st && !e) return;
+    if (st && e?.legible && e.tam === st.size && e.mtimeMs === st.mtimeMs) return;
+    if (st) await this.refrescar(rel, st);
+    else this.ficheros.delete(rel);
+    const ahora = this.ficheros.get(rel) ?? null;
+    if ((ahora?.version ?? null) !== (e?.version ?? null)) {
+      this.avisar([rel], 'disco');
+      throw new ErrorAlmacen('conflicto_version', `«${rel}» ha cambiado por fuera desde que lo cargaste`, { ruta: rel, version: ahora?.version ?? null });
+    }
+    if (ahora && !ahora.legible) throw new ErrorAlmacen(ahora.error, `«${rel}» no se puede leer ahora: no se sobrescribe`, { ruta: rel });
+  }
+
   /**
    * Escribe varios ficheros de datos {ruta: texto | null(borrar)}.
    * `versiones` {ruta: versión que el cliente vio}: si alguna no coincide → conflicto (409).
@@ -284,6 +306,10 @@ export class Almacen {
     for (const [rel, v] of Object.entries(versiones)) {
       const actual = this.ficheros.get(rel)?.version ?? null;
       if ((v ?? null) !== actual) throw new ErrorAlmacen('conflicto_version', `«${rel}» ha cambiado desde que lo cargaste`, { ruta: rel, version: actual });
+    }
+    // el índice puede ir hasta 30 s por detrás del disco: lo editado a mano y aún sin detectar no se pisa
+    for (const [rel, texto] of Object.entries(cambios)) {
+      if (detectar(rel) && (this.ficheros.get(rel)?.texto ?? null) !== texto) await this.comprobarDisco(rel);
     }
     const hechos = [];
     try {
