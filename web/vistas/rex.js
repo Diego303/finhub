@@ -237,7 +237,8 @@ export function registrarAccionesRex() {
   });
   entrada('chat-pregunta', (el) => (rx.pregunta = el.value));
   formulario('chat-enviar', (f, d) => {
-    if (!d.pregunta.trim()) return;
+    // con Rex trabajando el campo está desactivado y no viene en el formulario
+    if (!d.pregunta?.trim()) return;
     enviar(d.pregunta.trim());
   });
   accion('explicame-ir', () => {
@@ -249,14 +250,14 @@ export function registrarAccionesRex() {
   // ¿Qué opinan?
   entrada('opinan-pregunta', (el) => (rx.opinan.pregunta = el.value));
   formulario('opinan', async (f, d) => {
-    if (!d.pregunta.trim()) return toast('Escribe la pregunta', { tipo: 'error' });
+    if (!d.pregunta?.trim()) return toast('Escribe la pregunta', { tipo: 'error' });
     const fuentes = datosConocimiento(est()).resumen.filter((r) => r.activa).map((r) => r.id);
     await ejecutarCon(rx.opinan.prog, 'conocimiento', { tarea: 'opinan-canales', pregunta: d.pregunta.trim(), fuentes }, { repintar });
   });
   // Pausa de 48 h
   entrada('pausa-idea', (el) => (rx.pausa.idea = el.value));
   formulario('pausa', async (f, d) => {
-    const idea = d.idea.trim();
+    const idea = (d.idea ?? '').trim();
     if (!idea) return toast('Escribe la decisión', { tipo: 'error' });
     const r = await ejecutarCon(rx.pausa.prog, 'privado', { tarea: 'pausa-48h', pregunta: idea }, { repintar });
     if (r?.estado !== 'ok') return;
