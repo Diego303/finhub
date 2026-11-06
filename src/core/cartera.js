@@ -1,6 +1,6 @@
 // Cartera (§4.3): posiciones, coste fiscal, valor, plusvalía, impuesto, exposición y clases frente a objetivo.
 // Importes en céntimos; participaciones en millonésimas; pesos en puntos básicos.
-import { sumar, aplicarPb, proporcionPb, dividirRedondeo } from './dinero.js';
+import { sumar, proporcionPb, dividirRedondeo } from './dinero.js';
 
 /**
  * Flujos externos de la cartera (dinero que entra o sale de ella), desde el punto de vista de la cartera:
