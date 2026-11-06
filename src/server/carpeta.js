@@ -101,7 +101,8 @@ export async function crearCarpeta(ruta) {
  * `progreso({hechos, total, ruta})`.
  */
 export async function copiarVerificando(origen, destino, { progreso = () => {} } = {}) {
-  const lista = await listarTodo(origen);
+  // ajustes.md, el último: es lo que hace que una carpeta «sea de finhub», y una copia a medias no debe parecerlo
+  const lista = (await listarTodo(origen)).sort((a, b) => (a === 'ajustes.md') - (b === 'ajustes.md'));
   const creados = [];
   const dirsCreados = [];
   const ocupados = [];
