@@ -1,5 +1,5 @@
-// QA-043 (cifras): el color del presupuesto se decidía con el porcentaje ya redondeado a puntos básicos: 1.000,01 € de
-// gasto sobre 100.000,00 € de… un gasto apenas por encima del 100 % (o del 90 %) salía del color de abajo. Rojo es > 100 %.
+// QA-043 (cifras): el color del presupuesto se decidía con el porcentaje ya redondeado a puntos básicos: 300,01 € de gasto sobre
+// 300,00 € de presupuesto salía como «100 %» y en ámbar; apenas por encima del 90 %, en verde. Rojo es > 100 %.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { presupuestos } from '../../../src/core/mes.js';
