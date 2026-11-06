@@ -59,7 +59,7 @@ export class App {
   async abrirCarpeta(ruta, { tomarControl = false } = {}) {
     // patrones de conflicto: los de serie + los de tus ajustes (se leen antes de clasificar la carpeta)
     const ajustesTexto = await fsp.readFile(join(ruta, 'ajustes.md'), 'utf8').catch(() => null);
-    const almacen = await new Almacen({ raiz: ruta, patrones: patronesDe(ajustesTexto) }).cargar();
+    const almacen = await new Almacen({ raiz: ruta, patrones: patronesDe(ajustesTexto) }).cargar({ limpiar: false });
     const ajustes = this.ajustesDe(almacen);
     this.almacen = almacen;
     this.carpeta = ruta;
@@ -69,8 +69,12 @@ export class App {
     this.candado.arrancar();
     this.papelera = new Papelera({ almacen });
     this.copias = new Copias({ almacen, hoy: () => fechaLocal(), destinoLocal: ajustes.copias === 'local' ? join(carpetasLocales(this.env).datos, 'copias') : null });
-    this.purgadas = await this.papelera.purgar().catch(() => []);
-    await this.copias.limpiarHuerfanas().catch(() => {});
+    // la limpieza, solo con el candado: en solo lectura esos temporales pueden ser de la otra instancia, en marcha
+    if (!this.candado.estado.soloLectura) {
+      almacen.temporalesLimpiados = await almacen.limpiarTemporales();
+      this.purgadas = await this.papelera.purgar().catch(() => []);
+      await this.copias.limpiarHuerfanas().catch(() => {});
+    } else this.purgadas = [];
     almacen.alCambiar((ev) => {
       this.difusor.enviar('version', { version: ev.version, rutas: ev.rutas, origen: ev.origen });
       if (ev.rutas.includes('ajustes.md')) this.actualizarPatrones();

@@ -78,12 +78,13 @@ export class Almacen {
   }
 
   // ---------- carga y sondeo ----------
-  async cargar() {
+  /** `limpiar: false`: sin tocar nada aún (hasta saber si tenemos el candado). */
+  async cargar({ limpiar = true } = {}) {
     const st = await this.fs.stat(this.raiz).catch((e) => {
       throw new ErrorAlmacen('ruta', e.code === 'ENOENT' ? `la carpeta de datos no existe: ${this.raiz}` : `no se puede abrir la carpeta de datos: ${e.message}`);
     });
     if (!st.isDirectory()) throw new ErrorAlmacen('ruta', `no es una carpeta: ${this.raiz}`);
-    this.temporalesLimpiados = await this.limpiarTemporales();
+    if (limpiar) this.temporalesLimpiados = await this.limpiarTemporales();
     await this.barrer();
     return this;
   }
