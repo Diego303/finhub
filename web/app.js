@@ -14,7 +14,7 @@ import { registrarPulso, abrirPulso } from './componentes/pulso.js';
 import { registrarIngesta } from './componentes/ingesta.js';
 import { abrirAjustes, registrarAjustes } from './componentes/ajustes.js';
 import { abrirPapelera, registrarPapelera } from './componentes/papelera.js';
-import { registrarConflictos } from './componentes/conflictos.js';
+import { registrarConflictos, abrirConflictos } from './componentes/conflictos.js';
 import { abrirGuardado } from './componentes/guardado.js';
 import { abrirTextos, registrarTextos } from './componentes/textos-claude.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
@@ -137,6 +137,7 @@ accion('tomar-control', async () => {
 accion('pendiente', (el) => {
   const d = el.dataset.destino;
   const vistas = { mes: 'mes', descubrimientos: 'descubrimientos', predicciones: 'conocimiento', contexto: 'conocimiento', pausas: 'rex' };
+  if (d === 'conflictos') return abrirConflictos(estado);
   if (d === 'recurrentes') return abrirRecurrentes(estado);
   if (d === 'cierre') return abrirCierre(estado);
   if (d === 'valores') return abrirValores(estado);
