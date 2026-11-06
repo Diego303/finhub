@@ -21,6 +21,10 @@ import { textoInforme } from '../claude/trabajos/encaje.js';
 import { MODOS_DESCUBRIR, PROFUNDIDAD } from '../claude/trabajos/descubrir.js';
 
 const RAIZ_REPO = join(import.meta.dirname, '..', '..');
+function temasValidos(temas = []) {
+  if (!Array.isArray(temas) || temas.some((t) => typeof t !== 'string')) throw Object.assign(new Error('temas no válidos'), { estado: 400 });
+  return temas.slice(0, 20).map((t) => t.slice(0, 60));
+}
 const CONSERVAR = 20; // ejecuciones terminadas que se recuerdan en memoria
 
 export class ServicioClaude {
@@ -98,9 +102,15 @@ export class ServicioClaude {
       return { series };
     }
     if (id === 'privado' || id === 'conocimiento') return this.parametrosTarea(id, params, modelo);
+    if (id === 'rex-web') {
+      if (typeof params.pregunta !== 'string' || !params.pregunta.trim()) throw Object.assign(new Error('escribe la pregunta'), { estado: 400 });
+      return { pregunta: params.pregunta.slice(0, 8000), temas: temasValidos(params.temas) };
+    }
     if (id === 'pulso') {
+      if (!esFecha(params.fecha) || params.fecha > fechaLocal()) throw Object.assign(new Error('elige un día que ya haya pasado o el de hoy'), { estado: 400 });
+      temasValidos(params.temas);
       const activos = params.misActivos ? modelo.activos.filter((a) => !a.campos.archivado).map((a) => a.titulo) : null;
-      return { fecha: params.fecha, temas: params.temas ?? [], activos };
+      return { fecha: params.fecha, temas: temasValidos(params.temas), activos };
     }
     if (id === 'precios' && params.seguimiento) {
       const activos = isinsSeguidos(modelo);

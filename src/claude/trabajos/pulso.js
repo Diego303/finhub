@@ -2,7 +2,7 @@
 // activas en esa ejecución, los nombres de tus activos. Salida: notas de Mundo propuestas.
 import { O, L, T, opc, TEMAS, POSTURA, TIPO_NOTA } from './comun.js';
 import { bloque } from '../contexto.js';
-import { diasEntre } from '../../core/fechas.js';
+import { diasEntre, esFecha } from '../../core/fechas.js';
 
 export default {
   id: 'pulso',
@@ -24,6 +24,7 @@ export default {
   /** Reglas además del esquema: la fecha es la pedida ±1; los sectores, los del mapa de efectos. */
   comprobar(json, { params, modelo }) {
     const e = [];
+    if (!esFecha(params.fecha)) return ['no se sabe qué día se pidió: la fecha de las notas no se puede comprobar'];
     const sectores = new Set(modelo.ajustes.sectores_efectos ?? []);
     for (const [i, n] of json.notas.entries()) {
       if (Math.abs(diasEntre(params.fecha, n.fecha)) > 1) e.push(`notas[${i}]: fecha ${n.fecha} fuera del día pedido ±1`);
