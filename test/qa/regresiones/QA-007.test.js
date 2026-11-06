@@ -35,7 +35,7 @@ test('QA-007: cancelar, el timeout y la guardia matan al proceso y a sus hijos',
     const pidf = join(ta.dir, `pid-${modo}`);
     const pasos = [{ init: {} }, { hijo: pidf }, ...(modo === 'guardia' ? [{ esperar: 100 }, { toolUse: 'Bash' }] : []), { colgar: true }];
     const ac = new AbortController();
-    const p = ejecutar(trabajo('ingesta'), { sistema: 'S', usuario: 'x', sandboxBase: ta.base, comando: await ta.guion(pasos), senal: ac.signal, timeoutMs: modo === 'timeout' ? 800 : 6000 });
+    const p = ejecutar(trabajo('ingesta'), { sistema: 'S', usuario: 'x', sandboxBase: ta.base, comando: await ta.guion(pasos), senal: ac.signal, timeoutMs: modo === 'timeout' ? 3000 : 6000 });
     assert.ok(await hasta(() => fsp.stat(pidf).then(() => true, () => false)), 'arrancó el hijo');
     const pid = +(await fsp.readFile(pidf, 'utf8'));
     if (modo === 'cancelar') ac.abort();

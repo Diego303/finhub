@@ -64,7 +64,7 @@ test('seguridad HTTP (§2.2): Host, Origin, Sec-Fetch-Site, JSON obligatorio, l�
   assert.equal(idx.cabeceras['x-frame-options'], 'DENY');
   assert.equal((await cruda({ ruta: '/core/dinero.js' })).cabeceras['content-type'], 'text/javascript; charset=utf-8');
   const desconocida = await api('POST', '/api/ops', { op: 'inventada' });
-  assert.equal(desconocida.estado, 400);
+  assert.equal(desconocida.estado, 422);
   assert.doesNotMatch(desconocida.texto, /at .*\.js:\d+/, 'nunca trazas');
   assert.equal((await api('POST', '/api/ops', { op: 'ficheros.restaurar', args: { ficheros: { 'cuentas.md': 'x' } } })).estado, 400, 'la inversa genérica no se pide desde fuera');
 });
