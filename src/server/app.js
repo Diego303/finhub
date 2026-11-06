@@ -70,6 +70,7 @@ export class App {
     this.papelera = new Papelera({ almacen });
     this.copias = new Copias({ almacen, hoy: () => fechaLocal(), destinoLocal: ajustes.copias === 'local' ? join(carpetasLocales(this.env).datos, 'copias') : null });
     this.purgadas = await this.papelera.purgar().catch(() => []);
+    await this.copias.limpiarHuerfanas().catch(() => {});
     almacen.alCambiar((ev) => {
       this.difusor.enviar('version', { version: ev.version, rutas: ev.rutas, origen: ev.origen });
       if (ev.rutas.includes('ajustes.md')) this.actualizarPatrones();
@@ -92,6 +93,7 @@ export class App {
   async cerrarCarpeta() {
     clearInterval(this.tSondeo);
     clearInterval(this.tBarrido);
+    await this.copias?.enCurso; // una copia a medias no se abandona
     await this.candado?.soltar().catch(() => {});
     this.almacen = null;
   }
