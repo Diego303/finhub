@@ -13,6 +13,7 @@ import { crearPrng } from '../../src/core/prng.js';
 
 const SEMILLA = Number(process.env.FINHUB_SEMILLA ?? 20261106);
 const MATAR = Number(process.env.FINHUB_SIGKILL ?? 60); // test:todo usa 300
+const ESPERA_MAX = Number(process.env.FINHUB_SIGKILL_ESPERA ?? 25); // en un disco lento (/mnt/d), más: si no, se mata antes de empezar a escribir
 
 const ESCRITOR = `
 import { Almacen } from ${JSON.stringify(join(RAIZ, 'src/server/almacen.js'))};
@@ -34,7 +35,7 @@ test(`SIGKILL a mitad de escritura (${MATAR} veces, pequeños y grandes; semilla
       const tam = i % 3 === 0 ? 5 * 1024 * 1024 : i % 3 === 1 ? 200 : 64 * 1024;
       const h = spawn(process.execPath, [esc, ent.datos, String(tam)], { stdio: ['ignore', 'pipe', 'ignore'], env: { ...ent.env } });
       await new Promise((ok) => h.stdout.once('data', ok));
-      await esperar(prng.entero(0, 25));
+      await esperar(prng.entero(0, ESPERA_MAX));
       h.kill('SIGKILL');
       await new Promise((ok) => h.once('exit', ok));
       for (const f of ['cuentas.md', 'grupos.md']) {

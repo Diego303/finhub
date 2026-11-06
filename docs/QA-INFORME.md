@@ -15,11 +15,12 @@ Plan e inventario: [QA-PLAN.md](QA-PLAN.md). Lista manual: [QA-CHECKLIST.md](QA-
 
 **Un fallo intermitente sin explicar:** ver «Riesgos».
 
-56 bugs: 14 críticos, 20 altos, 13 medios y 9 bajos. Todos arreglados, cada uno con su prueba que fallaba antes.
+57 bugs: 14 críticos, 20 altos, 13 medios y 10 bajos. Todos arreglados, cada uno con su prueba que fallaba antes.
 
 **QA9, con tu permiso:**
 - **Prueba real con Claude Code 2.1.319** (`pnpm qa:humo -- --si`, 2026-11-07): 9 de 9 trabajos correctos, 0,11 USD, con haiku. Herramientas exactas, sin MCP, hooks, skills ni plugins globales, y nada tuyo en los trabajos sin privado. Detalle en [CLAUDE-CLI.md](CLAUDE-CLI.md).
-- **`pnpm qa:validar`:** listo y probado con temporales; **sin pasar por tu carpeta real**, que aún no está configurada. Falta que me digas la ruta.
+- **`pnpm qa:validar`** sobre `D:\\GoogleDrive\\Vida-Diego\\FINANZAS`: la carpeta estaba vacía, sin nada que validar. Hay que repetirlo cuando tenga datos.
+- **Recorrido real** en `FINANZAS-PRUEBAS`, con navegador automático y el servidor de verdad (2026-11-07): asistente, Mes, Cartera, Metas y todas las pestañas, sin errores. Una edición a mano se ve en la web en 1,1–1,8 s.
 
 ## Estado de R1
 
@@ -106,6 +107,7 @@ Gravedades: crítico (R1, seguridad, pérdida o corrupción) · alto (cifra inco
 | QA-054 | bajo | Igualar el objetivo de libertad contaba como alcanzarlo; §4.4 dice «supera». | `>=`. | `>`. (`f72e238`) | `test/qa/regresiones/QA-054.test.js` |
 | QA-055 | bajo | El impuesto podía diferir 1–2 céntimos. | Se redondeaba en cada tramo. | Se redondea una vez, al final. (`de3c6a8`) | `test/qa/regresiones/QA-055.test.js` |
 | QA-056 | medio | Un clic se perdía sin avisar si los datos se recargaban justo entre pulsar y soltar. Salió como fallo intermitente de una prueba. | El repintado sustituye el botón: el navegador no ve el clic. | El repintado espera a que sueltes. (`77580a0`) | `test/e2e/formularios.test.js` |
+| QA-057 | bajo | Por debajo de mil euros, el eje de la línea de tiempo decía «0k, 0k, 0k»; y «no concluyente» salía en verde, como si fuera bueno. Lo encontró la prueba real con tus datos de prueba. | Etiqueta siempre en miles enteros; color fijo. | `etiquetaMiles` y gris cuando no hay dato. | `test/qa/regresiones/QA-057.test.js` |
 
 Dos incidencias del propio proceso, sin reescribir el historial, como pediste: QA-010 se commiteó en `7bcd8fd` con su prueba aún en rojo y se corrigió en `f7d703f`; QA-040 comparte commit con QA-039 porque tocan las mismas líneas.
 
@@ -126,7 +128,8 @@ Pediste aplicar en cada una la opción recomendada. El detalle de cada decisión
 
 - **Fallo intermitente sin explicar.** `test/e2e/descubrimientos.test.js`, «simulador → encaje → … → diario de decisiones», falló en 2 ejecuciones completas seguidas (en ambas, «no se cumplió: decisión creada», y la prueba siguiente, en cascada). No se pudo reproducir: pasó en repeticiones sueltas, también con toda la CPU ocupada, y en las 4 ejecuciones completas posteriores. Esas 2 ejecuciones no dejaron datos, porque el diagnóstico se añadió después. La hipótesis del clic perdido (QA-056) era un bug real, pero **no** explica este fallo: tras arreglarla volvió a fallar. Puede seguir ahí. Si reaparece, el error dirá qué respondió el servidor y qué enseñaba la página. Efecto si fuera un fallo de la app: «Añadir al diario» no crea la decisión; no se ha visto ningún dato perdido.
 - **Claude de verdad, una sola pasada.** Los ataques y las baterías de R1 se han probado con el Claude simulado; con el real, 9 ejecuciones normales con haiku, sin textos trampa. Si una versión nueva de Claude Code cambia los flags o el evento `init`, la guardia falla cerrada; conviene repetir `pnpm qa:humo -- --si` tras actualizar.
-- **Sistema de ficheros real.** SIGKILL, renombrados y `fsync` se han probado en `/tmp` (ext4). `/mnt/d` (drvfs, NTFS) y un corte de luz de verdad pueden comportarse distinto; no lo he probado para no tocar tus discos.
+- **Sistema de ficheros real.** SIGKILL, fallos de disco, nube, conflictos y candado se han repetido en `D:` (9P sobre NTFS) el 2026-11-07, en una carpeta temporal fuera de Drive ya borrada: 60 SIGKILL sin ningún fichero truncado, y escrituras en 68 ms. Sin probar allí: los permisos (`chmod` no tiene efecto en esa unidad, y 3 pruebas fallan por eso) y un corte de luz de verdad.
+- **Papelera de Windows, probada de verdad por accidente.** Una prueba pensada para `/tmp`, al ejecutarse en `D:`, mandó una carpeta de prueba `FINANZAS vieja` (solo un `ajustes.md`) a tu Papelera de reciclaje. Funciona, pero esa carpeta no es tuya: puedes vaciarla.
 - **Sincronización simulada.** Los patrones de Google Drive para copias en conflicto siguen sin verificar (`docs/SINCRONIZACION.md` §4 y §7): punto 15 de la lista manual.
 - **Windows:** acceso directo, app instalada, arranque con el sistema, Bloc de notas, Obsidian y dos PC: solo manual.
 - **Revisión visual.** Las capturas las he revisado en hojas de contacto, por grupos, no una a una a tamaño completo; lo medible (contraste y desbordes) sí se comprueba en cada una. Comparación con la maqueta: sin diferencias que afecten al uso, aparte de las anotadas arriba.
