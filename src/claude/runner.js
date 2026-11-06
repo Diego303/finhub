@@ -66,22 +66,31 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
     return await new Promise((resolver) => {
       let hijo;
       try {
-        hijo = spawn(comando[0], [...comando.slice(1), ...args], { cwd: sandbox, env: entornoMinimo(env), stdio: ['pipe', 'pipe', 'pipe'] });
+        // su propio grupo de procesos: cancelar o abortar mata también a lo que haya lanzado
+        hijo = spawn(comando[0], [...comando.slice(1), ...args], { cwd: sandbox, env: entornoMinimo(env), stdio: ['pipe', 'pipe', 'pipe'], detached: true });
       } catch (e) {
         resolver({ estado: 'error', codigo: e.code === 'ENOENT' ? 'no_instalado' : 'fallo', mensaje: e.code === 'ENOENT' ? MENSAJES.no_instalado : e.message, texto: '', herramientas });
         return;
       }
       const temporizadores = [];
+      const matar = (senalKill) => {
+        try {
+          if (hijo.pid) process.kill(-hijo.pid, senalKill);
+        } catch {
+          /* el grupo ya no existe */
+        }
+      };
       const parar = (estado, codigo, motivos = []) => {
         if (fin) return;
         fin = { estado, codigo, motivos };
-        hijo.kill(codigo === 'guardia' ? 'SIGKILL' : 'SIGTERM');
-        temporizadores.push(setTimeout(() => hijo.kill('SIGKILL'), 5000));
+        matar(codigo === 'guardia' ? 'SIGKILL' : 'SIGTERM');
+        temporizadores.push(setTimeout(() => matar('SIGKILL'), 5000));
       };
       temporizadores.push(setTimeout(() => !init && parar('error', 'sin_init'), initMs));
       temporizadores.push(setTimeout(() => parar('error', 'timeout'), timeoutMs));
       const alAbortar = () => parar('error', 'cancelado');
       senal?.addEventListener('abort', alAbortar, { once: true });
+      if (senal?.aborted) alAbortar();
       let resto = '';
       let stderr = '';
       const linea = (l) => {
@@ -146,6 +155,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
         fin ??= { estado: 'error', codigo: e.code === 'ENOENT' ? 'no_instalado' : 'fallo', motivos: [e.message] };
       });
       hijo.on('close', (codigoSalida) => {
+        matar('SIGKILL'); // lo que el proceso haya dejado vivo en su grupo
         if (resto) linea(resto);
         for (const t of temporizadores) clearTimeout(t);
         senal?.removeEventListener('abort', alAbortar);
