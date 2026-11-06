@@ -10,11 +10,12 @@ import { cifrasNoVerificadas, permitidos, revisarCitas, idsInventados, revisarPr
 import { registrar, aCuarentena } from './registro.js';
 import { slug } from '../core/ids.js';
 
-/** Textos que se muestran al usuario dentro del JSON (para el verificador de cifras). */
-const TEXTOS = ['respuesta_md', 'comentario_md', 'tesis', 'resumen', 'argumento', 'coinciden', 'discrepan', 'opinion_modelo', 'ya_tienes', 'solapamiento'];
+/** Lo que no es texto para el usuario: ids, enumeraciones, enlaces, nombres de cifras. El resto se verifica. */
+const NO_TEXTO = new Set(['id', 'citas', 'cita', 'nota', 'url', 'medio', 'origen', 'fecha', 'mes', 'temas', 'activos', 'tipo', 'postura', 'confianza', 'nombre', 'isin', 'indice', 'medir', 'horizonte', 'cifras_usadas', 'efectos']);
 function textosDe(x, out = []) {
-  if (Array.isArray(x)) x.forEach((y) => textosDe(y, out));
-  else if (x && typeof x === 'object') for (const [k, v] of Object.entries(x)) (TEXTOS.includes(k) && typeof v === 'string' ? out.push(v) : textosDe(v, out));
+  if (typeof x === 'string') out.push(x);
+  else if (Array.isArray(x)) x.forEach((y) => textosDe(y, out));
+  else if (x && typeof x === 'object') for (const [k, v] of Object.entries(x)) if (!NO_TEXTO.has(k)) textosDe(v, out);
   return out;
 }
 const probabilidadesDe = (json) => (json?.escenarios ?? []).map((e) => e.prob);
