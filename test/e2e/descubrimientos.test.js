@@ -65,10 +65,11 @@ async function hasta(fn, que, ms = 10000) {
     } catch {
       /* aún no */
     }
-    if (performance.now() > fin) throw new Error(`no se cumplió: ${que}`);
+    if (performance.now() > fin) throw new Error(`no se cumplió: ${que} · toast: ${await p.textContent('#toast').catch(() => '?')} · respuestas: ${JSON.stringify(globalThis.__resp?.slice(-8))} · modal: ${(await p.textContent('[role=dialog]').catch(() => '?')).slice(-300)}`);
     await esperar(80);
   }
 }
+globalThis.__resp = [];
 const dialogo = '[role=dialog]';
 const ir = async (vista) => {
   await p.waitForSelector(dialogo, { state: 'detached', timeout: 10000 });
@@ -147,6 +148,9 @@ test('simulador → encaje → guardar en privado → al diario de decisiones', 
   assert.match(textoSeccion(e, 'Cifras (código)'), /simulador: peso dedicado \(sacado de msci-world\): 10 %/);
   assert.equal(await fsp.readFile(join(raiz, 'cartera/activos.md'), 'utf8'), antes, 'el simulador no toca tu cartera');
   await assert.rejects(fsp.stat(join(raiz, 'conocimiento/descubrimientos/D-013-encaje.md')));
+  p.on('response', async (r) => {
+    if (r.request().method() === 'POST') globalThis.__resp.push([r.status(), r.url().slice(-20), (r.request().postData() ?? '').slice(0, 60), r.status() >= 400 ? (await r.text().catch(() => '')).slice(0, 160) : '']);
+  });
   await clic(`${dialogo} [data-accion=encaje-diario]`);
   const dec = await hasta(async () => (await fsp.readdir(join(raiz, 'decisiones'))).find((f) => f.includes('idea-salud-global')), 'decisión creada');
   assert.match(cabeceras(await doc(`decisiones/${dec}`)).origen, /descubrimiento D-013/);
