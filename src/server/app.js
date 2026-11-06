@@ -148,11 +148,17 @@ export class App {
     return p;
   }
 
+  /** Relee el candado antes de escribir: si otro equipo tomó el control entre latidos, 423 y no se escribe. */
+  async exigirEscritura() {
+    await this.candado.verificar().catch((e) => this.log(`candado: ${e.message}`));
+    if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+  }
+
   async aplicar({ op, args = {}, versiones = {}, sesion = 'anonima' }) {
     if (typeof op !== 'string') throw new ErrorHttp(400, 'falta «op»');
     if (op === 'ficheros.restaurar' || op === 'papelera.restaurar') throw new ErrorHttp(400, `«${op}» no se puede pedir directamente`);
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const res = aplicarOp((r) => this.almacen.texto(r), op, args, this.ctxOps());
       return this.escribirResultado(res, { op, versiones, sesion });
     });
@@ -175,7 +181,7 @@ export class App {
 
   async deshacerUltima({ sesion = 'anonima', id = null }) {
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const e = this.deshacer.tomar(sesion, id);
       if (!e) throw new ErrorHttp(404, 'No hay nada que deshacer');
       for (const [ruta, v] of Object.entries(e.versiones)) {
@@ -190,7 +196,7 @@ export class App {
 
   async restaurarPapelera({ id, sesion = 'anonima' }) {
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const entrada = await this.papelera.entrada(id);
       if (!entrada) throw new ErrorHttp(404, 'Esa entrada ya no está en la papelera');
       if (entrada.tipo === 'conflicto') {
@@ -261,7 +267,7 @@ export class App {
   async resolverConflicto({ ruta, modo }) {
     if (!['tuya', 'otra', 'fusionar', 'hecho'].includes(modo)) throw new ErrorHttp(400, 'modo no válido');
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const { c, tuya, otra } = await this.leerConflicto(ruta);
       const hoy = fechaLocal();
       let nuevo = null;
@@ -425,7 +431,7 @@ export class App {
       case 'GET /api/claude/datos':
         return enviarJson(res, 200, { series: this.claude.estadoDatos() });
       case 'POST /api/claude/ejecutar': {
-        if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+        await this.exigirEscritura();
         try {
           return enviarJson(res, 202, await this.claude.lanzar({ trabajo: cuerpo.trabajo, params: cuerpo.params ?? {}, desclasificar: !!cuerpo.desclasificar, resume: cuerpo.resume ?? null }));
         } catch (e) {
@@ -450,7 +456,7 @@ export class App {
         return enviarJson(res, 200, { tareas: [...tareas.values()].map(({ instrucciones, ...t }) => ({ ...t, instrucciones })), roles: [...roles.values()] });
       }
       case 'POST /api/contexto/procesado': {
-        if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+        await this.exigirEscritura();
         try {
           return enviarJson(res, 200, await this.claude.archivarContexto(String(cuerpo.fichero ?? ''), String(cuerpo.fuente ?? '')));
         } catch (e) {

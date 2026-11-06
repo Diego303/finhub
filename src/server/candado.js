@@ -87,6 +87,20 @@ export class Candado {
     return this.estado;
   }
 
+  /** Justo antes de escribir (entre latidos pueden pasar 30 s): si otro tiene el control, solo lectura. */
+  async verificar() {
+    if (this.estado.soloLectura) return this.estado;
+    const c = await this.leer();
+    if (c?.ilegible || (c && this.esNuestro(c))) return this.estado;
+    if (c && this.vigente(c)) {
+      this.estado = { soloLectura: true, otro: { equipo: c.equipo, desde: c.inicio, latido: c.latido }, aviso: `${c.equipo} ha tomado el control: ahora estás en solo lectura` };
+      this.emitir();
+      return this.estado;
+    }
+    await this.escribir(); // ha desaparecido, o es de otro y ya caducó
+    return this.estado;
+  }
+
   arrancar() {
     this.temporizador = setInterval(() => this.latir().catch(() => {}), LATIDO_MS);
     this.temporizador.unref?.();
