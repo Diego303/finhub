@@ -33,7 +33,7 @@ cd ~                                   # o donde guardes tus repositorios (p. ej
 git clone <url-del-repo> finhub
 cd finhub
 pnpm install                           # sin dependencias de runtime; solo herramientas de desarrollo
-pnpm link --global                     # crea el comando «finhub»
+pnpm add -g "link:$PWD"                # crea el comando «finhub»
 finhub --help                          # comprueba que responde
 ```
 
@@ -225,7 +225,7 @@ Cada fichero de tu carpeta lleva `esquema:`. Si un fichero es de una versión m�
 
 | Problema | Qué hacer |
 |---|---|
-| `finhub: command not found` | `pnpm setup`, abre una terminal nueva y repite `pnpm link --global`; o usa `node bin/finhub.js` |
+| `finhub: command not found` | `pnpm setup`, abre una terminal nueva y repite `pnpm add -g "link:$PWD"` desde la carpeta de finhub; o usa `node bin/finhub.js` |
 | No se abre el navegador | abre a mano la dirección que imprime (`http://127.0.0.1:4747/`) |
 | El puerto 4747 está ocupado | finhub prueba el siguiente libre; o `finhub --puerto 4800`; o fija `puerto` en Ajustes → General |
 | «no existe la carpeta que la contendría» | crea antes la carpeta madre (p. ej. `D:\GoogleDrive`) o revisa la ruta y las comillas |

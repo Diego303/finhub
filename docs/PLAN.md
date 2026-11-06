@@ -181,7 +181,7 @@ finhub/
 ### 2.3 Puerto y CLI
 - Puerto por defecto `4747`, o el siguiente libre.
 - `finhub` abre el navegador con `wslview`, o con `explorer.exe` + `wslpath -w`. Si ya está en marcha, solo abre la pestaña.
-- `pnpm link --global` para usarlo desde cualquier sitio. App instalable (manifest) y arranque con Windows opcional, como en el planner.
+- `pnpm add -g "link:$PWD"` (pnpm 12 ya no admite `pnpm link --global`) para usarlo desde cualquier sitio. App instalable (manifest) y arranque con Windows opcional, como en el planner.
 
 ### 2.4 Escritura, copias y concurrencia
 - **Escritura atómica:** fichero `tmp`, `fsync` y `rename`, con una cola por fichero.

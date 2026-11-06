@@ -49,7 +49,7 @@ Requisitos: Windows con WSL (o Linux), **Node ≥ 20**, **pnpm** y, para las fun
 
 ```bash
 git clone <repo> finhub && cd finhub
-pnpm install && pnpm link --global   # instala el comando «finhub»
+pnpm install && pnpm add -g "link:$PWD"   # instala el comando «finhub»
 finhub --ejemplo                     # pruébalo con datos inventados (copia temporal)
 finhub carpeta "D:\GoogleDrive\FINANZAS" --crear    # tu carpeta real (la ruta la eliges tú)
 finhub                               # arranca y abre el navegador
