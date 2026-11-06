@@ -259,6 +259,15 @@ export class Almacen {
   }
 
   // ---------- escritura ----------
+  /** rutaSegura con el error que entiende la API (400, no 500). */
+  rutaDatos(rel) {
+    try {
+      return rutaSegura(this.raiz, rel);
+    } catch (e) {
+      throw new ErrorAlmacen('ruta', e.message);
+    }
+  }
+
   /** Encola fn por ruta (escrituras del mismo fichero, en orden). */
   cola(rel, fn) {
     const previa = this.colas.get(rel) ?? Promise.resolve();
@@ -331,7 +340,7 @@ export class Almacen {
     try {
       for (const [rel, texto] of Object.entries(cambios)) {
         if (!detectar(rel)) throw new ErrorAlmacen('ruta', `«${rel}» no es un fichero de datos`);
-        const abs = rutaSegura(this.raiz, rel);
+        const abs = this.rutaDatos(rel);
         const antes = this.ficheros.get(rel) ?? null;
         if (antes && !antes.legible) throw new ErrorAlmacen(antes.error, `«${rel}» no se puede leer ahora: no se sobrescribe`, { ruta: rel });
         if ((antes?.texto ?? null) === texto) continue;
@@ -384,7 +393,7 @@ export class Almacen {
 
   // ---------- ficheros de servicio (.finhub/) ----------
   rutaServicio(rel) {
-    return rutaSegura(this.raiz, `.finhub/${rel}`);
+    return this.rutaDatos(`.finhub/${rel}`);
   }
   async leerServicio(rel) {
     try {

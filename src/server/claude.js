@@ -62,14 +62,14 @@ export class ServicioClaude {
 
   /** Texto de un fichero de CONTEXTO (la bandeja de la carpeta), solo para la ingesta. */
   async leerContexto(fichero) {
-    if (!/^[^/]+$/.test(fichero ?? '') || fichero.startsWith('.')) throw Object.assign(new Error('fichero de CONTEXTO no válido'), { estado: 400 });
+    if (!/^[^/\\]+$/.test(fichero ?? '') || /^\.+$/.test(fichero) || fichero.startsWith('.')) throw Object.assign(new Error('fichero de CONTEXTO no válido'), { estado: 400 });
     if (!this.app.almacen.otros.contexto.includes(`CONTEXTO/${fichero}`)) throw Object.assign(new Error(`no está en CONTEXTO: ${fichero}`), { estado: 404 });
     return this.app.almacen.fs.readFile(join(this.app.almacen.raiz, 'CONTEXTO', fichero), 'utf8');
   }
 
   /** Mueve un fichero procesado a CONTEXTO/procesados/<fuente>/ (no se borra nada). */
   async archivarContexto(fichero, fuente) {
-    if (!/^[^/]+$/.test(fichero ?? '') || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fuente ?? '')) throw Object.assign(new Error('datos no válidos'), { estado: 400 });
+    if (!/^[^/\\]+$/.test(fichero ?? '') || /^\.+$/.test(fichero) || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fuente ?? '')) throw Object.assign(new Error('datos no válidos'), { estado: 400 });
     const a = this.app.almacen;
     const origen = join(a.raiz, 'CONTEXTO', fichero);
     const dir = join(a.raiz, 'CONTEXTO', 'procesados', fuente);
