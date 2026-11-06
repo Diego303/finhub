@@ -68,7 +68,7 @@ export function procesarSalida(trabajo, texto, { prompt, params, modelo, bloques
   const inventados = idsInventados(textos, prompt.ids);
   if (inventados.length) avisos.push(`ids citados que no están en tus notas: ${inventados.join(', ')}`);
   if (!trabajo.internet) {
-    const dudosas = cifrasNoVerificadas(textos, permitidos({ cifras: prompt.cifras, datos: bloques.map((b) => b.contenido).join('\n'), probabilidades: probabilidadesDe(json) }));
+    const dudosas = cifrasNoVerificadas(textos, permitidos({ cifras: prompt.cifras, datos: trabajo.cifrasEstrictas ? '' : bloques.map((b) => b.contenido).join('\n'), probabilidades: probabilidadesDe(json) }));
     if (dudosas.length) avisos.push(`cifra(s) no verificada(s): ${[...new Set(dudosas.map((d) => d.texto))].slice(0, 8).join(', ')}`);
   }
   const rec = recomendaciones(textos);

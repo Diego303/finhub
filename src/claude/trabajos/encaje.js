@@ -24,6 +24,7 @@ export default {
   privado: true,
   externo: true,
   herramientas: [],
+  cifrasEstrictas: true, // §8.3: cifras solo de <cifras>, no del informe (externo) ni de la cartera
   modelo: 'opus',
   timeoutMs: 120000,
   maxTurns: 2,
@@ -45,6 +46,7 @@ export default {
       for (const c of s.crisis) cifras.push({ nombre: `simulador: caída en ${c.nombre}`, valor: `${c.antesPb === null ? 'sin datos' : pct(c.antesPb)} → ${c.despuesPb === null ? 'sin datos' : pct(c.despuesPb)}` });
       cifras.push({ nombre: 'simulador: el último año', valor: `${pp(s.ultimoAnio.antes)} → ${pp(s.ultimoAnio.despues)}` });
     }
+    for (const p of e.porActivo.values()) cifras.push({ nombre: `posición ${p.nombre}`, valor: eur(p.valor) });
     const posiciones = [...e.porActivo.values()].map((p) => `${p.nombre} (${modelo.clases.find((c) => c.id === p.clase)?.nombre ?? 'sin clase'}): ${eur(p.valor)}`).join('\n');
     return {
       tarea: tarea?.instrucciones || 'Explica cómo encaja el descubrimiento con la cartera: qué tiene ya expuesto (ya_tienes), el solapamiento con lo que ya tiene y qué supondría según el simulador, usando solo las cifras dadas. Es información para decidir con calma, no una recomendación.',
