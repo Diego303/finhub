@@ -155,6 +155,8 @@ export class ServicioClaude {
     if (params.tarea && (!t || t.trabajo !== id)) throw Object.assign(new Error(`la tarea «${params.tarea}» no es del trabajo «${id}»`), { estado: 400 });
     const r = params.rol ? roles.get(params.rol) : null;
     if (params.rol && (!r || r.trabajo !== id)) throw Object.assign(new Error(`el rol «${params.rol}» no es del trabajo «${id}»`), { estado: 400 });
+    // R1 (§0.1): borradores, análisis e ideas son tuyos: solo los recibe el trabajo «privado»
+    if (id !== 'privado' && (params.borrador || params.analisis || params.idea)) throw Object.assign(new Error('eso son datos tuyos: solo los puede recibir el trabajo «privado»'), { estado: 400 });
     const p = { pregunta: params.pregunta ?? null, fuentes: Array.isArray(params.fuentes) ? params.fuentes : null, temas: params.temas ?? [], tarea: t ? { id: t.id, instrucciones: t.instrucciones, esquema: t.esquema } : null, rol: r ? { texto: r.texto } : null, cifrasExtra: [], bloquesExtra: [] };
     const pct = (pb) => `${pb > 0 ? '+' : ''}${(pb / 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
     if (t?.rangos) {
@@ -165,14 +167,14 @@ export class ServicioClaude {
     if (params.borrador) {
       const d = modelo.doc(params.borrador);
       if (!d || d.tipo !== 'borrador') throw Object.assign(new Error('borrador no válido'), { estado: 400 });
-      p.bloquesExtra.push({ origen: 'borrador de cartera', nivel: 'publico', contenido: `${d.titulo}\n${items(d).map((f) => `${f.nombre} (${f.clase ?? 'sin clase'}): ${(f.peso / 100).toLocaleString('es-ES')} %`).join('\n')}` });
+      p.bloquesExtra.push({ origen: 'borrador de cartera', nivel: 'privado', contenido: `${d.titulo}\n${items(d).map((f) => `${f.nombre} (${f.clase ?? 'sin clase'}): ${(f.peso / 100).toLocaleString('es-ES')} %`).join('\n')}` });
     }
     if (params.analisis) {
       const d = modelo.doc(params.analisis);
       if (!d || d.tipo !== 'analisis') throw Object.assign(new Error('análisis no válido'), { estado: 400 });
       p.bloquesExtra.push({ origen: `análisis ${params.analisis}`, nivel: 'privado', contenido: textoSeccion(d, 'Resultado') ?? '' });
     }
-    if (params.idea) p.bloquesExtra.push({ origen: 'idea a revisar', nivel: id === 'privado' ? 'privado' : 'publico', contenido: String(params.idea).slice(0, 4000) });
+    if (params.idea) p.bloquesExtra.push({ origen: 'idea a revisar', nivel: 'privado', contenido: String(params.idea).slice(0, 4000) });
     if (params.semana) Object.assign(p, limitesSemana(params.semana));
     if (params.quiz) p.quiz = Math.min(8, Math.max(3, +params.quiz || 6));
     return p;
