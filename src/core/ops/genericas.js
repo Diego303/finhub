@@ -9,6 +9,7 @@ import { parseHumor, parseAccesorios } from '../rex.js';
 import { parseCrisis } from '../herramientas.js';
 import { parseSupuestos } from '../proyeccion.js';
 import { parsePatronesConflicto } from '../formato/config.js';
+import { esFuentePrivada } from '../conocimiento.js';
 
 // Ajustes de texto con su propia gramática: se comprueban al guardarlos desde Ajustes.
 const GRAMATICAS = { rex_humor: parseHumor, accesorios: parseAccesorios, crisis_periodos: parseCrisis, proyeccion_manual: parseSupuestos, conflictos: parsePatronesConflicto };
@@ -51,6 +52,10 @@ registrar({
     for (const [k, v] of Object.entries(cambios)) {
       if (v === null || v === undefined) delete nuevo[k];
       else nuevo[k] = v;
+    }
+    // R1 (§0.3.7): una fuente privada con notas no puede dejar de serlo: las blanquearía hacia los trabajos con internet
+    if (ruta === 'conocimiento/_fuentes.md' && esFuentePrivada(nodo.valor) && !esFuentePrivada(nuevo) && tx.rutas(`conocimiento/${nodo.valor.id}/`).length) {
+      throw new ErrorOp('invalida', `«${nodo.valor.nombre}» es privada y tiene notas: si deja de serlo, llegarían a los trabajos con internet (regla R1). Si quieres publicar una nota, copia su texto en una fuente pública.`);
     }
     nodo.valor = validarEntidad(specItems(doc, seccion), nuevo, `«${valorClave}»`);
     tocarLista(tx, ruta);
