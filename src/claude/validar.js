@@ -16,7 +16,7 @@ export function validar(valor, esq, ruta = '$') {
       if (tipoDe(valor) !== 'object') return [`${ruta}: debe ser un objeto`];
       for (const k of esq.req ?? []) if (valor[k] === undefined || valor[k] === null) mal(`falta «${k}»`);
       for (const [k, v] of Object.entries(valor)) {
-        if (!(k in esq.props)) mal(`clave no permitida «${k}»`);
+        if (!Object.hasOwn(esq.props, k)) mal(`clave no permitida «${k}»`); // «in» aceptaría constructor, __proto__…
         else e.push(...validar(v, esq.props[k], `${ruta}.${k}`));
       }
       break;
