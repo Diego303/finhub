@@ -8,6 +8,7 @@ import { revisarInit } from './guardia.js';
 import { PROHIBIDAS, HERRAMIENTAS_WEB } from './r1.js';
 
 export const INIT_MS = 15000;
+export const MAX_SALIDA = 64 * 1024 * 1024; // ninguna salida legítima se acerca: protege la memoria del servidor
 
 /** Argumentos de `claude` para un trabajo (verificados en F0). */
 export function argumentos(trabajo, { sistema, modelo = trabajo.modelo, resume = null, persistir = trabajo.sesion ?? false, maxTurns = trabajo.maxTurns } = {}) {
@@ -49,9 +50,9 @@ const MENSAJES = {
 
 /**
  * Ejecuta un trabajo. → Promise<{estado: ok|error, codigo?, mensaje?, texto, sesion, init, herramientas, resultado, motivos?}>
- * opciones: {sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume, persistir, timeoutMs, initMs, senal, alEvento, maxTurns}
+ * opciones: {sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume, persistir, timeoutMs, initMs, senal, alEvento, maxTurns, maxSalida}
  */
-export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume = null, persistir = trabajo.sesion ?? false, timeoutMs = trabajo.timeoutMs, initMs = INIT_MS, senal = null, alEvento = () => {}, env = process.env, maxTurns = trabajo.maxTurns }) {
+export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume = null, persistir = trabajo.sesion ?? false, timeoutMs = trabajo.timeoutMs, initMs = INIT_MS, senal = null, alEvento = () => {}, env = process.env, maxTurns = trabajo.maxTurns, maxSalida = MAX_SALIDA }) {
   const sandbox = await crearSandbox(sandboxBase);
   const herramientas = [];
   let texto = '';
@@ -142,7 +143,16 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           if (limite?.status === 'rejected') parar('error', 'limite');
         } else if (ev.type === 'result' || (ev.session_id && ev.stop_reason !== undefined && ev.usage)) resultado = ev;
       };
+      let totalSalida = 0;
       hijo.stdout.on('data', (d) => {
+        if (fin) return; // ya abortado: lo que siga llegando no se lee
+        totalSalida += d.length;
+        if (totalSalida > maxSalida) {
+          resto = '';
+          texto = '';
+          textoDeltas = '';
+          return parar('error', 'fallo', ['la salida de Claude es demasiado grande: se ha parado el trabajo']);
+        }
         resto += d.toString('utf8');
         let i;
         while ((i = resto.indexOf('\n')) >= 0) {
