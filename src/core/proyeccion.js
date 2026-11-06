@@ -181,6 +181,6 @@ export function inflacionMedia(filas) {
 export function libertadFinanciera(proyeccion, consumoAnual, multiplicador = 25) {
   if (!consumoAnual || consumoAnual <= 0) return { objetivo: null, anio: null, masDe: null };
   const objetivo = consumoAnual * multiplicador;
-  const i = proyeccion.p50.findIndex((v) => v >= objetivo);
+  const i = proyeccion.p50.findIndex((v) => v > objetivo); // §4.4: «lo supera»
   return { objetivo, anio: i < 0 ? null : i, masDe: i < 0 ? proyeccion.anios.at(-1) : null };
 }

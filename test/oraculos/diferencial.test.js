@@ -356,7 +356,8 @@ test('proyección: propiedades con semilla, casos sin azar exactos y 40 años en
   assert.ok(performance.now() - t0 < 300, `${Math.round(performance.now() - t0)} ms`);
   assert.equal(g.p50.length, 41);
   // libertad: alcanzada o «más de N años»
-  assert.equal(libertadFinanciera({ anios: [0, 1, 2], p50: [10, 20, 30] }, 1, 20).anio, 1);
+  assert.equal(libertadFinanciera({ anios: [0, 1, 2], p50: [10, 20, 30] }, 1, 20).anio, 2, 'igualar no es superar');
+  assert.equal(O.libertadFinanciera({ consumo12m: 1, multiplicador: 20, p50PorAno: [20, 30] }).ano, 2);
   const lejos = libertadFinanciera({ anios: [0, 1, 2], p50: [10, 20, 30] }, 100, 25);
   assert.deepEqual([lejos.anio, lejos.masDe], [null, 2]);
   assert.equal(O.libertadFinanciera({ consumo12m: 100, multiplicador: 25, p50PorAno: [10, 20] }).ano, null);
