@@ -292,6 +292,7 @@ export class App {
   async cambiar({ ruta, modo, confirmarBorrado = false, aceptarAjenos = false }) {
     if (this.ejemplo) throw new ErrorHttp(400, 'En modo ejemplo no se cambia la carpeta');
     return this.enCola(async () => {
+      await this.claude.cancelarTodos(); // un trabajo de la carpeta anterior no puede acabar en la nueva
       const actual = this.carpeta;
       const progreso = (p) => this.difusor.enviar('progreso', p);
       const res = await cambiarCarpeta({
@@ -508,6 +509,7 @@ export class App {
   }
 
   async parar() {
+    await this.claude.cancelarTodos();
     this.difusor.cerrarTodo();
     await new Promise((ok) => {
       if (!this.servidor) return ok();

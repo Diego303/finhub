@@ -260,6 +260,13 @@ export class ServicioClaude {
     return { id: e.id, trabajo: e.trabajo, estado: e.estado, inicio: e.inicio, texto: e.texto, resultado: e.resultado ?? null };
   }
 
+  /** Cancela todo lo que esté en marcha y espera a que termine (al parar el servidor o cambiar de carpeta). */
+  async cancelarTodos() {
+    const enCurso = [...this.ejecuciones.values()].filter((e) => e.estado === 'en_curso');
+    for (const e of enCurso) e.ac.abort();
+    await Promise.allSettled(enCurso.map((e) => e.promesa));
+  }
+
   cancelar(id) {
     const e = this.ejecuciones.get(id);
     if (!e || e.estado !== 'en_curso') return false;
