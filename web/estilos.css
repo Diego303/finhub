@@ -9,6 +9,8 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Cascadia Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
   --radius: 8px;
+  /* los colores de la maqueta valen para gráficos; para TEXTO no llegan a AA (4,5:1): estos, un poco más oscuros */
+  --t-naranja: #B04015; --t-verde: #0B7355; --t-violeta: #5A50C4; --t-azul: #1A68B5; --t-rojo: #C42F2E; --t-gris: #6A6963;
   --naranja: #D85A30; --verde: #1D9E75; --violeta: #7F77DD; --azul: #378ADD; --rojo: #E24B4A; --ambar: #EF9F27; --gris: #888780;
   --ep-h-bg: #E6F1FB; --ep-h: #185FA5; --ep-c-bg: #EAF3DE; --ep-c: #3B6D11; --ep-o-bg: #FAEEDA; --ep-o: #854F0B; --ep-e-bg: #FBEAF0; --ep-e: #993556; --cit: #185FA5;
   color-scheme: light;
@@ -16,6 +18,7 @@
 /* ---------- oscuro: automático (sistema) o elegido en Ajustes ---------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
+    --t-naranja: #F09A76; --t-verde: #4FD0A6; --t-violeta: #B3AEEE; --t-azul: #8ABEF0; --t-rojo: #F39292; --t-gris: #B0AFA7;
     --surface-0: #1a1a19; --surface-1: #232322; --surface-2: #2b2b29;
     --text-primary: #f1efe8; --text-secondary: #b4b2a9; --text-muted: #9c9a92;
     --border: rgba(255, 255, 255, .12); --border-strong: rgba(255, 255, 255, .2); --border-stronger: rgba(255, 255, 255, .4);
@@ -25,6 +28,7 @@
   }
 }
 :root[data-tema="oscuro"] {
+  --t-naranja: #F09A76; --t-verde: #4FD0A6; --t-violeta: #B3AEEE; --t-azul: #8ABEF0; --t-rojo: #F39292; --t-gris: #B0AFA7;
   --surface-0: #1a1a19; --surface-1: #232322; --surface-2: #2b2b29;
   --text-primary: #f1efe8; --text-secondary: #b4b2a9; --text-muted: #9c9a92;
   --border: rgba(255, 255, 255, .12); --border-strong: rgba(255, 255, 255, .2); --border-stronger: rgba(255, 255, 255, .4);

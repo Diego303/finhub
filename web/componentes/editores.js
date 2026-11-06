@@ -24,7 +24,7 @@ function cuerpoCuentas() {
   const lista = m().cuentas;
   return html`<div class="mut" style="font-size:11px;margin:6px 0">Los cambios se guardan al salir de cada campo. Una cuenta con movimientos no se borra: se archiva.</div>
     <table class="tb"><thead><tr><th>nombre</th><th>tipo</th><th>colchón</th><th class="n">saldo inicial · desde</th><th></th></tr></thead><tbody>
-    ${lista.map((c) => html`<tr style="${c.archivada ? 'opacity:.55' : ''}">
+    ${lista.map((c) => html`<tr style="${c.archivada ? 'opacity:.75' : ''}">
       <td><label class="sr-only" for="cu-n-${c.id}">Nombre de ${c.nombre}</label><input class="inp" id="cu-n-${c.id}" value="${c.nombre}" data-cambio="cuenta-campo" data-id="${c.id}" data-campo="nombre" style="width:130px"></td>
       <td><label class="sr-only" for="cu-t-${c.id}">Tipo</label><select class="inp" id="cu-t-${c.id}" data-cambio="cuenta-campo" data-id="${c.id}" data-campo="tipo">${TIPOS_CUENTA.map((t) => html`<option value="${t}" ${(c.tipo ?? 'corriente') === t ? 'selected' : ''}>${TIPO[t]}</option>`)}</select></td>
       <td><input type="checkbox" id="cu-c-${c.id}" aria-label="Cuenta de colchón" ${c.colchon ? 'checked' : ''} data-cambio="cuenta-campo" data-id="${c.id}" data-campo="colchon"></td>
@@ -93,7 +93,7 @@ function cuerpoRecurrentes() {
   return html`<div class="mut" style="font-size:11px;margin:6px 0">La plantilla que se propone cada mes. Frecuencias mensual, bimestral, trimestral, semestral y anual. Se pueden pausar.</div>
     ${ed.rec ? formRecurrente(ed.rec === 'nuevo' ? null : lista.find((r) => r.id === ed.rec)) : html`<button type="button" class="pri" data-accion="rec-form" data-id="nuevo">+ nuevo recurrente</button>`}
     <table class="tb" style="margin-top:6px"><thead><tr><th>recurrente</th><th>grupo</th><th>cada</th><th class="n">importe</th><th></th></tr></thead><tbody>
-    ${lista.map((r) => html`<tr style="${r.pausado ? 'opacity:.55' : ''}"><td>${r.concepto}${r.pausado ? ' · pausado' : ''}${r.uso?.estado === 'no' ? html` <span style="color:var(--text-warning);font-size:10px">no lo usas</span>` : ''}</td><td class="mut">${g.get(r.grupo) ?? r.grupo}</td><td class="mut">${CADA[r.cada]} · ${r.dia.mes ? `${r.dia.dia}-${String(r.dia.mes).padStart(2, '0')}` : `día ${r.dia.dia}`}</td><td class="n">${formatearEuros(r.importe, 2)}</td>
+    ${lista.map((r) => html`<tr style="${r.pausado ? 'opacity:.75' : ''}"><td>${r.concepto}${r.pausado ? ' · pausado' : ''}${r.uso?.estado === 'no' ? html` <span style="color:var(--text-warning);font-size:10px">no lo usas</span>` : ''}</td><td class="mut">${g.get(r.grupo) ?? r.grupo}</td><td class="mut">${CADA[r.cada]} · ${r.dia.mes ? `${r.dia.dia}-${String(r.dia.mes).padStart(2, '0')}` : `día ${r.dia.dia}`}</td><td class="n">${formatearEuros(r.importe, 2)}</td>
       <td style="white-space:nowrap"><button type="button" class="go" data-accion="rec-form" data-id="${r.id}" aria-label="Editar ${r.concepto}">✎</button> <button type="button" class="go" data-accion="rec-pausa" data-id="${r.id}">${r.pausado ? 'reanudar' : 'pausar'}</button> <button type="button" class="go" data-accion="rec-borrar" data-id="${r.id}" aria-label="Borrar ${r.concepto}">🗑</button></td></tr>`)}
     </tbody></table>`;
 }

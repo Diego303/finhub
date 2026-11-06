@@ -15,7 +15,7 @@ import { textoCorto, sumarDias, esFecha, MESES_CORTOS } from '/core/fechas.js';
 import { leer } from '/core/formato/index.js';
 import { bloques } from '/core/formato/motor.js';
 
-const COLOR_POSTURA = (v) => (v === null ? 'var(--text-muted)' : v > 0.15 ? '#1D9E75' : v < -0.15 ? '#E24B4A' : '#888780');
+const COLOR_POSTURA = (v) => (v === null ? 'var(--text-muted)' : v > 0.15 ? 'var(--t-verde)' : v < -0.15 ? 'var(--t-rojo)' : 'var(--t-gris)');
 const TEXTO_POSTURA = (v) => (v === null ? '—' : v > 0.15 ? 'alcista' : v < -0.15 ? 'bajista' : 'neutral');
 const EP = { hecho: 'h', dato: 'h', consenso: 'c', opinión: 'o', especulación: 'e' };
 const ESTADO_PRED = { pendiente: '…', acertada: '✓', fallida: '✗', 'no-medible': '∅' };
@@ -146,7 +146,7 @@ function cajaBuscador(estado, d) {
       <label><input type="checkbox" data-cambio="busca-caducadas" ${f.caducadas ? 'checked' : ''}> caducadas</label></div>
     ${pag.map((n) => {
       const cad = K.caducada(n, estado.ahora.fecha, m.fuentes, m.familias);
-      return html`<button type="button" class="nota-fila" data-accion="nota-ver" data-ruta="${n.ruta}" data-id="${n.id}" style="${cad ? 'opacity:.55' : ''}"><span class="ep ${EP[n.tipo] ?? 'c'}">${n.tipo}</span> ${n.titulo} <span class="cit">[${n.id}]</span><span class="mut" style="font-size:10.5px;display:block">${nombre(n.fuente)} · ${n.fecha ? textoCorto(n.fecha) + ' ' + n.fecha.slice(0, 4) : 'sin fecha'}${n.temas.length ? ` · ${n.temas.join(', ')}` : ''}${cad ? ' · caducada' : ''}${n.editada ? ' · editada' : ''}${n.verificar ? ` · verificar ${n.verificar}` : ''}</span></button>`;
+      return html`<button type="button" class="nota-fila" data-accion="nota-ver" data-ruta="${n.ruta}" data-id="${n.id}" style="${cad ? 'opacity:.75' : ''}"><span class="ep ${EP[n.tipo] ?? 'c'}">${n.tipo}</span> ${n.titulo} <span class="cit">[${n.id}]</span><span class="mut" style="font-size:10.5px;display:block">${nombre(n.fuente)} · ${n.fecha ? textoCorto(n.fecha) + ' ' + n.fecha.slice(0, 4) : 'sin fecha'}${n.temas.length ? ` · ${n.temas.join(', ')}` : ''}${cad ? ' · caducada' : ''}${n.editada ? ' · editada' : ''}${n.verificar ? ` · verificar ${n.verificar}` : ''}</span></button>`;
     })}
     ${r.length > pag.length ? html`<button type="button" class="go" data-accion="busca-mas">ver ${Math.min(POR_PAGINA, r.length - pag.length)} más</button>` : ''}
     ${!r.length ? html`<div class="mut" style="font-size:11px;padding:6px 0">Ninguna nota con esos filtros.</div>` : ''}

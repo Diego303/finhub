@@ -14,7 +14,7 @@ import { tituloMes, mesFinanciero, periodoMes, sumarMesesMes, textoCorto, partes
 import { parseImporte, formatearEuros, formatearPct, formatearImporte } from '/core/dinero.js';
 import { NATURALEZAS } from '/core/formato/catalogos.js';
 
-export const NAT = { ingreso: ['ingreso', '#1D9E75'], consumo: ['consumo', 'var(--text-secondary)'], inversion: ['inversión', '#7F77DD'], ahorro: ['ahorro', '#378ADD'], traspaso: ['traspaso', 'var(--text-secondary)'] };
+export const NAT = { ingreso: ['ingreso', 'var(--t-verde)'], consumo: ['consumo', 'var(--text-secondary)'], inversion: ['inversión', 'var(--t-violeta)'], ahorro: ['ahorro', 'var(--t-azul)'], traspaso: ['traspaso', 'var(--text-secondary)'] };
 const eur = (c, d = 0) => formatearEuros(c, d);
 
 const ui = { mes: null, etiqueta: null, busqueda: '', orden: 'fecha', sankey: 'mes', edicion: null, borrador: {}, presEdit: null, editarCerrado: new Set() };
@@ -88,7 +88,7 @@ export function vistaMes(estado) {
     </div>
     ${cerrado ? bandaCerrado(x) : x.estadoMes.estado === 'reabierto' ? html`<div class="banda aviso">Mes reabierto: cuando termines, vuelve a cerrarlo para guardar su foto.</div>` : ''}
     ${barraAnotar(estado, x)}
-    <div class="kpis cinco" style="margin-top:8px">${[['Entradas', x.tot.entradas, '#1D9E75'], ['Consumo', x.tot.consumo, 'var(--text-secondary)'], ['Invertido', x.tot.invertido, '#7F77DD'], ['Ahorro y metas', x.tot.ahorrado, '#378ADD']].map((k) => html`<div class="box"><div class="lab">${k[0]}</div><div class="k" style="font-size:17px;color:${k[2]}">${eur(k[1])}</div></div>`)}
+    <div class="kpis cinco" style="margin-top:8px">${[['Entradas', x.tot.entradas, 'var(--t-verde)'], ['Consumo', x.tot.consumo, 'var(--text-secondary)'], ['Invertido', x.tot.invertido, 'var(--t-violeta)'], ['Ahorro y metas', x.tot.ahorrado, 'var(--t-azul)']].map((k) => html`<div class="box"><div class="lab">${k[0]}</div><div class="k" style="font-size:17px;color:${k[2]}">${eur(k[1])}</div></div>`)}
       <div class="box"><div class="lab">Tasa de ahorro</div><div class="k" style="font-size:17px">${x.tot.tasaPb === null ? html`<span style="font-size:12px">no concluyente</span>` : formatearPct(x.tot.tasaPb, 0).replace('+', '')}</div>${x.tot.tasaPb === null ? html`<div class="mut" style="font-size:10px">sin entradas este mes</div>` : ''}</div></div>
     ${mapaDinero(estado, x)}
     <div class="grid2" style="grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)">
