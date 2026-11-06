@@ -91,21 +91,23 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
         } catch {
           return;
         }
+        if (!ev || typeof ev !== 'object' || Array.isArray(ev)) return; // «null», números…: ruido, no un evento
         if (ev.type === 'system' && ev.subtype === 'init') {
           init = ev;
           const motivos = revisarInit(ev, trabajo, sandbox);
           if (motivos.length) return parar('error', 'guardia', motivos);
           alEvento({ tipo: 'init', modelo: ev.model, sesion: ev.session_id });
-        } else if (ev.type === 'stream_event' && ev.event?.delta?.type === 'text_delta') {
+        } else if (ev.type === 'stream_event' && ev.event?.delta?.type === 'text_delta' && typeof ev.event.delta.text === 'string') {
           textoDeltas += ev.event.delta.text;
           alEvento({ tipo: 'texto', delta: ev.event.delta.text });
         } else if (ev.type === 'assistant') {
-          for (const b of ev.message?.content ?? []) {
-            if (b.type === 'tool_use') {
+          const contenido = Array.isArray(ev.message?.content) ? ev.message.content : [];
+          for (const b of contenido) {
+            if (b?.type === 'tool_use') {
               herramientas.push({ nombre: b.name, entrada: resumirEntrada(b.input) });
               if (!trabajo.herramientas.includes(b.name)) return parar('error', 'guardia', [`herramienta no permitida «${b.name}»`]);
               alEvento({ tipo: 'herramienta', nombre: b.name, entrada: resumirEntrada(b.input) });
-            } else if (b.type === 'text') texto += b.text;
+            } else if (b?.type === 'text' && typeof b.text === 'string') texto += b.text;
           }
         } else if (ev.type === 'rate_limit_event') {
           limite = ev.rate_limit_info;
