@@ -35,7 +35,7 @@ function patronesDe(textoAjustes) {
 }
 export const VERSION_APP = JSON.parse(readFileSync(join(RAIZ_REPO, 'package.json'), 'utf8')).version;
 
-const ESTADO_OP = { invalida: 400, no_existe: 404, solo_lectura: 423, mes_cerrado: 409, conflicto: 409 };
+const ESTADO_OP = { desconocida: 422, invalida: 400, no_existe: 404, solo_lectura: 423, mes_cerrado: 409, conflicto: 409 };
 const ESTADO_ALMACEN = { conflicto_version: 409, nube: 503, ilegible: 503, ruta: 400, disco: 500 };
 
 export class App {

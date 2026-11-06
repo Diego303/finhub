@@ -8,7 +8,7 @@ import { leer as leerFormato, detectar } from '../formato/index.js';
 import { serializar } from '../formato/motor.js';
 
 export class ErrorOp extends Error {
-  /** codigo: 'invalida' | 'no_existe' | 'solo_lectura' | 'mes_cerrado' | 'conflicto' */
+  /** codigo: 'desconocida' | 'invalida' | 'no_existe' | 'solo_lectura' | 'mes_cerrado' | 'conflicto' */
   constructor(codigo, mensaje, extra = {}) {
     super(mensaje);
     this.codigo = codigo;
@@ -102,7 +102,7 @@ function crearTx(leer, ctx) {
 /** Aplica una operación. Puro: mismo (textos, args, ctx) → mismo resultado. */
 export function aplicarOp(leer, nombre, args = {}, ctx = {}) {
   const fn = REGISTRO.get(nombre);
-  if (!fn) throw new ErrorOp('invalida', `operación desconocida «${nombre}»`);
+  if (!fn) throw new ErrorOp('desconocida', `operación desconocida «${nombre}»`);
   const { tx, docs, escribir, papelera, avisos, finales } = crearTx(leer, ctx);
   const resultado = fn(tx, args ?? {}, ctx) ?? null;
   for (const f of finales.values()) f();
