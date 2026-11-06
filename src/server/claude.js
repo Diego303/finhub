@@ -2,6 +2,7 @@
 // lee), ejecuta el motor aislado, avisa del progreso por SSE, guarda registro y cuarentena en .finhub/ y
 // deja el resultado como PROPUESTA: nada se escribe en tus datos sin una operación que lances tú.
 import { readFileSync } from 'node:fs';
+import fsp from 'node:fs/promises';
 import { join } from 'node:path';
 import { ejecutarTrabajo } from '../claude/motor.js';
 import { trabajo as trabajoDe, resumenTrabajos } from '../claude/trabajos/index.js';
@@ -258,6 +259,16 @@ export class ServicioClaude {
     const e = this.ejecuciones.get(id);
     if (!e) return null;
     return { id: e.id, trabajo: e.trabajo, estado: e.estado, inicio: e.inicio, texto: e.texto, resultado: e.resultado ?? null };
+  }
+
+  /** Sandboxes de más de un día: los dejó un servidor que murió. Solo «sbx-*» (otra instancia viva usa los recientes). */
+  async limpiarSandboxesViejos({ ahora = Date.now() } = {}) {
+    const nombres = await fsp.readdir(this.sandboxBase).catch(() => []);
+    for (const n of nombres.filter((x) => x.startsWith('sbx-'))) {
+      const d = join(this.sandboxBase, n);
+      const st = await fsp.stat(d).catch(() => null);
+      if (st && ahora - st.mtimeMs > 24 * 3600 * 1000) await fsp.rm(d, { recursive: true, force: true }).catch(() => {});
+    }
   }
 
   /** Cancela todo lo que esté en marcha y espera a que termine (al parar el servidor o cambiar de carpeta). */

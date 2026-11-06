@@ -482,6 +482,7 @@ export class App {
   // ---------- arranque y parada ----------
   async iniciar({ host = '127.0.0.1', intentos = 20 } = {}) {
     await this.abrirCarpeta(this.carpeta);
+    await this.claude.limpiarSandboxesViejos();
     this.servidor = http.createServer((req, res) => this.manejar(req, res));
     this.servidor.requestTimeout = 120000;
     this.servidor.headersTimeout = 20000;
