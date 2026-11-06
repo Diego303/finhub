@@ -37,7 +37,7 @@ export function procesarSalida(trabajo, texto, { prompt, params, modelo, bloques
   normalizarTemas(json);
   const errores = validar(json, esquema);
   if (errores.length) return { ok: false, motivo: `no cumple el formato: ${errores.slice(0, 5).join(' · ')}` };
-  const reglas = comprobar?.call(trabajo, json, { params, modelo }) ?? [];
+  const reglas = comprobar?.call(trabajo, json, { params, modelo, texto: visible }) ?? [];
   if (reglas.length) return { ok: false, motivo: reglas.slice(0, 5).join(' · ') };
   const probs = revisarProbabilidades(probabilidadesDe(json));
   if (probs.length) return { ok: false, motivo: probs.join(' · '), reintentar: true };
