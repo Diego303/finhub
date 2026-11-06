@@ -53,10 +53,10 @@ export const ajustes = definirFormato({
       claude_modelo: T.mapa(T.enumerado(TRABAJOS), T.texto(), '='),
       contexto_max: T.texto(),
       umbral_desviacion: T.porcentaje(),
-      sectores_efectos: T.lista(T.texto()),
+      sectores_efectos: T.lista(T.texto(), { vacia: true }),
       crisis_periodos: T.texto(),
       descubrir_sin_cambios: T.enumerado(['version', 'nada']),
-      descubrir_filtros: T.lista(T.texto()),
+      descubrir_filtros: T.lista(T.texto(), { vacia: true }),
     },
   }),
 });
