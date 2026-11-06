@@ -104,7 +104,14 @@ export function aplicarOp(leer, nombre, args = {}, ctx = {}) {
   const fn = REGISTRO.get(nombre);
   if (!fn) throw new ErrorOp('desconocida', `operación desconocida «${nombre}»`);
   const { tx, docs, escribir, papelera, avisos, finales } = crearTx(leer, ctx);
-  const resultado = fn(tx, args ?? {}, ctx) ?? null;
+  let resultado;
+  try {
+    resultado = fn(tx, args ?? {}, ctx) ?? null;
+  } catch (e) {
+    // argumentos de otro tipo: es un dato no válido, no un fallo del servidor
+    if (e instanceof TypeError || e instanceof RangeError) throw new ErrorOp('invalida', `los datos de «${nombre}» no son válidos`, { causa: e.message });
+    throw e;
+  }
   for (const f of finales.values()) f();
   const salida = {};
   const anterior = {};
