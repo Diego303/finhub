@@ -69,7 +69,7 @@ En el scratchpad de la sesión, no en el repo: `fsbench.mjs` (banco; aborta si l
 ## 7. Implementado en F12 y después
 - **Resolver conflictos** (`src/server/conflictos.js`, banda «Conflicto» o Ajustes → Carpeta):
   - diferencias por entidad (cada línea de una lista o de un bloque) entre tu versión y la copia;
-  - cuatro salidas: quedarte con la tuya, con la otra, **fusionar por entidades** (si la misma entidad cambió en los dos lados, no se fusiona sola: a mano) o «ya lo arreglé a mano»;
+  - cuatro salidas: quedarte con la tuya, con la otra, **fusionar por entidades** (unión sin repetir: si la misma entidad cambió en los dos lados, se queda la tuya, se avisa de lo ignorado y la otra versión sigue en la papelera) o «ya lo arreglé a mano»;
   - lo descartado va a la papelera como «copia en conflicto», y al restaurarlo vuelve a aparecer el conflicto.
 - **Patrones propios** (`conflictos` en ajustes.md): `{nombre} (conflicto *).md | …`. Se suman a los de serie, se validan al guardar y se aplican en caliente (la carpeta se vuelve a clasificar).
 - **Indicador de guardado** (arriba a la derecha):

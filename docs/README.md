@@ -11,6 +11,7 @@
 | El aislamiento de Claude Code (regla R1) | [CLAUDE-CLI.md](CLAUDE-CLI.md) |
 | La carpeta sincronizada vista desde WSL | [SINCRONIZACION.md](SINCRONIZACION.md) |
 | Los casos límite y su prueba | [CHECKLIST.md](CHECKLIST.md) |
+| Qué se ha probado, qué se encontró y qué queda por decidir | [QA-INFORME.md](QA-INFORME.md) · [QA-PLAN.md](QA-PLAN.md) · [lista manual](QA-CHECKLIST.md) |
 | Qué se decidió en cada fase | [DECISIONES.md](DECISIONES.md) |
 | La maqueta original | [maquetas/finhub.html](maquetas/finhub.html) |
 

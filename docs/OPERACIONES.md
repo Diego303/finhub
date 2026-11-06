@@ -9,9 +9,9 @@ aplicarOp(leer, nombre, args, ctx) → { escribir: {ruta: texto | null}, inversa
 ## Reglas comunes
 - **Pura y determinista.** No toca el disco: lee con `leer(ruta)` y devuelve el texto nuevo de cada fichero tocado (`null` = borrar). El contexto (`ctx`) trae `hoy`, `hora`, `ajustes`, `rutas` y un PRNG con semilla.
 - **Inversa exacta.** La inversa es siempre `ficheros.restaurar` con el contenido anterior, byte a byte, de cada fichero tocado (propiedad probada).
-  - El servidor la guarda para **deshacer**: 30 por sesión, desde el aviso de 10 s.
+  - El servidor la guarda para **deshacer**: las 30 últimas por sesión, durante los 10 s del aviso (y 5 de margen).
   - Solo la aplica si esos ficheros siguen como los dejó la operación; si no, responde 409 «cambió después».
-- **Versiones (409).** La web manda la versión de cada fichero que vio. Si otro equipo o una edición a mano lo cambió entre medias, el servidor responde 409, la web recarga y nada se pisa.
+- **Versiones (409).** Cada operación de la web lleva `base`, la versión de los datos con los que la pestaña calculó. Si alguno de los ficheros que va a escribir cambió después (otra pestaña, otro equipo, una edición a mano), el servidor responde 409, la web recarga y nada se pisa. Antes de escribir también se mira el disco, por si hay una edición que el sondeo aún no ha visto. Las operaciones de una pestaña salen de una en una.
 - **Papelera.** Lo que una operación borra (una línea, un bloque o un fichero) va a `.finhub/papelera/` 30 días. `papelera.restaurar` lo devuelve a su sitio.
 - **Una a la vez.** El servidor encola las operaciones. Escribe cada fichero de forma atómica (temporal + `fsync` + renombrar) y, si falla a mitad, vuelve atrás los que ya había escrito.
 - **Solo lectura.** Si la carpeta está abierta en otro equipo, ninguna operación escribe (423).
