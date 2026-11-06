@@ -254,7 +254,7 @@ export function abrirCierre(estado, mes = mesActual(estado)) {
         ${check(true, 'Saldos de tus cuentas', m.cuentas.filter((c) => !c.archivada).map((c) => `${c.nombre.toLowerCase()} ${eur(x.saldos.porCuenta[c.id])}`).join(' · '))}</div>
       <div class="box" style="margin-top:10px;font-size:11.5px">Tasa de ahorro <b style="font-weight:500">${x.tot.tasaPb === null ? 'no concluyente' : formatearPct(x.tot.tasaPb, 0).replace('+', '')}</b> · consumo ${eur(x.tot.consumo)} · ${excedidos.length ? excedidos.map((p, i) => html`${i ? ', ' : ''}<span style="color:var(--text-warning)">${p.nombre} se pasó ${eur(p.gastado - p.presupuesto)}</span>`) : 'presupuestos cumplidos'}</div>
       <form data-form="cerrar-mes"><input type="hidden" name="mes" value="${mes}">
-        <div class="lab" style="margin-top:10px"><label for="leccion">Una lección del mes (opcional)</label></div><input class="inp" id="leccion" name="leccion" style="width:100%;box-sizing:border-box" placeholder="p. ej. las cenas sociales se me van de presupuesto" autofocus>
+        <div class="lab" style="margin-top:10px"><label for="leccion">Una lección del mes (opcional)</label></div><input class="inp" id="leccion" name="leccion" value="${x.d?.cierre?.leccion ?? ''}" style="width:100%;box-sizing:border-box" placeholder="p. ej. las cenas sociales se me van de presupuesto" autofocus>
         <div style="text-align:right;margin-top:12px"><button type="submit" class="pri">Cerrar mes</button></div></form>
       <div class="mut" style="font-size:10.5px">Cerrar guarda una foto (saldos, cartera y patrimonio) y una marca, no un candado: podrás editarlo o reabrirlo.</div>`,
   });

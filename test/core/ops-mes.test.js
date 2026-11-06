@@ -43,7 +43,7 @@ test('reabrir quita la foto; volver a cerrar hace otra', () => {
   m.op('mes.reabrir', { mes: '2026-10' });
   const d = m.doc('mes/2026-10.md');
   assert.equal(cabeceras(d).estado.estado, 'reabierto');
-  assert.ok(!d.secciones.some((s) => s.nombre === 'Cierre'));
+  assert.equal(valores(d, 'Cierre').saldos, undefined, 'sin foto (la lección, si la hay, se queda: QA-050)');
   falla(() => m.op('mes.reabrir', { mes: '2026-10' }), 'invalida', /no está cerrado/);
   m.op('mes.cerrar', { mes: '2026-10' });
   assert.equal(cabeceras(m.doc('mes/2026-10.md')).estado.estado, 'cerrado');

@@ -45,7 +45,8 @@ test('cerrar → reabrir → cerrar N veces: nunca duplica la foto ni los movimi
     assert.equal(valores(m.doc('mes/2026-11.md'), 'Cierre').leccion, `lección ${i}`);
     assert.equal(cabeceras(m.doc('mes/2026-11.md')).estado.estado, 'cerrado');
     m.op('mes.reabrir', { mes: '2026-11' });
-    assert.equal(secciones(m, '2026-11', 'Cierre'), 0);
+    assert.equal(valores(m.doc('mes/2026-11.md'), 'Cierre').saldos, undefined, 'sin foto');
+    assert.equal(valores(m.doc('mes/2026-11.md'), 'Cierre').leccion, `lección ${i}`, 'la lección se queda (QA-050)');
     assert.equal(cabeceras(m.doc('mes/2026-11.md')).estado.estado, 'reabierto');
   }
 });
