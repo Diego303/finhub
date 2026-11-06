@@ -93,6 +93,14 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
   };
   const r1 = problemasR1(trabajo);
   if (r1.length) return fin({ estado: 'rechazado', mensaje: `R1: ${r1.join(' · ')}` });
+  // cualquier fallo inesperado deja su línea en el registro (§0.3.12) y se entiende como un error del trabajo
+  try {
+    return await correrTrabajo();
+  } catch (e) {
+    return fin({ estado: 'error', codigo: 'interno', mensaje: `No se pudo completar el trabajo: ${e.message}` });
+  }
+
+  async function correrTrabajo() {
   const entrada = trabajo.entrada(modelo, { ...params, hoy });
   const bloques = entrada.bloques ?? [];
   const pe = problemasEntrada(trabajo, bloques, { desclasificar });
@@ -116,10 +124,16 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
     Object.assign(linea, { modelo: r.init?.modelo ?? null, version: r.init?.version ?? null, herramientas: r.herramientas, turnos: r.resultado?.turnos ?? null, coste: r.resultado?.coste ?? null, uso: r.resultado?.uso ?? null, sesion: trabajo.sesion ? r.sesion : null });
     if (r.estado !== 'ok') return fin({ estado: 'error', codigo: r.codigo, mensaje: r.mensaje, motivo: [r.mensaje, ...(r.motivos ?? [])].filter(Boolean).join(' · ') });
     if (trabajo.sesion && r.sesion) await sesiones.guardar(r.sesion, trabajo.id).catch(() => {});
-    const p = procesarSalida(trabajo, r.texto, { prompt, params: { ...params, hoy }, modelo, bloques, esquema, comprobar: entrada.comprobar ?? trabajo.comprobar });
+    let p;
+    try {
+      p = procesarSalida(trabajo, r.texto, { prompt, params: { ...params, hoy }, modelo, bloques, esquema, comprobar: entrada.comprobar ?? trabajo.comprobar });
+    } catch (e) {
+      p = { ok: false, motivo: `no se pudo validar la salida: ${e.message}` }; // lo que no se puede validar no llega a tus datos
+    }
     if (p.ok) return fin({ estado: 'ok', json: p.json, texto: p.texto, avisos: p.avisos, cifras: prompt.cifras, modeloUsado: r.init?.modelo ?? null, sesion: trabajo.sesion ? r.sesion : null, seleccion: entrada.seleccion ? { usadas: entrada.seleccion.usadas, total: entrada.seleccion.total } : null });
     if (p.reintentar && intento++ === 0) continue;
     const rel = await aCuarentena(servicio, { id, trabajo: trabajo.id, inicio, motivo: p.motivo, texto: r.texto, json: null }).catch(() => null);
     return fin({ estado: 'cuarentena', motivo: p.motivo, mensaje: `La salida de Claude no pasó la validación (${p.motivo}): está en .finhub/${rel ?? 'cuarentena/'} y no ha tocado tus datos.` });
+  }
   }
 }
