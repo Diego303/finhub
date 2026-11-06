@@ -1,6 +1,6 @@
 // Modales (maqueta: .mw/.md) accesibles: role=dialog, foco atrapado, Esc y clic fuera cierran,
 // el foco vuelve a donde estaba. Un solo modal a la vez, como en la maqueta.
-import { html, pintar } from '../esc.js';
+import { html, pintar, conservarEscrito } from '../esc.js';
 
 let anterior = null;
 let alCerrarFn = null;
@@ -30,7 +30,7 @@ export function repintarModal() {
   if (!actual || !hayModal()) return;
   const id = document.activeElement?.id;
   const pos = document.activeElement?.selectionStart;
-  pintarModal(actual.titulo, actual.cuerpo(), actual.ancho);
+  conservarEscrito(raiz(), null, () => pintarModal(actual.titulo, actual.cuerpo(), actual.ancho));
   const el = id ? document.getElementById(id) : null;
   if (el) {
     el.focus();

@@ -1,5 +1,5 @@
 // finhub · web. Sin build: módulos ES servidos por el servidor local; /core/ es el mismo código del servidor.
-import { html, pintar } from './esc.js';
+import { html, pintar, conservarEscrito, EN_FORMULARIO } from './esc.js';
 import { estado, alCambiar, cargar, sincronizar, ponerRex } from './estado.js';
 import { accion, delegar } from './acciones.js';
 import { pedir } from './api.js';
@@ -74,12 +74,12 @@ export function render() {
   const cursor = activo && typeof activo.selectionStart === 'number' ? activo.selectionStart : null;
   const clave = activo?.id || (activo?.dataset?.accion ? `${activo.dataset.accion}|${activo.dataset.vista ?? activo.dataset.destino ?? activo.dataset.modo ?? ''}` : null);
   const marco = document.getElementById('marco');
-  pintar(
+  conservarEscrito(marco, EN_FORMULARIO, () => pintar(
     marco,
     html`<button type="button" class="saltar" data-accion="saltar">Saltar al contenido</button>${cabecera(estado, { menuAbierto })}${bandas(estado)}${pestanas()}
       <main id="contenido" tabindex="-1" role="tabpanel" aria-labelledby="pestana-${estado.vista}">${contenido()}</main>
       ${barraR1(estado.claude)}`,
-  );
+  ));
   if (clave && !hayModal()) {
     const [acc, dato] = clave.split('|');
     const el = dato !== undefined ? marco.querySelector(`[data-accion="${acc}"][data-vista="${dato}"], [data-accion="${acc}"][data-destino="${dato}"], [data-accion="${acc}"][data-modo="${dato}"], [data-accion="${acc}"]`) : document.getElementById(clave);

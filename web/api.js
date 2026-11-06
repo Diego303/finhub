@@ -86,6 +86,8 @@ export async function op(nombre, args = {}, { versiones = {}, mensaje = 'Hecho',
     if (!silencioso) toast(texto, { deshacer: r.deshacer ? () => deshacer(r.deshacer) : null });
     return r;
   } catch (e) {
+    // no se ha guardado: lo que escribiste se conserva al repintar
+    for (const f of document.querySelectorAll('form[data-enviado]')) delete f.dataset.enviado;
     if (e.codigo === 'mes_cerrado') {
       const si = await confirmar(e.message, { si: 'Editar igualmente', no: 'Cancelar' });
       return si ? op(nombre, { ...args, confirmarCerrado: true }, { versiones, mensaje, silencioso }) : null;

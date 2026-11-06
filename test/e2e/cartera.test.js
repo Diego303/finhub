@@ -176,7 +176,7 @@ test('la cartera de punta a punta desde la web', async (t) => {
   await p.click('[data-accion=vista][data-vista=mes]');
   await p.waitForFunction(() => document.querySelector('#marco').dataset.vista === 'mes');
   await p.selectOption('#anotar-grupo', 'cartera');
-  await p.fill('#anotar-dia', '3');
+  await p.fill('#anotar-dia', String(+HOY.slice(8)));
   await p.fill('#anotar-concepto', 'Aportación extra fondo');
   await p.fill('#anotar-importe', '150');
   await p.click('form[data-form=anotar] button[type=submit]');

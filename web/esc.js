@@ -52,3 +52,42 @@ export function pintar(el, contenido) {
     pintando--;
   }
 }
+
+const CONTROLES = 'input:not([type=hidden]), select, textarea';
+export const EN_FORMULARIO = 'form[data-form] input:not([type=hidden]), form[data-form] select, form[data-form] textarea';
+
+function tocado(c) {
+  if (c.type === 'checkbox' || c.type === 'radio') return c.checked !== c.defaultChecked;
+  if (c.tagName === 'SELECT') {
+    const inicial = [...c.options].findIndex((o) => o.defaultSelected);
+    return c.selectedIndex !== (inicial < 0 ? 0 : inicial);
+  }
+  return c.value !== c.defaultValue;
+}
+
+/** Identifica un control por su formulario, los datos ocultos de ese formulario (qué registro edita) y su nombre. */
+function firma(c) {
+  const f = c.form;
+  const form = f ? `${f.dataset.form ?? ''}|${[...f.querySelectorAll('input[type=hidden]')].map((h) => `${h.name}=${h.value}`).join('&')}` : '';
+  return `${form}|${c.name || c.id}${c.type === 'radio' ? `|${c.value}` : ''}`;
+}
+
+/**
+ * Repinta `raiz` sin perder lo que estás escribiendo: un cambio de datos (otra pestaña, una edición a mano, la
+ * sincronización) no borra un formulario a medias. Solo se conserva lo que has tocado; lo demás se actualiza.
+ * Lo de un formulario ya enviado no se conserva: al guardar, queda limpio.
+ */
+export function conservarEscrito(raiz, selector, repintar) {
+  const escrito = new Map();
+  for (const c of raiz.querySelectorAll(selector || CONTROLES)) {
+    if ((c.name || c.id) && !c.form?.dataset.enviado && tocado(c)) escrito.set(firma(c), c.type === 'checkbox' || c.type === 'radio' ? c.checked : c.value);
+  }
+  repintar();
+  if (!escrito.size) return;
+  for (const c of raiz.querySelectorAll(selector || CONTROLES)) {
+    const k = firma(c);
+    if (!escrito.has(k)) continue;
+    if (c.type === 'checkbox' || c.type === 'radio') c.checked = escrito.get(k);
+    else c.value = escrito.get(k);
+  }
+}
