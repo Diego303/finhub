@@ -135,6 +135,8 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           if (resultado?.subtype === 'error_max_turns' || resultado?.terminal_reason === 'max_turns') r = { estado: 'error', codigo: 'turnos' };
           else if (/not logged in|please run \/login/i.test(errorTexto)) r = { estado: 'error', codigo: 'sin_sesion' };
           else if (resultado?.is_error || codigoSalida) r = { estado: 'error', codigo: 'fallo', motivos: [errorTexto.trim().slice(0, 300)] };
+          // sin init no se ha podido comprobar el aislamiento: la salida no vale, aunque el proceso acabe bien (§0.3.3)
+          else if (!init) r = { estado: 'error', codigo: 'sin_init' };
           else r = { estado: 'ok' };
         }
         resolver({
