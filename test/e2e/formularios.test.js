@@ -70,3 +70,24 @@ test('al enviar, lo enviado no vuelve: el formulario de Gestión queda limpio tr
   assert.equal(await p.inputValue('#gr-nuevo'), '');
   await p.keyboard.press('Escape');
 });
+
+// QA-056: entre pulsar y soltar el ratón (un clic humano dura unos 100 ms), una recarga sustituía el botón: el navegador ya no
+// veía un clic sobre él y el clic se perdía sin avisar. El repintado espera a que sueltes.
+test('un clic no se pierde si los datos se recargan mientras tienes el botón pulsado', async () => {
+  await p.goto(`${app.url}#panel`);
+  await p.waitForFunction(() => document.querySelector('#marco')?.dataset.vista === 'panel');
+  const caja = await p.locator('[data-accion=abrir-r1]').first().boundingBox();
+  await p.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
+  await p.mouse.down();
+  await cambioExterno();
+  await p.mouse.up();
+  await p.waitForSelector('[role=dialog]', { timeout: 2000 });
+  await p.keyboard.press('Escape');
+  await p.waitForSelector('[role=dialog]', { state: 'detached' });
+  // y el repintado aplazado llega al soltar
+  const antes = await p.evaluate(() => document.querySelector('#marco').dataset.renderMs);
+  assert.ok(antes !== undefined);
+  const r = join(ent.datos, 'ajustes.md');
+  await fsp.writeFile(r, (await fsp.readFile(r, 'utf8')).replace(/^- nombre: .*$/m, '- nombre: Tras soltar'));
+  await p.waitForFunction(() => document.querySelector('#contenido').textContent.includes('Tras soltar'), null, { timeout: 5000 });
+});

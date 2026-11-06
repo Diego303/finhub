@@ -68,7 +68,25 @@ function contenido() {
   return html`<div class="rejilla"><div>${principal}</div><aside class="lateral" aria-label="Pendientes y Rex">${cajaPendientes(estado)}</aside></div>`;
 }
 
+// Con el ratón pulsado no se repinta: si el botón se sustituye entre pulsar y soltar, el navegador no ve el clic y se pierde.
+let pulsando = false;
+let renderAplazado = false;
+addEventListener('pointerdown', () => (pulsando = true), true);
+const soltar = () => {
+  pulsando = false;
+  if (!renderAplazado) return;
+  renderAplazado = false;
+  setTimeout(render); // después del clic que va a llegar
+};
+addEventListener('pointerup', soltar, true);
+addEventListener('pointercancel', soltar, true);
+addEventListener('blur', soltar);
+
 export function render() {
+  if (pulsando) {
+    renderAplazado = true;
+    return;
+  }
   const t0 = performance.now();
   const activo = document.activeElement;
   const cursor = activo && typeof activo.selectionStart === 'number' ? activo.selectionStart : null;
