@@ -60,6 +60,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
   let resultado = null;
   let limite = null;
   let fin = null; // {estado, codigo, motivos}
+  const vistas = new Set(); // ids de tool_use ya anotados
   const args = argumentos(trabajo, { sistema, modelo, resume, persistir, maxTurns });
   try {
     return await new Promise((resolver) => {
@@ -92,11 +93,31 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           return;
         }
         if (!ev || typeof ev !== 'object' || Array.isArray(ev)) return; // «null», números…: ruido, no un evento
+        // un tool_use se comprueba en cuanto se anuncia (stream parcial) y otra vez en el mensaje completo
+        const usarHerramienta = (b) => {
+          const yaVista = b.id && vistas.has(b.id);
+          if (b.id) vistas.add(b.id);
+          if (!yaVista) herramientas.push({ nombre: b.name, entrada: resumirEntrada(b.input) });
+          if (!trabajo.herramientas.includes(b.name)) {
+            parar('error', 'guardia', [`herramienta no permitida «${b.name}»`]);
+            return false;
+          }
+          if (!yaVista) alEvento({ tipo: 'herramienta', nombre: b.name, entrada: resumirEntrada(b.input) });
+          return true;
+        };
+        if (!init && ev.type !== 'system') {
+          // nada puede ocurrir antes del init: lo que haga antes de que se compruebe el aislamiento se aborta
+          const bloquesAntes = ev.type === 'assistant' && Array.isArray(ev.message?.content) ? ev.message.content : ev.event?.content_block ? [ev.event.content_block] : [];
+          for (const b of bloquesAntes) if (b?.type === 'tool_use') return void usarHerramienta(b);
+          if (ev.type === 'assistant' || ev.type === 'stream_event') return parar('error', 'sin_init');
+        }
         if (ev.type === 'system' && ev.subtype === 'init') {
           init = ev;
           const motivos = revisarInit(ev, trabajo, sandbox);
           if (motivos.length) return parar('error', 'guardia', motivos);
           alEvento({ tipo: 'init', modelo: ev.model, sesion: ev.session_id });
+        } else if (ev.type === 'stream_event' && ev.event?.content_block?.type === 'tool_use') {
+          usarHerramienta(ev.event.content_block);
         } else if (ev.type === 'stream_event' && ev.event?.delta?.type === 'text_delta' && typeof ev.event.delta.text === 'string') {
           textoDeltas += ev.event.delta.text;
           alEvento({ tipo: 'texto', delta: ev.event.delta.text });
@@ -104,9 +125,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           const contenido = Array.isArray(ev.message?.content) ? ev.message.content : [];
           for (const b of contenido) {
             if (b?.type === 'tool_use') {
-              herramientas.push({ nombre: b.name, entrada: resumirEntrada(b.input) });
-              if (!trabajo.herramientas.includes(b.name)) return parar('error', 'guardia', [`herramienta no permitida «${b.name}»`]);
-              alEvento({ tipo: 'herramienta', nombre: b.name, entrada: resumirEntrada(b.input) });
+              if (!usarHerramienta(b)) return;
             } else if (b?.type === 'text' && typeof b.text === 'string') texto += b.text;
           }
         } else if (ev.type === 'rate_limit_event') {
