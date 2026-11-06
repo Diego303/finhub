@@ -44,7 +44,7 @@ test('presupuestos: el del mes sobrescribe al del grupo; semáforo ≤90 % verde
   const t = M.totales([mv(-13500, 'ocio'), mv(-30001, 'comida'), mv(-72000, 'vivienda')], G);
   const p = Object.fromEntries(M.presupuestos(t, G, { ocio: 14000 }).map((x) => [x.grupo, x]));
   assert.deepEqual([p.ocio.presupuesto, p.ocio.pct, p.ocio.color, p.ocio.delMes], [14000, 9643, 'ambar', true]);
-  assert.deepEqual([p.comida.pct, p.comida.color], [10000, 'ambar']);
+  assert.deepEqual([p.comida.pct, p.comida.color], [10000, 'rojo'], 'QA-043: 300,01 € sobre 300,00 € ya supera el 100 %, aunque se vea «100 %»');
   assert.equal(p.vivienda.color, 'verde');
   assert.equal(M.presupuestos(M.totales([mv(-30100, 'comida')], G), G).find((x) => x.grupo === 'comida').color, 'rojo');
   assert.equal(M.presupuestos(t, G, { cartera: 1 }).some((x) => x.grupo === 'cartera'), false, 'solo grupos de consumo');

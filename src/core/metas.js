@@ -115,5 +115,5 @@ export function consumo12(modelo, hoy) {
   const meses = Array.from({ length: 12 }, (_, i) => sumarMesesMes(actual, -(i + 1))).filter((m) => modelo.mes(m)?.movimientos.length);
   if (!meses.length) return { consumo: null, meses: 0, estimado: true };
   const suma = meses.reduce((a, m) => a + totales(modelo.mes(m).movimientos, modelo.grupos).consumo, 0);
-  return { consumo: meses.length === 12 ? suma : Math.round((suma * 12) / meses.length), meses: meses.length, estimado: meses.length < 12 };
+  return { consumo: meses.length === 12 ? suma : dividirRedondeo(suma * 12, meses.length), meses: meses.length, estimado: meses.length < 12 };
 }
