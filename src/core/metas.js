@@ -2,7 +2,7 @@
 // Importes en céntimos; porcentajes en puntos básicos. Isomórfico.
 import { saldos } from './patrimonio.js';
 import { totales } from './mes.js';
-import { proporcionPb } from './dinero.js';
+import { proporcionPb, dividirRedondeo } from './dinero.js';
 import { mesDe, sumarMesesMes, mesesEntre, sumarMeses, mesFinanciero, periodoMes } from './fechas.js';
 
 /** Todos los movimientos de la carpeta (de todos los meses). */
@@ -57,7 +57,7 @@ export function progresoMeta(meta, { cuentas, movimientos, hoy, diaInicio = 1 })
   } else if (c.aportacion?.media3m && origen && origen.tipo !== 'manual') {
     const actual = mesFinanciero(hoy, diaInicio);
     const meses = [1, 2, 3].map((k) => sumarMesesMes(actual, -k));
-    aportacion = Math.round(meses.reduce((a, m) => a + flujoMensual(origen, movimientos, m, diaInicio), 0) / 3);
+    aportacion = dividirRedondeo(meses.reduce((a, m) => a + flujoMensual(origen, movimientos, m, diaInicio), 0), 3);
     aportacionOrigen = 'media3m';
   } else if (c.aportacion?.media3m) avisos.push('«media3m» necesita una cuenta o un grupo');
 
