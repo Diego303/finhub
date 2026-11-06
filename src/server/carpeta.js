@@ -12,6 +12,7 @@ import { leerEsquema } from '../core/formato/migraciones.js';
 
 const hash = (buf) => createHash('sha256').update(buf).digest('hex');
 const RE_TEMPORAL = /^\.finhub-tmp-/;
+const RE_COPIA_A_MEDIAS = /\.finhub-tmp-\d+$/;
 
 async function existe(ruta) {
   return fsp.stat(ruta).then((s) => s, () => null);
@@ -22,8 +23,9 @@ async function listarTodo(raiz) {
   const visitar = async (abs, rel) => {
     for (const e of await fsp.readdir(abs, { withFileTypes: true })) {
       const r = rel ? `${rel}/${e.name}` : e.name;
-      if (e.isDirectory()) await visitar(join(abs, e.name), r);
-      else if (e.isFile() && !RE_TEMPORAL.test(e.name) && r !== '.finhub/abierto.lock') res.push(r);
+      if (e.isDirectory()) {
+        if (!RE_COPIA_A_MEDIAS.test(e.name)) await visitar(join(abs, e.name), r);
+      } else if (e.isFile() && !RE_TEMPORAL.test(e.name) && r !== '.finhub/abierto.lock') res.push(r);
     }
   };
   await visitar(raiz, '');

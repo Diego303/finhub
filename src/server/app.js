@@ -307,6 +307,7 @@ export class App {
     if (this.ejemplo) throw new ErrorHttp(400, 'En modo ejemplo no se cambia la carpeta');
     return this.enCola(async () => {
       await this.claude.cancelarTodos(); // un trabajo de la carpeta anterior no puede acabar en la nueva
+      await this.copias?.enCurso; // la copia del día se está escribiendo dentro de lo que se va a copiar
       const actual = this.carpeta;
       const progreso = (p) => this.difusor.enviar('progreso', p);
       const res = await cambiarCarpeta({
