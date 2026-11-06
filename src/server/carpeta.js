@@ -183,8 +183,13 @@ export async function cambiarCarpeta({ entrada, modo, actual = null, confirmarBo
   const { ficheros } = await copiarVerificando(actual, v.ruta, { progreso });
   let antiguaEnPapelera = null;
   if (modo === 'mover') {
-    if (confirmarBorrado) antiguaEnPapelera = await enviarAPapelera(actual);
-    else avisos.push('la carpeta antigua sigue en su sitio: confirma para mandarla a la papelera');
+    if (confirmarBorrado) {
+      // lo copiado ya está verificado: que falle la papelera no deshace el cambio de carpeta
+      antiguaEnPapelera = await enviarAPapelera(actual).catch((e) => {
+        avisos.push(`no se pudo mandar la carpeta antigua a la papelera (${e.message}): sigue en su sitio`);
+        return null;
+      });
+    } else avisos.push('la carpeta antigua sigue en su sitio: confirma para mandarla a la papelera');
   }
   return { ruta: v.ruta, modo, ficheros, antiguaEnPapelera, avisos };
 }

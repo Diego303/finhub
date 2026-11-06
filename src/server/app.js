@@ -324,7 +324,12 @@ export class App {
         throw new ErrorHttp(400, e.message);
       });
       if (this.almacen) await this.cerrarCarpeta();
-      await this.abrirCarpeta(res.ruta);
+      try {
+        await this.abrirCarpeta(res.ruta);
+      } catch (e) {
+        await this.abrirCarpeta(actual); // el servidor nunca se queda sin carpeta
+        throw new ErrorHttp(400, e.message);
+      }
       if (this.guardarConfig) await fijarCarpeta(res.ruta, this.env);
       return { ok: true, ...res, rutaWindows: aRutaWindows(res.ruta) };
     });
