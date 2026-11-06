@@ -136,9 +136,9 @@ export class Almacen {
     for (let intento = 0; intento <= this.reintentos.length; intento++) {
       try {
         const texto = await this.fs.readFile(abs, 'utf8');
-        if (tamEsperado > 0 && texto.length === 0) {
-          ultimo = Object.assign(new Error('el fichero tiene tamaño pero no devuelve contenido'), { code: 'EIO' });
-        } else return { texto };
+        // 0 bytes es el marcador de un fichero solo en la nube, o una lectura a medias: nunca un fichero vacío
+        if (texto.length === 0) ultimo = Object.assign(new Error('el fichero no devuelve contenido'), { code: 'EIO' });
+        else return { texto };
       } catch (e) {
         if (e.code === 'ENOENT') return { borrado: true };
         ultimo = e;
@@ -186,11 +186,18 @@ export class Almacen {
       else if (c.clase === 'ajeno') otros.ajenos.push(rel);
     }
     const cambiados = [];
-    const stats = await enParalelo(datos, this.concurrencia, async (rel) => this.fs.stat(join(this.raiz, rel)).catch(() => null));
+    const stats = await enParalelo(datos, this.concurrencia, async (rel) => this.fs.stat(join(this.raiz, rel)).catch((e) => (e.code === 'ENOENT' ? null : { fallo: e.code })));
     await enParalelo(datos, this.concurrencia, async (rel, i) => {
       const st = stats[i];
       const e = this.ficheros.get(rel);
       if (!st) return;
+      if (st.fallo) {
+        // existe (está en el listado) pero no se puede consultar: ni fuera del índice ni «inexistente»
+        const error = ERRORES_NUBE.has(st.fallo) ? 'nube' : 'ilegible';
+        this.ficheros.set(rel, { ...(e ?? { texto: null, version: null, tam: null, mtimeMs: null }), tipo: detectar(rel)?.formato.tipo ?? null, legible: false, error, codigo: st.fallo });
+        if (!e || e.legible !== false) cambiados.push(rel);
+        return;
+      }
       if (e && e.legible && e.tam === st.size && e.mtimeMs === st.mtimeMs) return;
       if (await this.refrescar(rel, st)) cambiados.push(rel);
     });
