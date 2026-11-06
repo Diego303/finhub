@@ -20,6 +20,7 @@
     "test:todo": "node scripts/test.js --todo",
     "test:larga": "node scripts/test.js test/larga",
     "qa:validar": "node scripts/qa-validar.js",
+    "qa:humo": "node scripts/qa-humo.js",
     "test:cobertura": "node scripts/test.js --cobertura",
     "check": "node scripts/check.js",
     "ejemplo": "node scripts/generar-ejemplo.js",

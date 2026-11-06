@@ -17,16 +17,18 @@ Plan e inventario: [QA-PLAN.md](QA-PLAN.md). Lista manual: [QA-CHECKLIST.md](QA-
 
 56 bugs: 14 críticos, 20 altos, 13 medios y 9 bajos. Todos arreglados, cada uno con su prueba que fallaba antes.
 
-**Sin ejecutar (QA9, requiere tu permiso):** la prueba de humo con Claude de verdad y `pnpm qa:validar` sobre tu carpeta real. Ver «Riesgos».
+**QA9, con tu permiso:**
+- **Prueba real con Claude Code 2.1.319** (`pnpm qa:humo -- --si`, 2026-11-07): 9 de 9 trabajos correctos, 0,11 USD, con haiku. Herramientas exactas, sin MCP, hooks, skills ni plugins globales, y nada tuyo en los trabajos sin privado. Detalle en [CLAUDE-CLI.md](CLAUDE-CLI.md).
+- **`pnpm qa:validar`:** listo y probado con temporales; **sin pasar por tu carpeta real**, que aún no está configurada. Falta que me digas la ruta.
 
 ## Estado de R1
 
-«Ningún trabajo de Claude junta a la vez datos privados, texto externo y salida a internet.» Se cumple en todos los casos probados, **con Claude simulado**: el aislamiento real de hooks, plugins y MCP globales con tu versión de Claude Code no se ha podido volver a comprobar aquí (QA9).
+«Ningún trabajo de Claude junta a la vez datos privados, texto externo y salida a internet.» Se cumple en todos los casos probados, con Claude simulado en las baterías y con el **real** en la prueba de humo de QA9.
 
 | § 0.3 | Garantía | Test | Resultado |
 |---|---|---|---|
 | 1 | Sin herramientas de disco ni terminal; el servidor es el único que escribe | `test/r1/aislamiento.test.js` (spec, flags), `test/r1/r1.test.js` | ✓ |
-| 2 | Aislado de tu configuración global | `test/r1/aislamiento.test.js` (flags por trabajo) | ✓ en los flags; **sin comprobar con el Claude real** |
+| 2 | Aislado de tu configuración global | `test/r1/aislamiento.test.js` (flags por trabajo) | ✓, también con el Claude real (`pnpm qa:humo`) |
 | 3 | Guardia en tiempo de ejecución | `test/r1/aislamiento.test.js`, `QA-003`, `QA-004`, `QA-006`, `test/r1/ataques.test.js` | ✓ |
 | 4 | `cwd` vacío, nuevo y borrado, también con error, timeout y cancelación | `test/r1/aislamiento.test.js`, `QA-021` | ✓ |
 | 5 | Entorno mínimo sin rutas de tus datos | `test/r1/canarios.test.js` (env en el proceso real), `test/r1/r1.test.js` | ✓ |
@@ -123,7 +125,7 @@ Pediste aplicar en cada una la opción recomendada. El detalle de cada decisión
 ## Riesgos restantes y lo no automatizable
 
 - **Fallo intermitente sin explicar.** `test/e2e/descubrimientos.test.js`, «simulador → encaje → … → diario de decisiones», falló en 2 ejecuciones completas seguidas (en ambas, «no se cumplió: decisión creada», y la prueba siguiente, en cascada). No se pudo reproducir: pasó en repeticiones sueltas, también con toda la CPU ocupada, y en las 4 ejecuciones completas posteriores. Esas 2 ejecuciones no dejaron datos, porque el diagnóstico se añadió después. La hipótesis del clic perdido (QA-056) era un bug real, pero **no** explica este fallo: tras arreglarla volvió a fallar. Puede seguir ahí. Si reaparece, el error dirá qué respondió el servidor y qué enseñaba la página. Efecto si fuera un fallo de la app: «Añadir al diario» no crea la decisión; no se ha visto ningún dato perdido.
-- **Claude de verdad, sin probar en esta QA.** Todo R1 se ha probado con el Claude simulado. Si una versión nueva de Claude Code cambia los flags o el evento `init`, la guardia falla cerrada, pero conviene la prueba de humo (QA9.1, que te pediré).
+- **Claude de verdad, una sola pasada.** Los ataques y las baterías de R1 se han probado con el Claude simulado; con el real, 9 ejecuciones normales con haiku, sin textos trampa. Si una versión nueva de Claude Code cambia los flags o el evento `init`, la guardia falla cerrada; conviene repetir `pnpm qa:humo -- --si` tras actualizar.
 - **Sistema de ficheros real.** SIGKILL, renombrados y `fsync` se han probado en `/tmp` (ext4). `/mnt/d` (drvfs, NTFS) y un corte de luz de verdad pueden comportarse distinto; no lo he probado para no tocar tus discos.
 - **Sincronización simulada.** Los patrones de Google Drive para copias en conflicto siguen sin verificar (`docs/SINCRONIZACION.md` §4 y §7): punto 15 de la lista manual.
 - **Windows:** acceso directo, app instalada, arranque con el sistema, Bloc de notas, Obsidian y dos PC: solo manual.
