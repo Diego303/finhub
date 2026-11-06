@@ -98,13 +98,12 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
       iMin = i;
     }
   }
+  // recuperar es volver al pico de antes de la caída (desde donde se mide), contando desde el inicio del periodo
   const recupera = (serie) => {
-    let abajo = false;
-    for (let i = 1; i < serie.length; i++) {
-      if (serie[i] < 100 - 1e-9) abajo = true;
-      else if (abajo && i > iMin) return i;
-    }
-    return abajo ? null : 0;
+    if (iMin === 0) return 0;
+    const nivel = Math.max(...serie.slice(0, iMin + 1));
+    for (let i = iMin + 1; i < serie.length; i++) if (serie[i] >= nivel - 1e-9) return i;
+    return null;
   };
   const recuperaSin = recupera(sin);
   const recuperaCon = recupera(con);
