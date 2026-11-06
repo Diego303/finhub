@@ -28,10 +28,13 @@ export function indiceNotas(modelo) {
   for (const [ruta, doc] of modelo.docs) {
     if (doc.tipo !== 'notas' || !ruta.startsWith('conocimiento/')) continue;
     const cab = cabeceras(doc);
-    const porDefecto = cab.fuente ?? fuenteDeRuta(ruta);
+    // R1 (§0.3.7): la fuente de una nota es SU CARPETA. Los campos «fuente:» del fichero no mandan: si no, una
+    // nota de conocimiento/mias/ con «fuente: mundo» pasaría por pública y llegaría a los trabajos con internet.
+    const deCarpeta = fuenteDeRuta(ruta);
+    const porDefecto = deCarpeta ?? cab.fuente;
     for (const b of bloques(doc)) {
       const c = b.campos;
-      lista.push({ id: b.id, titulo: b.titulo, ruta, fuente: c.fuente ?? porDefecto, tipo: c.tipo, fecha: c.fecha ?? cab.fecha ?? null, temas: c.temas ?? [], activos: c.activos ?? [], postura: c.postura ?? null, caduca: c.caduca ?? null, cuerpo: b.cuerpo, origen: c.origen ?? cab.origen ?? null, verificar: c.verificar ?? null, editada: !!c.editada, campos: c });
+      lista.push({ id: b.id, titulo: b.titulo, ruta, fuente: deCarpeta ?? c.fuente ?? porDefecto, tipo: c.tipo, fecha: c.fecha ?? cab.fecha ?? null, temas: c.temas ?? [], activos: c.activos ?? [], postura: c.postura ?? null, caduca: c.caduca ?? null, cuerpo: b.cuerpo, origen: c.origen ?? cab.origen ?? null, verificar: c.verificar ?? null, editada: !!c.editada, campos: c });
     }
   }
   return lista.sort((a, b) => ((b.fecha ?? '') < (a.fecha ?? '') ? -1 : (b.fecha ?? '') > (a.fecha ?? '') ? 1 : a.id < b.id ? -1 : 1));
