@@ -82,7 +82,8 @@ export function presupuestos(tot, grupos, delMes = {}) {
       const presupuesto = delMes[g.id] ?? g.presupuesto;
       const gastado = tot.porGrupo.get(g.id)?.consumo ?? 0;
       const pct = presupuesto > 0 ? proporcionPb(gastado, presupuesto) : null;
-      const color = pct === null ? (gastado > 0 ? 'rojo' : 'verde') : pct <= 9000 ? 'verde' : pct <= 10000 ? 'ambar' : 'rojo';
+      // con los céntimos, no con el porcentaje redondeado: 100,001 % ya es rojo
+      const color = pct === null ? (gastado > 0 ? 'rojo' : 'verde') : gastado * 100 <= presupuesto * 90 ? 'verde' : gastado <= presupuesto ? 'ambar' : 'rojo';
       return { grupo: g.id, nombre: g.nombre, gastado, presupuesto, pct, color, delMes: delMes[g.id] !== undefined };
     });
 }
