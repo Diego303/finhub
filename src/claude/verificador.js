@@ -2,7 +2,7 @@
 // ser una probabilidad del propio JSON), citas (los ids deben existir en <datos>), probabilidades (enteras,
 // entre 5 y 90 y que sumen 100) y lenguaje de recomendación (se resalta y se registra).
 
-const RE_NUM = /(?<![\w.,])[-−+]?\d{1,3}(?:[.\s ]\d{3})+(?:,\d+)?(?![\w])|(?<![\w.,])[-−+]?\d+(?:[.,]\d+)?(?![\w])/g;
+const RE_NUM = /(?<![\w.,-])[-−+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?![\w])|(?<![\w.,-])[-−+]?\d{1,3}(?:[.\s ]\d{3})+(?:,\d+)?(?![\w])|(?<![\w.,-])[-−+]?\d+(?:[.,]\d+)?(?![\w])/g;
 const RE_ID = /\b[A-Z]{1,4}-\d{2,6}(?:-\d{2})?\b/g;
 export const RE_RECOMENDACION = /\b(compra|vende|comprar ya|vender ya|precio objetivo|te recomiendo (?:comprar|vender))\b/gi;
 
@@ -21,7 +21,8 @@ export function interpretar(s) {
 
 /** Todos los números de un texto, con su forma escrita. */
 export function numeros(texto) {
-  return [...String(texto ?? '').matchAll(RE_NUM)].map((m) => ({ texto: m[0], valores: interpretar(m[0]) }));
+  // los números de una URL no son cifras; los de un id ([B-1001]) tampoco (el «-» de delante no es un signo)
+  return [...String(texto ?? '').replace(/https?:\/\/\S+/g, ' ').matchAll(RE_NUM)].map((m) => ({ texto: m[0], valores: interpretar(m[0]) }));
 }
 
 const parecido = (a, b) => Math.abs(a - b) <= Math.max(0.5, Math.abs(b) * 0.005);
