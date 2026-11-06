@@ -40,7 +40,7 @@ const abrirVista = async (p, v) => {
   await p.waitForTimeout(80);
 };
 const foto = async (p, nombre) => {
-  if (CAPTURAR) await p.screenshot({ path: join(DIR, `${nombre}.jpg`), type: 'jpeg', quality: 55, fullPage: true });
+  if (CAPTURAR) await p.screenshot({ path: join(DIR, `${nombre}.jpg`), type: 'jpeg', quality: 45, fullPage: true, scale: 'css' });
 };
 
 /** Lo que se sale por la derecha de la pantalla, en este momento. */
