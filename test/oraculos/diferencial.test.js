@@ -132,7 +132,7 @@ test(`saldos con dos patas y a:, ajustes y deuda; patrimonio; colchón (${N} cas
 const TRAMOS = O.TRAMOS_PLAN;
 test(`impuesto: tramos 6.000/50.000/200.000/300.000 ±1 céntimo y ±1 euro, plusvalía negativa y ${N} aleatorios`, () => {
   const LIM = [600000, 5000000, 20000000, 30000000];
-  for (const l of LIM) for (const d of [-100, -1, 0, 1, 100]) cerca(impuestoVenta(l + d, TRAMOS), O.impuestoEstimado(l + d), 1, `${l}${d}`);
+  for (const l of LIM) for (const d of [-100, -1, 0, 1, 100]) assert.equal(impuestoVenta(l + d, TRAMOS), O.impuestoEstimado(l + d), `${l}${d}`);
   for (const p of [0, -1, -100000]) assert.equal(impuestoVenta(p, TRAMOS), 0);
   // cada euro de más en un tramo paga el tipo de ese tramo
   for (let k = 0; k < TRAMOS.length; k++) {
@@ -141,7 +141,7 @@ test(`impuesto: tramos 6.000/50.000/200.000/300.000 ±1 céntimo y ±1 euro, plu
   }
   for (let i = 0; i < N; i++) {
     const p = e(-100000, 60000000);
-    cerca(impuestoVenta(p, TRAMOS), O.impuestoEstimado(p), 2, sello(i, String(p)));
+    assert.equal(impuestoVenta(p, TRAMOS), O.impuestoEstimado(p), sello(i, String(p)));
   }
 });
 
