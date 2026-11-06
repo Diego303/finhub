@@ -164,7 +164,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
       hijo.on('error', (e) => {
         fin ??= { estado: 'error', codigo: e.code === 'ENOENT' ? 'no_instalado' : 'fallo', motivos: [e.message] };
       });
-      hijo.on('close', (codigoSalida) => {
+      hijo.on('close', (codigoSalida, senalSalida) => {
         matar('SIGKILL'); // lo que el proceso haya dejado vivo en su grupo
         if (resto) linea(resto);
         for (const t of temporizadores) clearTimeout(t);
@@ -175,7 +175,8 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           const errorTexto = `${resultado?.result ?? ''} ${resultado?.errors?.join(' ') ?? ''} ${stderr}`;
           if (resultado?.subtype === 'error_max_turns' || resultado?.terminal_reason === 'max_turns') r = { estado: 'error', codigo: 'turnos' };
           else if (/not logged in|please run \/login/i.test(errorTexto)) r = { estado: 'error', codigo: 'sin_sesion' };
-          else if (resultado?.is_error || codigoSalida) r = { estado: 'error', codigo: 'fallo', motivos: [errorTexto.trim().slice(0, 300)] };
+          else if (/usage limit|rate limit|limit reached|hit your .*limit/i.test(errorTexto)) r = { estado: 'error', codigo: 'limite' };
+          else if (resultado?.is_error || codigoSalida || senalSalida) r = { estado: 'error', codigo: 'fallo', motivos: [errorTexto.trim().slice(0, 300) || (senalSalida ? `el proceso murió con ${senalSalida}` : '')] };
           // sin init no se ha podido comprobar el aislamiento: la salida no vale, aunque el proceso acabe bien (§0.3.3)
           else if (!init) r = { estado: 'error', codigo: 'sin_init' };
           else r = { estado: 'ok' };
