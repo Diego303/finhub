@@ -68,6 +68,7 @@ const env = {
   PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || join(realHome, '.cache', 'ms-playwright'),
   PATH: `${bin}:${process.env.PATH}`,
   FINHUB_TRAMPA_LOG: logTrampa,
+  ...(todo ? { FINHUB_SECUENCIAS: '1000', FINHUB_SIGKILL: '300' } : {}), // las baterías largas, enteras, en test:todo
   NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import=${pathToFileURL(join(raiz, 'test', 'qa', 'trampa-rutas.js')).href}`.trim(),
 };
 
