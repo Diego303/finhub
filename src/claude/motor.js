@@ -42,12 +42,28 @@ export function procesarSalida(trabajo, texto, { prompt, params, modelo, bloques
   const probs = revisarProbabilidades(probabilidadesDe(json));
   if (probs.length) return { ok: false, motivo: probs.join(' · '), reintentar: true };
   const avisos = [];
-  // citas: las que no existen en <datos> se quitan y se avisa (salvo URLs, en los trabajos con internet)
-  if (Array.isArray(json.citas)) {
-    const r = revisarCitas(json.citas, prompt.ids);
-    if (r.inventadas.length) avisos.push(`citas que no existen (quitadas): ${r.inventadas.join(', ')}`);
-    json.citas = r.validas;
-  }
+  // citas, a cualquier nivel: las que no existen en <datos> se quitan y se avisa (las URL, solo con internet)
+  const quitadas = [];
+  const limpiarCitas = (x) => {
+    if (Array.isArray(x)) x.forEach(limpiarCitas);
+    else if (x && typeof x === 'object') {
+      for (const [k, v] of Object.entries(x)) {
+        if (k === 'citas' && Array.isArray(v)) {
+          const r = revisarCitas(v, prompt.ids, { urls: trabajo.internet });
+          quitadas.push(...r.inventadas);
+          x.citas = r.validas;
+        } else if (k === 'cita' && typeof v === 'string') {
+          const r = revisarCitas([v], prompt.ids, { urls: trabajo.internet });
+          if (r.inventadas.length) {
+            quitadas.push(v);
+            x.cita = null;
+          }
+        } else limpiarCitas(v);
+      }
+    }
+  };
+  limpiarCitas(json);
+  if (quitadas.length) avisos.push(`citas que no existen (quitadas): ${[...new Set(quitadas)].join(', ')}`);
   const textos = [visible, ...textosDe(json)].join('\n');
   const inventados = idsInventados(textos, prompt.ids);
   if (inventados.length) avisos.push(`ids citados que no están en tus notas: ${inventados.join(', ')}`);

@@ -45,15 +45,23 @@ export function permitidos({ cifras = [], datos = '', probabilidades = [] }) {
   return s;
 }
 
-/** Citas: devuelve las válidas y las inventadas (que se quitan). */
-export function revisarCitas(citas, idsValidos) {
+/**
+ * Citas: devuelve las válidas y las inventadas (que se quitan). Una URL no se confunde con un id aunque lleve
+ * algo parecido dentro; solo vale en los trabajos con internet (`urls`): en uno privado, una URL con datos en
+ * la query sería una forma de sacarlos.
+ */
+export function revisarCitas(citas, idsValidos, { urls = true } = {}) {
   const ok = new Set(idsValidos);
   const validas = [];
   const inventadas = [];
   for (const c of citas ?? []) {
+    if (/^(web:)?https?:\/\//i.test(String(c).trim())) {
+      (urls ? validas : inventadas).push(c);
+      continue;
+    }
     const ids = String(c).match(RE_ID);
     if (!ids) {
-      validas.push(c); // una URL o una referencia que no es un id de nota
+      validas.push(c); // una referencia que no es un id de nota
       continue;
     }
     (ids.every((id) => ok.has(id)) ? validas : inventadas).push(c);
@@ -61,10 +69,10 @@ export function revisarCitas(citas, idsValidos) {
   return { validas, inventadas };
 }
 
-/** Ids citados en un texto ([B-1001]) que no existen. */
+/** Ids citados en un texto ([B-1001]) que no existen (lo que hay dentro de una URL no es un id). */
 export const idsInventados = (texto, idsValidos) => {
   const ok = new Set(idsValidos);
-  return [...new Set((String(texto ?? '').match(RE_ID) ?? []).filter((id) => !ok.has(id)))];
+  return [...new Set((String(texto ?? '').replace(/https?:\/\/\S+/g, ' ').match(RE_ID) ?? []).filter((id) => !ok.has(id)))];
 };
 
 /** Probabilidades de escenarios (§8.4): enteras, entre 5 y 90, suma 100. → errores */
