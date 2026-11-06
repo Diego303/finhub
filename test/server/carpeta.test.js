@@ -127,9 +127,11 @@ test('usar existente y crear nueva', async () => {
   await assert.rejects(cambiarCarpeta({ entrada: join(vacia, 'x'), modo: 'teletransportar', actual: existente }), /modo desconocido/);
 });
 
-test('papelera del sistema (WSL): la carpeta se MUEVE a la papelera de freedesktop, no se borra', async () => {
+test('papelera del sistema (WSL): la carpeta se MUEVE a la papelera de freedesktop, no se borra', async (t) => {
   const { enviarAPapeleraSistema } = await import('../../src/server/carpeta.js');
   const base = await tmp('papelera-sistema');
+  // en /mnt/ iría a TU Papelera de reciclaje de Windows: una prueba nunca debe tocarla
+  if (base.startsWith('/mnt/')) return t.skip('los temporales están en una unidad de Windows');
   const vieja = join(base, 'FINANZAS vieja');
   await fsp.mkdir(vieja);
   await fsp.writeFile(join(vieja, 'ajustes.md'), '# Ajustes\nesquema: 1\n');
