@@ -8,33 +8,42 @@ export const RE_RECOMENDACION = /\b(compra|vende|comprar ya|vender ya|precio obj
 
 /** Valores posibles de un número escrito (es-ES «1.234,5» y en-US «1,234.5»). */
 export function interpretar(s) {
-  const t = String(s).replace(/[−]/g, '-').replace(/[\s ]/g, '');
-  const out = new Set();
-  const es = t.replace(/\./g, '').replace(',', '.');
-  const en = t.replace(/,/g, '');
-  for (const x of [es, en, t.replace(',', '.')]) {
-    const n = Number(x);
-    if (Number.isFinite(n)) out.add(n);
-  }
-  return [...out];
+  return lecturas(s).map((l) => l.v);
 }
 
-/** Todos los números de un texto, con su forma escrita. */
+/** Lecturas posibles de un número escrito, con sus decimales: [{v, decimales}] */
+function lecturas(s) {
+  const t = String(s).replace(/[−]/g, '-').replace(/[\s ]/g, '');
+  const out = new Map();
+  const anadir = (x) => {
+    const n = Number(x);
+    if (Number.isFinite(n) && !out.has(n)) out.set(n, x.split('.')[1]?.length ?? 0);
+  };
+  anadir(t.replace(/\./g, '').replace(',', '.')); // es-ES
+  anadir(t.replace(/,/g, '')); // en-US
+  anadir(t.replace(',', '.'));
+  return [...out].map(([v, decimales]) => ({ v, decimales }));
+}
+
+/** Todos los números de un texto, con su forma escrita y si llevan unidad (%, €…). */
 export function numeros(texto) {
   // los números de una URL no son cifras; los de un id ([B-1001]) tampoco (el «-» de delante no es un signo)
-  return [...String(texto ?? '').replace(/https?:\/\/\S+/g, ' ').matchAll(RE_NUM)].map((m) => ({ texto: m[0], valores: interpretar(m[0]) }));
+  const limpio = String(texto ?? '').replace(/https?:\/\/\S+/g, ' ');
+  return [...limpio.matchAll(RE_NUM)].map((m) => ({ texto: m[0], lecturas: lecturas(m[0]), valores: interpretar(m[0]), conUnidad: /^\s*(%|€|eur\b|euros?\b|puntos?\b|pb\b)/i.test(limpio.slice(m.index + m[0].length)) }));
 }
 
-const parecido = (a, b) => Math.abs(a - b) <= Math.max(0.5, Math.abs(b) * 0.005);
+/** Tolerancia de redondeo: media unidad del último decimal escrito, o un 0,5 % de la cifra si es mayor. */
+const parecido = (l, p) => Math.abs(Math.abs(l.v) - Math.abs(p)) <= Math.max(0.5 * 10 ** -l.decimales, Math.abs(p) * 0.005) + 1e-9;
 
 /**
  * Comprueba los números de `texto` contra los permitidos (cifras, números de los datos y probabilidades).
- * Los años (1900–2100) que aparecen en los datos y los enteros pequeños de enumeraciones (1–12) se aceptan.
+ * Sin unidad se aceptan los enteros pequeños de enumeraciones (0–12) y los años (1900–2100).
  * → [{texto}] no verificadas
  */
 export function cifrasNoVerificadas(texto, permitidos) {
   const lista = [...permitidos];
-  return numeros(texto).filter((n) => !n.valores.some((v) => (Number.isInteger(v) && v >= 0 && v <= 12) || lista.some((p) => parecido(Math.abs(v), Math.abs(p)))));
+  const libre = (n) => !n.conUnidad && n.lecturas.some((l) => l.decimales === 0 && Number.isInteger(l.v) && ((l.v >= 0 && l.v <= 12) || (l.v >= 1900 && l.v <= 2100)));
+  return numeros(texto).filter((n) => !libre(n) && !n.lecturas.some((l) => lista.some((p) => parecido(l, p))));
 }
 
 /** Números permitidos: los de <cifras>, los que aparecen en el texto de <datos> y las probabilidades del JSON. */
