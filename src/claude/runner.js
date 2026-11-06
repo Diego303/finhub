@@ -190,7 +190,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           sesion: init?.session_id ?? resultado?.session_id ?? null,
           init: init ? { modelo: init.model, version: init.claude_code_version, herramientas: init.tools } : null,
           herramientas,
-          resultado: resultado ? { duracionMs: resultado.duration_ms ?? null, turnos: resultado.num_turns ?? null, coste: resultado.total_cost_usd ?? null } : null,
+          resultado: resultado ? { duracionMs: resultado.duration_ms ?? null, turnos: resultado.num_turns ?? null, coste: resultado.total_cost_usd ?? null, uso: resultado.usage ?? null } : null,
           limite: limite ? { estado: limite.status, uso: limite.utilization ?? null, renueva: limite.resetsAt ?? null } : null,
         });
       });

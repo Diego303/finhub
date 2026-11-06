@@ -84,9 +84,9 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
   const id = randomBytes(4).toString('hex');
   const inicio = new Date().toISOString();
   const t0 = Date.now();
-  const linea = { id, trabajo: trabajo.id, inicio, internet: trabajo.internet, privado: trabajo.privado, externo: trabajo.externo };
+  const linea = { id, trabajo: trabajo.id, inicio, internet: trabajo.internet, privado: trabajo.privado, externo: trabajo.externo, destino: trabajo.escribe };
   const fin = async (r) => {
-    Object.assign(linea, { duracionMs: Date.now() - t0, estado: r.estado, motivo: r.motivo ?? r.mensaje ?? null, avisos: r.avisos ?? [] });
+    Object.assign(linea, { duracionMs: Date.now() - t0, estado: r.estado, codigo: r.codigo ?? null, motivo: r.motivo ?? r.mensaje ?? null, avisos: r.avisos ?? [] });
     await registrar(servicio, linea).catch(() => {});
     alEvento({ tipo: 'fin', id, estado: r.estado });
     return { id, ...r, registro: linea };
@@ -97,6 +97,7 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
   const bloques = entrada.bloques ?? [];
   const pe = problemasEntrada(trabajo, bloques, { desclasificar });
   linea.entradas = bloques.map((b) => `${b.origen}:${b.nivel}${b.ids ? `(${b.ids.length})` : ''}`);
+  linea.ids = bloques.flatMap((b) => b.ids ?? []);
   if (pe.length) return fin({ estado: 'rechazado', mensaje: `R1: ${pe.join(' · ')}` });
   if (resume) {
     try {
@@ -112,7 +113,7 @@ export async function ejecutarTrabajo({ trabajo, modelo, params = {}, hoy, descl
   let intento = 0;
   for (;;) {
     const r = await ejecutar(trabajo, { sistema: prompt.sistema, usuario: prompt.usuario, modelo: modeloClaude ?? trabajo.modelo, resume, timeoutMs: entrada.timeoutMs ?? trabajo.timeoutMs, ...runner, maxTurns: Math.min(entrada.maxTurns ?? trabajo.maxTurns, 60), senal, alEvento: (e) => alEvento({ ...e, id }) });
-    Object.assign(linea, { modelo: r.init?.modelo ?? null, version: r.init?.version ?? null, herramientas: r.herramientas, turnos: r.resultado?.turnos ?? null, coste: r.resultado?.coste ?? null, sesion: trabajo.sesion ? r.sesion : null });
+    Object.assign(linea, { modelo: r.init?.modelo ?? null, version: r.init?.version ?? null, herramientas: r.herramientas, turnos: r.resultado?.turnos ?? null, coste: r.resultado?.coste ?? null, uso: r.resultado?.uso ?? null, sesion: trabajo.sesion ? r.sesion : null });
     if (r.estado !== 'ok') return fin({ estado: 'error', codigo: r.codigo, mensaje: r.mensaje, motivo: [r.mensaje, ...(r.motivos ?? [])].filter(Boolean).join(' · ') });
     if (trabajo.sesion && r.sesion) await sesiones.guardar(r.sesion, trabajo.id).catch(() => {});
     const p = procesarSalida(trabajo, r.texto, { prompt, params: { ...params, hoy }, modelo, bloques, esquema, comprobar: entrada.comprobar ?? trabajo.comprobar });
