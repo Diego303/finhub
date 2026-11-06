@@ -52,7 +52,8 @@ test('diferencias y fusión por entidades (sin servidor)', () => {
   const f = fusionar('cuentas.md', tuya, otra);
   assert.equal(f.texto, '# Cuentas\nesquema: 1\n- a | A | tipo: corriente\n- b | B | tipo: ahorro\n- c | C | tipo: efectivo\n');
   // la misma entidad cambiada en los dos lados: la fusión no da un fichero válido → a mano
-  assert.throws(() => fusionar('cuentas.md', tuya, '# Cuentas\nesquema: 1\n- a | A cambiada | tipo: corriente\n'), /a mano/);
+  // QA-036: la misma entidad cambiada en los dos lados se deduplica por id: se queda la tuya y se avisa
+  assert.match(fusionar('cuentas.md', tuya, '# Cuentas\nesquema: 1\n- a | A cambiada | tipo: corriente\n').ignoradas.join(), /A cambiada/);
   // un bloque solo en la otra se añade entero; una clave con otro valor se queda la tuya
   const d1 = '# D-001 · X\nesquema: 1\n- tipo: tema\n## v1 · 2026-11-01\n- tesis: Una tesis suficientemente larga.\n';
   const d2 = '# D-001 · X\nesquema: 1\n- tipo: sector\n## v2 · 2026-11-03\n- tesis: Otra tesis suficientemente larga.\n## v1 · 2026-11-01\n- tesis: Una tesis suficientemente larga.\n';
