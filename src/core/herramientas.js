@@ -140,7 +140,10 @@ export function rangos12m(historico) {
   }
   moviles.sort((a, b) => a - b);
   const pb = (q) => Math.round(percentil(moviles, q) * 10000);
-  return { pesimista: [pb(0.05), pb(0.25)], base: [pb(0.25), pb(0.75)], optimista: [pb(0.75), pb(0.95)], peor: Math.round(moviles[0] * 10000), ventanas: moviles.length, desde: historico.meses[0], hasta: historico.meses.at(-1) };
+  // el mismo aviso que en la proyección (QA-063): el peor caso es el peor de los años que hay
+  const inicio = historico.meses?.[0];
+  const aviso = r.length < 120 ? `histórico corto: solo ${(r.length / 12).toFixed(1).replace('.', ',')} años de datos, así que estos rangos pueden quedarse cortos` : inicio > '2008-01' ? `tu histórico empieza en ${inicio}: no incluye las crisis de 2000 y 2008, así que el peor caso real pudo ser bastante peor` : null;
+  return { pesimista: [pb(0.05), pb(0.25)], base: [pb(0.25), pb(0.75)], optimista: [pb(0.75), pb(0.95)], peor: Math.round(moviles[0] * 10000), ventanas: moviles.length, aviso, desde: historico.meses[0], hasta: historico.meses.at(-1) };
 }
 
 // ---------- IPC personal (§4.6) ----------
