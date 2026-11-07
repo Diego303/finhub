@@ -28,7 +28,7 @@ export default {
     return e;
   },
   entrada(modelo, { series, hoy }) {
-    const lineas = series.map((s) => `${s.id} · ${s.que} · unidad: ${s.unidad} · proxy/fuente: ${s.proxy} · método: ${s.metodo} · ${s.ultimo ? `tienes hasta ${s.ultimo}: trae solo los meses posteriores` : 'no tienes datos: trae los últimos 36 meses'}`);
+    const lineas = series.map((s) => `${s.id} · ${s.que} · unidad: ${s.unidad} · proxy/fuente: ${s.proxy} · método: ${s.metodo} · ${s.ultimo ? `tienes hasta ${s.ultimo}: trae solo los meses posteriores` : 'no tienes datos: trae todo el histórico mensual disponible, hasta 25 años'}`);
     return { tarea: `Para cada serie, devuelve las filas mensuales que faltan hasta el último mes completo anterior a ${hoy.slice(0, 7)}, siguiendo su método. Indica en «origen» la fuente y la URL. Si no encuentras datos fiables para una serie, no la incluyas.`, bloques: [bloque('manifiesto de series', 'publico', lineas.join('\n'))] };
   },
 };

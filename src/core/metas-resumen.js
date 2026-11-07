@@ -44,7 +44,10 @@ export function resumenMetas(modelo, hoy, { perfil = null, plantillas = [], apor
     }
   } else {
     const historico = historicoMezcla(componentes, (id) => modelo.serie(id));
-    avisos = historico.avisos;
+    avisos = [...(historico.avisos ?? [])];
+    // con pocos años, la banda es la de esos años: si fueron buenos, sale demasiado optimista (y al revés)
+    const anosHistorico = (historico.r?.length ?? 0) / 12;
+    if (anosHistorico >= 1 && anosHistorico < 10) avisos.push(`histórico corto: solo ${anosHistorico.toFixed(1).replace('.', ',')} años de datos. La proyección repite esos años y puede salir demasiado optimista o pesimista: tómala con cautela o usa supuestos manuales en Ajustes.`);
     proyeccion = proyectarHistorico({ inicial, aportacion: aporta, anios, historico, real, pausa });
   }
   const libertad = proyeccion.error ? null : libertadFinanciera(proyeccion, consumo.consumo, modelo.ajustes.libertad_multiplicador ?? 25);
