@@ -289,17 +289,20 @@ function nodoKv(k, especKv, contenido, comentario, linea, n, aviso) {
 
 // ---------- escritura ----------
 
+/** Un campo de una línea nunca puede abrir otra: colaría filas, bloques o secciones en el fichero (QA-066). */
+const unaLinea = (v) => String(v ?? '').replace(/\s*[\r\n\u2028\u2029\u0085]+\s*/g, ' ').trim();
+
 function lineaKv(nodo) {
-  const valor = nodo.valor !== undefined && nodo.especKv ? nodo.especKv.fmtValor(nodo.clave, nodo.valor) : nodo.texto;
+  const valor = unaLinea(nodo.valor !== undefined && nodo.especKv ? nodo.especKv.fmtValor(nodo.clave, nodo.valor) : nodo.texto);
   const prefijo = nodo.k === 'cab' ? '' : '- ';
   return anadirComentario(`${prefijo}${nodo.clave}:${valor === '' ? '' : ' ' + escaparValor(valor)}`, nodo.comentario);
 }
 
 export function serializar(doc) {
-  const out = [`# ${doc.titulo}`, anadirComentario(`esquema: ${doc.esquema ?? doc.spec.esquema ?? ESQUEMA_ACTUAL}`, doc.comentarioEsquema)];
+  const out = [`# ${unaLinea(doc.titulo)}`, anadirComentario(`esquema: ${doc.esquema ?? doc.spec.esquema ?? ESQUEMA_ACTUAL}`, doc.comentarioEsquema)];
   for (const sec of doc.secciones) {
-    if (sec.clase === 'bloque') out.push(`## ${sec.id} · ${sec.titulo}`);
-    else if (sec.clase !== 'preambulo') out.push(`## ${sec.nombre}`);
+    if (sec.clase === 'bloque') out.push(`## ${unaLinea(sec.id)} · ${unaLinea(sec.titulo)}`);
+    else if (sec.clase !== 'preambulo') out.push(`## ${unaLinea(sec.nombre)}`);
     const it = specItems(doc.spec, sec);
     for (const nodo of sec.nodos) {
       if (nodo.k === 'item') out.push(anadirComentario(it.fmt(nodo.valor, nodo.extra), nodo.comentario));
