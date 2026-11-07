@@ -80,7 +80,7 @@ Cabecera `# Ajustes`, `esquema: 1` y una lista `- clave: valor`. Claves (todas o
 | `rex_humor`, `accesorios` | como el plan | del plan |
 | `copias` | `carpeta` \| `local` | `carpeta` |
 | `conflictos` 🆕 | patrones de copias en conflicto de tu servicio de sincronización, separados por ` \| `: `{nombre}` es el nombre del fichero original sin `.md` (una vez), `*` cualquier texto, y acaba en `.md`. Ejemplo: `{nombre} (conflicto *).md \| {nombre}_*_conflicto.md`. Se suman a los de serie y se aplican en caliente | sin patrones propios; los de serie: `nombre-EQUIPO.md`, `nombre (1).md`, `nombre (… conflicted copy …).md` / `(… copia en conflicto …)`, `nombre.sync-conflict-….md` |
-| `claude_modelo` 🆕 | `trabajo=modelo` separados por `, ` (modelo: `opus` \| `sonnet` \| `haiku` \| nombre completo) | `pulso=sonnet, precios=haiku, datos=haiku, ingesta=sonnet, conocimiento=sonnet, rex-web=sonnet, privado=opus, encaje=opus, descubrir=opus` |
+| `claude_modelo` 🆕 | `trabajo=modelo` separados por `, ` (modelo: `opus` \| `sonnet` \| `haiku` \| nombre completo) | `pulso=sonnet, precios=haiku, datos=sonnet, ingesta=sonnet, conocimiento=sonnet, rex-web=sonnet, privado=opus, encaje=opus, descubrir=opus` |
 | `nombre` 🆕 | texto (para el saludo del resumen al abrir) | — |
 | `umbral_desviacion` 🆕 | porcentaje (aviso de clases frente a objetivo) | `1` |
 | `sectores_efectos` 🆕 | lista de ids de sectores del mapa de efectos (puede quedar vacía: `- sectores_efectos:`) | los 7 de la maqueta |
