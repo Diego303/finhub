@@ -16,7 +16,7 @@ export default {
   recibe: 'el manifiesto de series y el último dato que tienes',
   escribe: ['conocimiento/datos/series/ (tú confirmas)'],
   rol: 'Construyes series mensuales para calcular (índices vía ETF de acumulación, IPC del INE, tipos y cambios del BCE) desde fuentes públicas y gratuitas, siguiendo exactamente el método del manifiesto. Un valor por mes: el último dato del mes.',
-  esquema: O({ series: L(O({ id: T('texto', { patron: /^[a-z0-9]+(-[a-z0-9]+)*$/ }), filas: L(O({ mes: T('mes'), valor: T('numero', { min: 0 }) }), { max: 400 }), origen: T('texto', { min: 5, max: 300 }) }), { max: 20 }) }),
+  esquema: O({ series: L(O({ id: T('texto', { patron: /^[a-z0-9]+(-[a-z0-9]+)*$/ }), filas: L(O({ mes: T('mes'), valor: T('numero') }), { max: 400 }), origen: T('texto', { min: 5, max: 300 }) }), { max: 20 }) }),
   comprobar(json, { params }) {
     const pedidas = new Map(params.series.map((s) => [s.id, s]));
     const e = [];
@@ -24,6 +24,8 @@ export default {
       const p = pedidas.get(s.id);
       if (!p) e.push(`series[${i}]: «${s.id}» no se pidió`);
       if (!/https?:\/\//.test(s.origen)) e.push(`series[${i}]: el origen debe llevar la URL`);
+      // un tipo de interés puede ser negativo (el del BCE lo fue de 2014 a 2022); un índice o un cambio, no
+      if (p && p.unidad !== 'porcentaje' && s.filas.some((f) => f.valor < 0)) e.push(`series[${i}]: «${s.id}» con un valor negativo`);
     }
     return e;
   },
