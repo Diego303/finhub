@@ -99,7 +99,7 @@ export function errorHtml(r) {
 export const avisosHtml = (avisos = []) => (avisos.length ? html`<div class="mut" style="font-size:10.5px;margin-top:6px">⚠ ${avisos.join(' · ')}</div>` : '');
 
 // ---------- modal «Datos de mercado» ----------
-const dm = { fase: 'elegir', series: [], elegidas: new Set(), progreso: { texto: '', herramientas: [], id: null }, resultado: null, guardar: new Set() };
+const dm = { fase: 'elegir', series: [], elegidas: new Set(), historia: false, progreso: { texto: '', herramientas: [], id: null }, resultado: null, guardar: new Set() };
 
 function cuerpoDatos() {
   const lista = dm.series;
@@ -107,6 +107,7 @@ function cuerpoDatos() {
   if (dm.fase === 'elegir') {
     return html`<div class="mut" style="font-size:11px;margin:6px 0">Series para calcular (comparativas, proyección, crisis, IPC). Sus valores no están en el repo por licencias: se crean en tu máquina, desde fuentes gratuitas, siguiendo semilla/datos-manifiesto.md.</div>${r1}
       <table class="tb"><thead><tr><th><span class="sr-only">elegir</span></th><th>serie</th><th>en tu carpeta</th><th class="n">meses</th></tr></thead><tbody>${lista.map((s) => html`<tr style="${s.sintetica ? 'opacity:.55' : ''}"><td><input type="checkbox" data-cambio="datos-serie" data-id="${s.id}" ${dm.elegidas.has(s.id) ? 'checked' : ''} ${s.sintetica ? 'disabled' : ''} aria-label="${s.id}"></td><td>${s.id}<div class="mut" style="font-size:10px">${s.que}</div></td><td class="mut">${s.sintetica ? 'sintética (ejemplo): no se mezcla' : s.existe ? `hasta ${s.ultimo ?? '—'}` : 'no la tienes'}</td><td class="n">${s.filas || ''}</td></tr>`)}</tbody></table>
+      <label class="tg" style="border:0;margin-top:8px"><input type="checkbox" data-cambio="datos-historia" ${dm.historia ? 'checked' : ''}><span style="font-size:11px">Añadir historia aproximada desde 2000 <span class="mut">(índice de precio con dividendos estimados, marcada «aproximación»: para que la prueba de crisis cubra 2000 y 2008)</span></span></label>
       <div class="entre" style="margin-top:10px"><span class="mut" style="font-size:10.5px">${dm.elegidas.size} serie(s) · modelo ${estado.modelo?.ajustes.claude_modelo?.datos ?? 'sonnet'}</span><button type="button" class="pri" data-accion="datos-lanzar" ${dm.elegidas.size ? '' : 'disabled'}>Buscar con Claude (luz verde)</button></div>`;
   }
   if (dm.fase === 'trabajando') {
@@ -147,6 +148,10 @@ export function registrarAccionesClaude() {
     repintarModal();
   };
   cambio('datos-serie', marcar(() => dm.elegidas));
+  cambio('datos-historia', (el) => {
+    dm.historia = el.checked;
+    repintarModal();
+  });
   cambio('datos-guardar', marcar(() => dm.guardar));
   // los eventos «claude» del SSE llegan como evento del documento (ver estado.js)
   document.addEventListener('finhub:claude-evento', (ev) => eventoClaude(ev.detail));
@@ -155,7 +160,7 @@ export function registrarAccionesClaude() {
     dm.progreso = { texto: '', herramientas: [], id: null };
     repintarModal();
     try {
-      dm.resultado = await lanzar('datos', { ids: [...dm.elegidas] }, {
+      dm.resultado = await lanzar('datos', { ids: [...dm.elegidas], historia: dm.historia }, {
         alProgreso: (ev) => {
           if (ev.tipo === 'lanzado') dm.progreso.id = ev.id;
           if (ev.tipo === 'texto') dm.progreso.texto += ev.delta;

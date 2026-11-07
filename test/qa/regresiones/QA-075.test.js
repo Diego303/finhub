@@ -35,7 +35,7 @@ test('al guardar, los meses anteriores van delante, marcados, y la fuente origin
 });
 
 test('el prompt dice dónde empieza tu serie y cómo añadir historia aproximada', () => {
-  const e = D.entrada(modeloDe(ficherosEjemplo()), { series: [{ id: 'x', que: 'x', unidad: 'indice', proxy: 'x', metodo: 'x', ultimo: '2026-10', ultimoValor: 774.21, primero: '2009-10', primeroValor: 100 }], hoy: HOY });
+  const e = D.entrada(modeloDe(ficherosEjemplo()), { series: [{ id: 'x', que: 'x', unidad: 'indice', proxy: 'x', metodo: 'x', ultimo: '2026-10', ultimoValor: 774.21, primero: '2009-10', primeroValor: 100 }], hoy: HOY, historia: true });
   assert.match(e.bloques[0].contenido, /empieza en 2009-10 \(valor 100\)/);
   assert.match(e.tarea, /aproximacion/);
   const yo = { manifiesto: () => [{ id: 'x', que: 'x', unidad: 'indice', proxy: 'p', metodo: 'm' }] };

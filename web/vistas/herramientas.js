@@ -83,7 +83,7 @@ function tCrisis(estado) {
   const rg = H.rangos12m(H.historicoMezcla(H.componentesDe(filas, m.clases), (id) => m.serie(id)));
   const cab = html`<div class="entre"><b style="font-weight:500">Prueba de crisis</b><span>${periodos.map((p) => html`<button type="button" class="chip ck ${p.id === sel.id ? 'on' : ''}" data-accion="crisis-periodo" data-id="${p.id}" aria-pressed="${p.id === sel.id ? 'true' : 'false'}">${p.nombre}</button>`)}</span></div>
     ${errorPeriodos ? html`<div class="banda aviso" style="margin-top:6px">Periodos de Ajustes no válidos (${errorPeriodos}): uso los de por defecto.</div>` : ''}`;
-  if (r.error || !filas.length) return html`${cab}<div class="banda aviso" style="margin-top:8px">No se puede simular: ${filas.length ? r.error : 'aún no tienes cartera ni objetivo'}.</div>`;
+  if (r.error || !filas.length) return html`${cab}<div class="banda aviso" style="margin-top:8px">No se puede simular: ${filas.length ? r.error : 'aún no tienes cartera ni objetivo'}.${filas.length && sel.desde < '2009-10' ? ' Para crisis anteriores a 2009, pide la historia aproximada en Conocimiento → Datos de mercado.' : ''}</div>`;
   const rec = (n) => (n === null ? `más de ${r.mesesConDatos - 1} meses` : `${n} meses`);
   const n = r.sin.length;
   const conLibertad = r.recuperaCon ?? r.mesesConDatos - 1;

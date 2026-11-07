@@ -100,7 +100,7 @@ export class ServicioClaude {
       const pedidas = new Set(params.ids ?? []);
       const series = this.estadoDatos(modelo).filter((s) => pedidas.has(s.id) && !s.sintetica);
       if (!series.length) throw Object.assign(new Error('elige al menos una serie que no sea sintética'), { estado: 400 });
-      return { series };
+      return { series, historia: params.historia === true };
     }
     if (id === 'privado' || id === 'conocimiento') return this.parametrosTarea(id, params, modelo);
     if (id === 'rex-web') {
