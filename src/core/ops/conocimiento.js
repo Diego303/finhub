@@ -267,7 +267,7 @@ registrar({
       // la fuente de la historia aproximada se conserva al lado de la del proxy, también en las actualizaciones
       const RE_APROX = / · antes de \d{4}-\d{2} \(aproximación\): .*$/;
       const previaFuente = cab.fuente ?? '';
-      if (existe && antes.length && s.fuente) fijarCabecera(doc, 'fuente', `${previaFuente.replace(RE_APROX, '')} · antes de ${primero} (aproximación): ${s.fuente}`);
+      if (existe && antes.length && s.fuente) fijarCabecera(doc, 'fuente', `${previaFuente} · antes de ${primero} (aproximación): ${s.fuente}`);
       else if (existe && s.fuente) fijarCabecera(doc, 'fuente', `${s.fuente}${RE_APROX.exec(previaFuente)?.[0] ?? ''}`);
       tx.tocar(ruta);
       escritas.push({ id: s.id, filas: n });
