@@ -16,7 +16,7 @@ test('una serie nueva pide todo el histórico disponible, no 36 meses', () => {
   const u = e.bloques[0].contenido;
   assert.match(u, /todo el histórico/);
   assert.doesNotMatch(u, /36 meses/);
-  assert.match(readFileSync(join(RAIZ, 'semilla/datos-manifiesto.md'), 'utf8'), /range=max/);
+  assert.match(readFileSync(join(RAIZ, 'semilla/datos-manifiesto.md'), 'utf8'), /period1=0/);
 });
 
 test('con menos de 10 años de histórico, la proyección lo avisa; con más, no', () => {
