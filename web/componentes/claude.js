@@ -103,11 +103,11 @@ const dm = { fase: 'elegir', series: [], elegidas: new Set(), progreso: { texto:
 
 function cuerpoDatos() {
   const lista = dm.series;
-  const r1 = html`<div class="mut" style="font-size:10.5px;margin:6px 0">🔒 Trabajo <b style="font-weight:500">datos</b>: internet sí · tus datos privados no · solo recibe el manifiesto de series y el último mes que tienes. Claude no escribe nada: te propone las filas y tú decides si se guardan.</div>`;
+  const r1 = html`<div class="mut" style="font-size:10.5px;margin:6px 0">🔒 Trabajo <b style="font-weight:500">datos</b>: internet sí · tus datos privados no · solo recibe el manifiesto de series y el último dato que tienes. Claude no escribe nada: te propone las filas y tú decides si se guardan.</div>`;
   if (dm.fase === 'elegir') {
     return html`<div class="mut" style="font-size:11px;margin:6px 0">Series para calcular (comparativas, proyección, crisis, IPC). Sus valores no están en el repo por licencias: se crean en tu máquina, desde fuentes gratuitas, siguiendo semilla/datos-manifiesto.md.</div>${r1}
       <table class="tb"><thead><tr><th><span class="sr-only">elegir</span></th><th>serie</th><th>en tu carpeta</th><th class="n">meses</th></tr></thead><tbody>${lista.map((s) => html`<tr style="${s.sintetica ? 'opacity:.55' : ''}"><td><input type="checkbox" data-cambio="datos-serie" data-id="${s.id}" ${dm.elegidas.has(s.id) ? 'checked' : ''} ${s.sintetica ? 'disabled' : ''} aria-label="${s.id}"></td><td>${s.id}<div class="mut" style="font-size:10px">${s.que}</div></td><td class="mut">${s.sintetica ? 'sintética (ejemplo): no se mezcla' : s.existe ? `hasta ${s.ultimo ?? '—'}` : 'no la tienes'}</td><td class="n">${s.filas || ''}</td></tr>`)}</tbody></table>
-      <div class="entre" style="margin-top:10px"><span class="mut" style="font-size:10.5px">${dm.elegidas.size} serie(s) · modelo ${estado.modelo?.ajustes.claude_modelo?.datos ?? 'haiku'}</span><button type="button" class="pri" data-accion="datos-lanzar" ${dm.elegidas.size ? '' : 'disabled'}>Buscar con Claude (luz verde)</button></div>`;
+      <div class="entre" style="margin-top:10px"><span class="mut" style="font-size:10.5px">${dm.elegidas.size} serie(s) · modelo ${estado.modelo?.ajustes.claude_modelo?.datos ?? 'sonnet'}</span><button type="button" class="pri" data-accion="datos-lanzar" ${dm.elegidas.size ? '' : 'disabled'}>Buscar con Claude (luz verde)</button></div>`;
   }
   if (dm.fase === 'trabajando') {
     return html`${r1}<div class="fila" style="margin:8px 0"><span class="spinner" aria-hidden="true"></span><b style="font-weight:500">Claude está buscando…</b><button type="button" class="go" data-accion="datos-cancelar" style="margin-left:auto">cancelar</button></div>
