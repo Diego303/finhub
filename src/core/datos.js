@@ -19,8 +19,12 @@ export function parseManifiesto(texto) {
  * Revisa las filas propuestas para una serie: meses válidos, posteriores a lo que ya tienes y anteriores al
  * mes en curso, sin repetidos, valores positivos (índices) y sin saltos de más del 40 % respecto al mes
  * anterior (§7.3). → {filas: aceptadas ordenadas, avisos}
+ * En el IPC, el límite es del 12 %: su mayor mes real desde 2002 es del 9,7 %, y un cambio de base del INE
+ * (−15,9 % en 2026) no pasaría el del 40 %.
  */
-export function revisarFilas(existentes, nuevas, { unidad = 'indice', mesActual }) {
+export function revisarFilas(existentes, nuevas, { id = '', unidad = 'indice', mesActual }) {
+  const esIpc = id.startsWith('ipc-');
+  const saltoMax = esIpc ? 0.12 : 0.4;
   const avisos = [];
   const ultimo = existentes.at(-1)?.mes ?? null;
   const vistas = new Set();
@@ -28,6 +32,7 @@ export function revisarFilas(existentes, nuevas, { unidad = 'indice', mesActual 
   const filas = [];
   let previo = existentes.at(-1)?.valor ?? null;
   let mesPrevio = ultimo;
+  let roto = false; // tras un salto, lo que sigue con esa escala tampoco vale, aunque haya pasado tiempo
   for (const f of candidatas) {
     if (!esMes(f.mes)) {
       avisos.push(`mes «${f.mes}» no válido`);
@@ -47,10 +52,12 @@ export function revisarFilas(existentes, nuevas, { unidad = 'indice', mesActual 
       avisos.push(`${f.mes}: valor no válido`);
       continue;
     }
-    if (unidad === 'indice' && previo > 0 && mesPrevio && mesesEntre(mesPrevio, f.mes) <= 2 && Math.abs(f.valor / previo - 1) > 0.4) {
-      avisos.push(`${f.mes}: salto de más del 40 % respecto al mes anterior: se descarta (revísalo a mano)`);
+    if (unidad === 'indice' && previo > 0 && mesPrevio && (roto || mesesEntre(mesPrevio, f.mes) <= 2) && Math.abs(f.valor / previo - 1) > saltoMax) {
+      avisos.push(`${f.mes}: salto de más del ${saltoMax * 100} % respecto al mes anterior: se descarta (revísalo a mano${esIpc ? '; puede ser un cambio de base del INE' : ''})`);
+      roto = true;
       continue;
     }
+    roto = false;
     filas.push({ mes: f.mes, valor: f.valor });
     previo = f.valor;
     mesPrevio = f.mes;

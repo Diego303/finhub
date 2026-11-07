@@ -247,7 +247,7 @@ export class ServicioClaude {
       const series = r.json.series.map((s) => {
         const m = params.series.find((x) => x.id === s.id);
         const existentes = modelo.series.some((x) => x.id === s.id) ? modelo.serie(s.id) : [];
-        const rev = revisarFilas(existentes, s.filas, { unidad: m.unidad, mesActual });
+        const rev = revisarFilas(existentes, s.filas, { id: s.id, unidad: m.unidad, mesActual });
         return { id: s.id, titulo: m.que, unidad: m.unidad, fuente: s.origen, metodo: m.metodo, filas: rev.filas, avisos: rev.avisos, desde: rev.filas[0]?.mes ?? null, hasta: rev.filas.at(-1)?.mes ?? null };
       });
       return { ...base, series };
