@@ -214,4 +214,5 @@ El usuario pidió aplicar en cada una la opción recomendada. Detalle y bugs en 
 | 21 | **Primera vez** | La carpeta se elige en la terminal, porque el servidor la necesita para arrancar; luego se cambia desde Ajustes. |
 | 22 | **Ancho en 1920 px** | A la izquierda con el ancho máximo, como la maqueta. |
 | 23 | **Migraciones** | El mecanismo está probado, pero no conectado al servidor: con el esquema 1 no hay nada que migrar. Al subir a esquema 2 hay que conectarlo, con su copia previa. |
-
+| 24 | **Historia aproximada en Datos** (QA-075, decidido por el usuario el 2026-11-07) | La salida de `datos` admite `aproximacion: true` en cada fila. Esas filas solo pueden ir antes de tu primer mes, encadenadas a él, y se guardan con `| aproximación`. La fuente de esa historia se añade a la del proxy («… · antes de AAAA-MM (aproximación): …») y se conserva al actualizar. La prueba de crisis avisa de cuántos meses aproximados usa. |
+| 25 | **Precios en tu divisa** (QA-076, decidido por el usuario el 2026-11-07) | `precios` recibe también la divisa del activo (EUR si no tiene), que no es un dato privado, y pide el precio en esa divisa. |

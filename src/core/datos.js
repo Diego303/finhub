@@ -26,14 +26,11 @@ export function revisarFilas(existentes, nuevas, { id = '', unidad = 'indice', m
   const esIpc = id.startsWith('ipc-');
   const saltoMax = esIpc ? 0.12 : 0.4;
   const avisos = [];
+  const primero = existentes[0]?.mes ?? null;
   const ultimo = existentes.at(-1)?.mes ?? null;
   const vistas = new Set();
-  const candidatas = [...nuevas].sort((a, b) => (a.mes < b.mes ? -1 : 1));
-  const filas = [];
-  let previo = existentes.at(-1)?.valor ?? null;
-  let mesPrevio = ultimo;
-  let roto = false; // tras un salto, lo que sigue con esa escala tampoco vale, aunque haya pasado tiempo
-  for (const f of candidatas) {
+  const validas = [];
+  for (const f of [...nuevas].sort((a, b) => (a.mes < b.mes ? -1 : 1))) {
     if (!esMes(f.mes)) {
       avisos.push(`mes «${f.mes}» no válido`);
       continue;
@@ -43,7 +40,8 @@ export function revisarFilas(existentes, nuevas, { id = '', unidad = 'indice', m
       continue;
     }
     vistas.add(f.mes);
-    if (ultimo && f.mes <= ultimo) continue; // ya lo tienes: no se pisa
+    // ya lo tienes: no se pisa. Antes de tu primer mes solo entra historia marcada como aproximación (§7.3)
+    if (ultimo && f.mes <= ultimo && !(f.aproximacion === true && f.mes < primero)) continue;
     if (mesActual && f.mes >= mesActual) {
       avisos.push(`${f.mes} aún no ha terminado: se descarta`);
       continue;
@@ -52,16 +50,28 @@ export function revisarFilas(existentes, nuevas, { id = '', unidad = 'indice', m
       avisos.push(`${f.mes}: valor no válido`);
       continue;
     }
-    if (unidad === 'indice' && previo > 0 && mesPrevio && (roto || mesesEntre(mesPrevio, f.mes) <= 2) && Math.abs(f.valor / previo - 1) > saltoMax) {
-      avisos.push(`${f.mes}: salto de más del ${saltoMax * 100} % respecto al mes anterior: se descarta (revísalo a mano${esIpc ? '; puede ser un cambio de base del INE' : ''})`);
-      roto = true;
-      continue;
-    }
-    roto = false;
-    filas.push({ mes: f.mes, valor: f.valor });
-    previo = f.valor;
-    mesPrevio = f.mes;
+    validas.push(f);
   }
-  if (filas.length > 1) for (let i = 1; i < filas.length; i++) if (mesesEntre(filas[i - 1].mes, filas[i].mes) > 1) avisos.push(`hueco entre ${filas[i - 1].mes} y ${filas[i].mes}`);
-  return { filas, avisos };
+  // saltos: hacia delante desde tu último mes y hacia atrás desde el primero; tras un salto, lo que sigue con esa escala tampoco vale
+  const recorrer = (lista, previo, mesPrevio, hacia) => {
+    const out = [];
+    let roto = false;
+    for (const f of lista) {
+      const separados = mesPrevio ? Math.abs(mesesEntre(mesPrevio, f.mes)) : 0;
+      if (unidad === 'indice' && previo > 0 && mesPrevio && (roto || separados <= 2) && Math.abs(f.valor / previo - 1) > saltoMax) {
+        avisos.push(`${f.mes}: salto de más del ${saltoMax * 100} % respecto al mes ${hacia}: se descarta (revísalo a mano${esIpc ? '; puede ser un cambio de base del INE' : ''})`);
+        roto = true;
+        continue;
+      }
+      roto = false;
+      out.push({ mes: f.mes, valor: f.valor, ...(f.aproximacion === true ? { aproximacion: true } : {}) });
+      previo = f.valor;
+      mesPrevio = f.mes;
+    }
+    return out;
+  };
+  const antes = primero ? recorrer(validas.filter((f) => f.mes < primero).reverse(), existentes[0].valor, primero, 'siguiente').reverse() : [];
+  const despues = recorrer(validas.filter((f) => !primero || f.mes > ultimo), existentes.at(-1)?.valor ?? null, ultimo, 'anterior');
+  for (const parte of [antes, despues]) for (let i = 1; i < parte.length; i++) if (mesesEntre(parte[i - 1].mes, parte[i].mes) > 1) avisos.push(`hueco entre ${parte[i - 1].mes} y ${parte[i].mes}`);
+  return { filas: [...antes, ...despues], avisos };
 }

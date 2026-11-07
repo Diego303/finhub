@@ -247,17 +247,28 @@ registrar({
         for (const [k, v] of [['id', s.id], ['unidad', s.unidad ?? 'indice'], ['frecuencia', 'mensual'], ['divisa', s.divisa ?? null], ['fuente', s.fuente], ['metodo', s.metodo], ['sintetica', false]]) if (v !== null && v !== undefined) fijarCabecera(doc, k, v);
       }
       const sec = seccionDe(doc, 'Filas', { crear: true });
+      const primero = items(doc, 'Filas')[0]?.mes ?? null;
       const ultimo = items(doc, 'Filas').at(-1)?.mes ?? null;
       let n = 0;
+      const antes = []; // historia aproximada anterior a tu primer mes (§7.3): va delante
       for (const f of [...s.filas].sort((a, b) => (a.mes < b.mes ? -1 : 1))) {
-        if (ultimo && f.mes <= ultimo) continue;
-        const valor = validarEntidad(doc.spec.secciones.Filas.items, { mes: f.mes, valor: Math.round(f.valor * 1e6) }, `la fila ${f.mes} de ${s.id}`);
-        sec.nodos.push(nodoItem(valor));
+        const previa = primero && f.mes < primero && f.aproximacion === true;
+        if (ultimo && f.mes <= ultimo && !previa) continue;
+        const valor = validarEntidad(doc.spec.secciones.Filas.items, { mes: f.mes, valor: Math.round(f.valor * 1e6), ...(f.aproximacion === true ? { 'aproximación': true } : {}) }, `la fila ${f.mes} de ${s.id}`);
+        (previa ? antes : sec.nodos).push(nodoItem(valor));
         n++;
       }
       if (!n) continue;
+      if (antes.length) {
+        const i = sec.nodos.findIndex((x) => x.k === 'item');
+        sec.nodos.splice(i < 0 ? sec.nodos.length : i, 0, ...antes);
+      }
       fijarCabecera(doc, 'actualizado', tx.ctx.hoy);
-      if (existe && s.fuente) fijarCabecera(doc, 'fuente', s.fuente);
+      // la fuente de la historia aproximada se conserva al lado de la del proxy, también en las actualizaciones
+      const RE_APROX = / · antes de \d{4}-\d{2} \(aproximación\): .*$/;
+      const previaFuente = cab.fuente ?? '';
+      if (existe && antes.length && s.fuente) fijarCabecera(doc, 'fuente', `${previaFuente.replace(RE_APROX, '')} · antes de ${primero} (aproximación): ${s.fuente}`);
+      else if (existe && s.fuente) fijarCabecera(doc, 'fuente', `${s.fuente}${RE_APROX.exec(previaFuente)?.[0] ?? ''}`);
       tx.tocar(ruta);
       escritas.push({ id: s.id, filas: n });
     }

@@ -53,7 +53,7 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
   const partes = componentesDe(filas, clases).map((c, i) => {
     const peso = c.peso / 10000;
     const propia = rDe(c.indice);
-    if (cubre(propia)) return { peso, r: propia };
+    if (cubre(propia)) return { peso, r: propia, id: c.indice, nombre: c.nombre };
     if (c.grupo === 'efectivo' && !c.indice) return { peso, r: tipoBce };
     // sin datos en el periodo: la clase «parecida» (§4.5), indicada
     const clase = clases.find((x) => x.id === filas[i].clase);
@@ -61,7 +61,7 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
     const alt = rDe(parecida);
     if (cubre(alt)) {
       aproximaciones.push({ nombre: c.nombre, con: clases.find((x) => x.id === clase.parecida)?.nombre ?? clase.parecida });
-      return { peso, r: alt };
+      return { peso, r: alt, id: parecida, nombre: c.nombre };
     }
     avisos.push(`«${c.nombre}» no tiene datos en ese periodo: cuenta como si no se moviera`);
     return { peso, r: null };
@@ -107,6 +107,11 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
   };
   const recuperaSin = recupera(sin);
   const recuperaCon = recupera(con);
+  // historia aproximada (índice de precio y dividendos estimados, §7.3): se dice
+  for (const p of partes.filter((x) => x.id && x.r)) {
+    const n = (series(p.id) ?? []).filter((f) => f.aproximacion && f.mes >= periodo.desde && f.mes <= meses.at(-1)).length;
+    if (n) avisos.push(`«${p.nombre}» usa ${n} meses aproximados (índice de precio con los dividendos estimados): tómalo como orientación`);
+  }
   // se enseña hasta 6 meses después de recuperarse las dos (o todo, si alguna no se recupera)
   const corte = recuperaSin === null || recuperaCon === null ? meses.length : Math.min(meses.length, Math.max(recuperaSin, recuperaCon, finPeriodo) + 7);
   return {

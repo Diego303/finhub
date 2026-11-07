@@ -90,7 +90,7 @@ export class ServicioClaude {
     return this.manifiesto().map((s) => {
       const existente = modelo.series.find((x) => x.id === s.id);
       const filas = existente ? modelo.serie(s.id) : [];
-      return { ...s, existe: !!existente, sintetica: !!existente?.sintetica, ultimo: filas.at(-1)?.mes ?? null, ultimoValor: filas.at(-1)?.valor ?? null, filas: filas.length, actualizado: existente?.actualizado ?? null };
+      return { ...s, existe: !!existente, sintetica: !!existente?.sintetica, ultimo: filas.at(-1)?.mes ?? null, ultimoValor: filas.at(-1)?.valor ?? null, primero: filas[0]?.mes ?? null, primeroValor: filas[0]?.valor ?? null, filas: filas.length, actualizado: existente?.actualizado ?? null };
     });
   }
 

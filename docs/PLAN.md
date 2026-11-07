@@ -758,7 +758,7 @@ stdin: prompt con bloques <datos …>   ·   cwd: .finhub/sandbox/<id>/ vacío  
 |---|---|
 | `pulso` | `{notas:[{titulo, tipo, fecha, origen:{medio,url}, temas[], activos[], postura?, efectos?:{<sector>: "▲"\|"▼"\|"•"}, resumen}]}`. La fecha tiene que ser el día pedido ±1. Los sectores salen de la lista editable del mapa de efectos |
 | `precios` | `{precios:[{isin, valor, divisa, fecha, origen}]}` |
-| `datos` | `{series:[{id, filas:[{mes, valor}], origen}]}` |
+| `datos` | `{series:[{id, filas:[{mes, valor, aproximacion?}], origen}]}` |
 | `ingesta` | `{notas:[…], predicciones:[{texto, medir?, horizonte}]}` |
 | `privado` (escenarios) | `{escenarios:[{nombre, prob, porque, citas[]}], ideas:[{titulo, tipo, texto, citas[]}], no_concluyente?}`. `prob` entera y la suma 100 |
 | `privado` / `rex-web` (chat) | `{respuesta_md, citas[], cifras_usadas[]}` |
