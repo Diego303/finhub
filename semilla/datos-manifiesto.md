@@ -22,9 +22,9 @@ tests las series son **sintéticas**, generadas con semilla.
 
 | id | qué es | unidad | proxy (fuente gratuita) | método |
 |---|---|---|---|---|
-| `msci-world-nr-eur` | MSCI World, net return, en € | indice | ETF UCITS de acumulación sobre el MSCI World (p. ej. iShares Core MSCI World, IE00B4L5Y983) · histórico del valor liquidativo en la web de la gestora | cierre mensual del valor liquidativo en EUR, base 100 en el primer mes |
+| `msci-world-nr-eur` | MSCI World, net return, en € | indice | ETF UCITS de acumulación sobre el MSCI World (p. ej. iShares Core MSCI World, IE00B4L5Y983) · cierre mensual del ETF en euros | cierre mensual del ETF en EUR (cotización, o valor liquidativo si la gestora da la tabla; di cuál en «origen»), base 100 en el primer mes |
 | `msci-acwi-nr-eur` | MSCI ACWI (desarrollados + emergentes), en € | indice | ETF UCITS de acumulación sobre el MSCI ACWI (p. ej. iShares MSCI ACWI, IE00B6R52259) | ídem |
-| `sp500-eur` | S&P 500, en € y con dividendos | indice | ETF UCITS de acumulación sobre el S&P 500 (p. ej. iShares Core S&P 500, IE00B5BMR087) | ídem, convertido a EUR si el valor liquidativo es en USD (con `eurusd`) |
+| `sp500-eur` | S&P 500, en € y con dividendos | indice | ETF UCITS de acumulación sobre el S&P 500 (p. ej. iShares Core S&P 500, IE00B5BMR087) | ídem, convertido a EUR si cotiza en USD (con `eurusd`) |
 | `nasdaq-100-eur` | Nasdaq-100, en € y con dividendos | indice | ETF UCITS de acumulación sobre el Nasdaq-100 (p. ej. iShares Nasdaq 100, IE00B53SZB19) | ídem |
 | `msci-em-nr-eur` | MSCI Emerging Markets, en € | indice | ETF UCITS de acumulación sobre emergentes (p. ej. iShares Core MSCI EM IMI, IE00BKM4GZ66) | ídem |
 | `msci-world-small-eur` | MSCI World Small Cap, en € | indice | ETF UCITS de acumulación sobre el MSCI World Small Cap (p. ej. iShares MSCI World Small Cap, IE00BF4RFH31) | ídem |
