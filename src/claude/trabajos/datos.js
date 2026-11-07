@@ -10,7 +10,7 @@ export default {
   privado: false,
   externo: true,
   herramientas: ['WebSearch', 'WebFetch'],
-  modelo: 'haiku',
+  modelo: 'sonnet',
   timeoutMs: 300000,
   maxTurns: 30,
   recibe: 'el manifiesto de series y el último dato que tienes',

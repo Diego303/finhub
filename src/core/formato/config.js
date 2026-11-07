@@ -23,7 +23,7 @@ export const AJUSTES_DEFECTO = {
   rex_humor: 'contento>=30 | tranquilo>=15 | preocupado<15',
   accesorios: 'gafas:mes-tasa>=30 | corbata:meta(colchon)=100 | japon:meta(japon)=100 | corona:libertad',
   copias: 'carpeta',
-  claude_modelo: { pulso: 'sonnet', precios: 'haiku', datos: 'haiku', ingesta: 'sonnet', conocimiento: 'sonnet', 'rex-web': 'sonnet', privado: 'opus', encaje: 'opus', descubrir: 'opus' },
+  claude_modelo: { pulso: 'sonnet', precios: 'haiku', datos: 'sonnet', ingesta: 'sonnet', conocimiento: 'sonnet', 'rex-web': 'sonnet', privado: 'opus', encaje: 'opus', descubrir: 'opus' },
   contexto_max: '60 notas · 60000 car.',
   crisis_periodos: '2000-03..2003-03 Puntocom | 2007-10..2009-02 Crisis financiera | 2020-01..2020-03 Covid | 2021-12..2022-09 Inflación y tipos',
   descubrir_sin_cambios: 'version',
