@@ -135,7 +135,7 @@ function generarConfig() {
     impuestos_verificado: 2026,
     proyeccion: 'datos',
     libertad_multiplicador: 25,
-    claude_modelo: { pulso: 'sonnet', precios: 'haiku', datos: 'haiku', privado: 'opus', descubrir: 'opus', encaje: 'opus' },
+    claude_modelo: { pulso: 'sonnet', precios: 'haiku', datos: 'sonnet', privado: 'opus', descubrir: 'opus', encaje: 'opus' },
     sectores_efectos: ['bancos', 'utilities-e-infraestructura', 'tecnologia', 'inmobiliario', 'consumo-basico', 'energia', 'renta-fija-euro'],
   };
   for (const [k, v] of Object.entries(valores)) fijarKv(a, null, k, v);
