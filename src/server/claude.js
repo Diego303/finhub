@@ -250,7 +250,8 @@ export class ServicioClaude {
         const rev = revisarFilas(existentes, s.filas, { id: s.id, unidad: m.unidad, mesActual });
         return { id: s.id, titulo: m.que, unidad: m.unidad, fuente: s.origen, metodo: m.metodo, filas: rev.filas, avisos: rev.avisos, desde: rev.filas[0]?.mes ?? null, hasta: rev.filas.at(-1)?.mes ?? null };
       });
-      return { ...base, series };
+      const faltan = params.series.filter((p) => !series.some((s) => s.id === p.id)).map((p) => p.id);
+      return { ...base, series, faltan };
     }
     return { ...base, json: r.json };
   }
