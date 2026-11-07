@@ -37,3 +37,15 @@ test('con menos de 10 años de histórico, la proyección lo avisa; con más, no
   assert.ok(!r.proyeccion.error, r.proyeccion.error);
   assert.ok(r.avisos.some((a) => /histórico corto/.test(a) && /optimista|pesimista/.test(a)), JSON.stringify(r.avisos));
 });
+
+test('con años de sobra pero sin las crisis de 2000 y 2008, también avisa', () => {
+  const fs = ficherosEjemplo();
+  const recorte = new Map(fs);
+  for (const [r, t] of fs) {
+    if (!r.startsWith('conocimiento/datos/series/')) continue;
+    recorte.set(r, t.split('\n').filter((x) => !/^- (\d{4})-\d{2} \|/.exec(x) || +/^- (\d{4})/.exec(x)[1] >= 2009).join('\n'));
+  }
+  const r = resumenMetas(construirModelo(Object.fromEntries([...recorte].map(([k, texto]) => [k, { texto, version: 'v' }]))), HOY);
+  assert.ok(!r.proyeccion.error, r.proyeccion.error);
+  assert.ok(r.avisos.some((a) => /no incluye las crisis de 2000 y 2008/.test(a)), JSON.stringify(r.avisos));
+});

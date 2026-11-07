@@ -48,6 +48,7 @@ export function resumenMetas(modelo, hoy, { perfil = null, plantillas = [], apor
     // con pocos años, la banda es la de esos años: si fueron buenos, sale demasiado optimista (y al revés)
     const anosHistorico = (historico.r?.length ?? 0) / 12;
     if (anosHistorico >= 1 && anosHistorico < 10) avisos.push(`histórico corto: solo ${anosHistorico.toFixed(1).replace('.', ',')} años de datos. La proyección repite esos años y puede salir demasiado optimista o pesimista: tómala con cautela o usa supuestos manuales en Ajustes.`);
+    else if (anosHistorico >= 10 && historico.meses?.[0] > '2008-01') avisos.push(`tu histórico empieza en ${historico.meses[0]}: no incluye las crisis de 2000 y 2008, así que la proyección puede salir demasiado optimista. Tómala con cautela o usa supuestos manuales en Ajustes.`);
     proyeccion = proyectarHistorico({ inicial, aportacion: aporta, anios, historico, real, pausa });
   }
   const libertad = proyeccion.error ? null : libertadFinanciera(proyeccion, consumo.consumo, modelo.ajustes.libertad_multiplicador ?? 25);
