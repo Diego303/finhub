@@ -31,7 +31,7 @@ R1 está por encima de cualquier otra regla, de la comodidad y del rendimiento. 
 | Trabajo | Internet | Privado | Externo | Entrada (la monta el servidor) | Salida | Herramientas |
 |---|---|---|---|---|---|---|
 | `pulso` | ✅ | ❌ | ✅ | fecha, temas y, opcional, nombres de activos | notas Mundo (JSON) | WebSearch, WebFetch |
-| `precios` | ✅ | ❌ | ✅ | lista de ISIN y nombres | precios propuestos (JSON) | WebSearch, WebFetch |
+| `precios` | ✅ | ❌ | ✅ | lista de ISIN, nombres y divisa | precios propuestos (JSON) | WebSearch, WebFetch |
 | `datos` | ✅ | ❌ | ✅ | manifiesto de series y último dato que tienes | filas nuevas de series (JSON) | WebSearch, WebFetch |
 | `ingesta` | ❌ | ❌ | ✅ | texto de CONTEXTO y ficha de la fuente | notas propuestas (JSON) | ninguna |
 | `conocimiento` | ❌ | ❌ | ✅ (normalizado) | notas de la mezcla | ¿Qué opinan?, resumen semanal, quiz | ninguna |

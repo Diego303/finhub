@@ -172,14 +172,14 @@ function cuerpoValores() {
   const filas = [...r.estado.porActivo.values()].filter((p) => !p.archivado);
   vp.fecha ??= e.ahora.fecha;
   const conIsin = filas.filter((p) => p.isin);
-  return html`<div class="mut" style="font-size:11px;margin:6px 0 10px">Escribe el valor que ves en tu banco o bróker, o pide a Claude el último precio público (trabajo aislado: solo recibe los ISIN y nombres, devuelve precios y tú los confirmas).</div>
+  return html`<div class="mut" style="font-size:11px;margin:6px 0 10px">Escribe el valor que ves en tu banco o bróker, o pide a Claude el último precio público (trabajo aislado: solo recibe los ISIN, nombres y divisa, devuelve precios y tú los confirmas).</div>
     <form data-form="valores"><label style="font-size:11.5px">fecha <input class="inp" name="fecha" value="${vp.fecha}" data-entrada-texto="valores-fecha" style="width:96px"></label>
     <table class="tb" style="margin-top:6px"><thead><tr><th>activo</th><th class="n">antes</th><th class="n">valor hoy</th></tr></thead><tbody>${filas.map((p) => {
       const pr = vp.propuestos[p.id];
       return html`<tr><td>${p.nombre}${pr ? html`<div class="mut" style="font-size:10px" data-precio="${p.id}">precio ${formatearDecimal(Math.round(pr.precio * 1e6))} ${pr.divisa} del ${textoCorto(pr.fecha)} · <a href="${pr.url}" target="_blank" rel="noopener noreferrer">fuente</a>${pr.valor === null ? ` · ${pr.motivo}` : ''}</div>` : ''}</td><td class="n mut">${eur(p.valor)}${p.valorado ? '' : ' (aportado)'}</td><td class="n"><label class="sr-only" for="val-${p.id}">Valor de ${p.nombre}</label><input class="inp" id="val-${p.id}" name="v:${p.id}" value="${vp.escritos[p.id] ?? ''}" data-entrada-texto="valor-activo" data-id="${p.id}" placeholder="${formatearImporte(p.valor)}" style="width:96px;text-align:right"> €</td></tr>`;
     })}</tbody></table>
     ${progresoHtml(vp.prog, { que: 'Claude está buscando precios…' })}${vp.prog.fase === 'hecho' ? errorHtml(vp.prog.resultado) : ''}
-    <div class="entre" style="margin-top:12px"><button type="button" data-accion="precios-buscar" ${conIsin.length && vp.prog.fase !== 'trabajando' ? '' : 'disabled'} title="${conIsin.length ? `Solo envía ${conIsin.length} ISIN y sus nombres` : 'Ningún activo tiene ISIN'}">Buscar precios con Claude</button><button type="submit" class="pri">Guardar valores</button></div></form>`;
+    <div class="entre" style="margin-top:12px"><button type="button" data-accion="precios-buscar" ${conIsin.length && vp.prog.fase !== 'trabajando' ? '' : 'disabled'} title="${conIsin.length ? `Solo envía ${conIsin.length} ISIN, sus nombres y su divisa` : 'Ningún activo tiene ISIN'}">Buscar precios con Claude</button><button type="submit" class="pri">Guardar valores</button></div></form>`;
 }
 
 export function abrirValores() {

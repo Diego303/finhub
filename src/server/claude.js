@@ -128,7 +128,7 @@ export class ServicioClaude {
     }
     if (id === 'precios') {
       const ids = new Set(params.ids ?? []);
-      const activos = modelo.activos.filter((a) => a.campos.isin && !a.campos.archivado && (!ids.size || ids.has(a.id))).map((a) => ({ isin: a.campos.isin, nombre: a.titulo }));
+      const activos = modelo.activos.filter((a) => a.campos.isin && !a.campos.archivado && (!ids.size || ids.has(a.id))).map((a) => ({ isin: a.campos.isin, nombre: a.titulo, divisa: a.campos.divisa ?? 'EUR' }));
       if (!activos.length) throw Object.assign(new Error('ningún activo con ISIN'), { estado: 400 });
       return { activos };
     }

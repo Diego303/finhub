@@ -264,7 +264,7 @@ const pr = { prog: nuevoProgreso(), propuestos: null };
 function cuerpoPrecios() {
   const m = est().modelo;
   const seguidos = D.isinsSeguidos(m);
-  return html`<div class="mut" style="font-size:11px;margin:6px 0">Precios de los vehículos de referencia de lo que sigues. El trabajo <b style="font-weight:500">precios</b> solo recibe estos ISIN y nombres (con internet, sin tus datos). Tú confirmas antes de guardar en conocimiento/datos/series/.</div>
+  return html`<div class="mut" style="font-size:11px;margin:6px 0">Precios de los vehículos de referencia de lo que sigues. El trabajo <b style="font-weight:500">precios</b> solo recibe estos ISIN y nombres, en euros (con internet, sin tus datos). Tú confirmas antes de guardar en conocimiento/datos/series/.</div>
     ${seguidos.map((s) => html`<div class="pd" style="grid-template-columns:1fr auto"><span>${s.nombre} <span class="mut">${s.isin}</span></span><span class="mut" style="font-size:10.5px">último: ${D.ultimoPrecio(m, s.isin) ?? '—'}</span></div>`)}
     ${progresoHtml(pr.prog, { que: 'Claude está buscando precios…' })}${pr.prog.fase === 'hecho' ? errorHtml(pr.prog.resultado) : ''}
     ${pr.propuestos ? html`<table class="tb" style="margin-top:8px" data-precios-seguimiento><thead><tr><th scope="col">ISIN</th><th scope="col" class="n">precio</th><th scope="col">fecha</th><th scope="col">origen</th></tr></thead><tbody>${pr.propuestos.map((p) => html`<tr><td>${p.isin}</td><td class="n">${p.valor.toLocaleString('es-ES')} ${p.divisa}</td><td>${p.fecha}</td><td class="mut" style="font-size:10.5px">${p.origen}</td></tr>`)}</tbody></table>` : ''}
