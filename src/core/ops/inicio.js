@@ -5,7 +5,7 @@ import { items } from '../formato/motor.js';
 import { slugUnico } from '../ids.js';
 import { esFecha } from '../fechas.js';
 import { TIPOS_CUENTA } from '../formato/catalogos.js';
-import { GRUPOS_DEFECTO, ETIQUETAS_DEFECTO } from '../inicio.js';
+import { GRUPOS_DEFECTO, ETIQUETAS_DEFECTO, FAMILIAS_DEFECTO, FUENTES_DEFECTO, CLASES_DEFECTO } from '../inicio.js';
 
 
 registrar({
@@ -43,6 +43,10 @@ registrar({
       const id = slugUnico(concepto, idsRec);
       idsRec.push(id);
       tx.sub('lista.crear', { ruta: 'recurrentes.md', valor: { id, concepto: concepto.slice(0, 80), importe: Math.round(Number(r.importe) || 0), grupo: r.grupo, cuenta, cada: 'mes', dia: { dia }, etiquetas: ['fijo'] } });
+    }
+    for (const [ruta, lista] of [['conocimiento/_familias.md', FAMILIAS_DEFECTO], ['conocimiento/_fuentes.md', FUENTES_DEFECTO], ['cartera/clases.md', CLASES_DEFECTO]]) {
+      if (tx.existe(ruta)) continue;
+      for (const valor of lista) tx.sub('lista.crear', { ruta, valor });
     }
     const b = base?.ficheros ? tx.sub('base.importar', { ficheros: base.ficheros }) : null;
     return { cuentas: ids.length, grupos: elegidos.length, recurrentes: idsRec.length, base: b?.importadas ?? 0 };
