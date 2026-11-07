@@ -16,7 +16,7 @@ Plan e inventario: [QA-PLAN.md](QA-PLAN.md). Lista manual: [QA-CHECKLIST.md](QA-
 
 **Un fallo intermitente sin explicar:** ver «Riesgos».
 
-66 bugs: 15 críticos, 25 altos, 14 medios y 12 bajos. Todos arreglados, cada uno con su prueba que fallaba antes.
+66 bugs: 15 críticos, 26 altos, 14 medios y 11 bajos. Todos arreglados, cada uno con su prueba que fallaba antes.
 
 **QA9, con tu permiso:**
 - **Prueba real con Claude Code 2.1.319** (`pnpm qa:humo -- --si`, 2026-11-07): 9 de 9 trabajos correctos, 0,11 USD, con haiku. Herramientas exactas, sin MCP, hooks, skills ni plugins globales, y nada tuyo en los trabajos sin privado. Detalle en [CLAUDE-CLI.md](CLAUDE-CLI.md).
