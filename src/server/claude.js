@@ -90,7 +90,7 @@ export class ServicioClaude {
     return this.manifiesto().map((s) => {
       const existente = modelo.series.find((x) => x.id === s.id);
       const filas = existente ? modelo.serie(s.id) : [];
-      return { ...s, existe: !!existente, sintetica: !!existente?.sintetica, ultimo: filas.at(-1)?.mes ?? null, filas: filas.length, actualizado: existente?.actualizado ?? null };
+      return { ...s, existe: !!existente, sintetica: !!existente?.sintetica, ultimo: filas.at(-1)?.mes ?? null, ultimoValor: filas.at(-1)?.valor ?? null, filas: filas.length, actualizado: existente?.actualizado ?? null };
     });
   }
 
@@ -172,7 +172,7 @@ export class ServicioClaude {
     const pct = (pb) => `${pb > 0 ? '+' : ''}${(pb / 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
     if (t?.rangos) {
       const rg = rangos12m(historicoMezcla(componentesDe(filasCartera(modelo), modelo.clases), (x) => modelo.serie(x)));
-      if (!rg.error) p.cifrasExtra.push({ nombre: 'rango 12 m pesimista (p5–p25)', valor: `${pct(rg.pesimista[0])} … ${pct(rg.pesimista[1])}` }, { nombre: 'rango 12 m base (p25–p75)', valor: `${pct(rg.base[0])} … ${pct(rg.base[1])}` }, { nombre: 'rango 12 m optimista (p75–p95)', valor: `${pct(rg.optimista[0])} … ${pct(rg.optimista[1])}` }, { nombre: 'peor caso histórico a 12 m', valor: pct(rg.peor) });
+      if (!rg.error) p.cifrasExtra.push({ nombre: 'rango 12 m pesimista (p5–p25)', valor: `${pct(rg.pesimista[0])} … ${pct(rg.pesimista[1])}` }, { nombre: 'rango 12 m base (p25–p75)', valor: `${pct(rg.base[0])} … ${pct(rg.base[1])}` }, { nombre: 'rango 12 m optimista (p75–p95)', valor: `${pct(rg.optimista[0])} … ${pct(rg.optimista[1])}` }, { nombre: 'peor caso histórico a 12 m', valor: rg.aviso ? `${pct(rg.peor)} (${rg.aviso})` : pct(rg.peor) });
     }
     if (t?.id === 'tu-ano') for (const c of tarjetas(tuAnio(modelo, +hoy.slice(0, 4), hoy))) p.cifrasExtra.push({ nombre: c.titulo, valor: `${c.valor} (${c.sub})` });
     if (params.borrador) {

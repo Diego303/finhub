@@ -14,6 +14,7 @@ tests las series son **sintéticas**, generadas con semilla.
 - **Más historia (2000–2009):** si el proxy no llega, índice de precio más un ajuste por dividendos documentado en
   `metodo`, con cada fila marcada `| aproximación`.
 - **Dónde buscar el histórico mensual:** las webs de las gestoras no suelen dar la tabla. Antes de rendirte, prueba el precio de cierre mensual del ETF en euros en una fuente pública, con WebFetch: `https://query1.finance.yahoo.com/v8/finance/chart/<ticker>?range=max&interval=1mo` o `https://stooq.com/q/d/l/?s=<ticker>&i=m`. Tickers en euros, por ejemplo: `EUNL.DE` (MSCI World), `IUSQ.DE` (MSCI ACWI), `SXR8.DE` (S&P 500), `SXRV.DE` (Nasdaq 100), `IS3N.DE` (emergentes), `IUSN.DE` (small caps), `EUNA.DE` (renta fija global cubierta). Comprueba que el ticker es de ese ETF y que cotiza en euros. Indica en `metodo` que es la cotización de cierre del ETF de acumulación.
+- **Actualizar una serie:** sigue en la escala que ya tienes (base 100, o una base anterior del INE): valor nuevo = tu último valor × dato del mes ÷ dato de tu último mes en la fuente.
 - Los ISIN de los proxies son orientativos: el trabajo `datos` debe **verificarlos** (nombre, clase de
   acumulación, divisa) antes de descargar nada.
 
