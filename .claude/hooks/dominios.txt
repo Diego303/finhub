@@ -1,0 +1,97 @@
+# Dominios a los que puede ir WebFetch en este repo (la guardia permite el dominio y sus subdominios).
+# Solo lo edita el usuario, a mano: ninguna herramienta de Claude puede cambiar este fichero.
+# Orden de fuentes del proyecto de conocimiento: primarias > prensa de referencia > divulgación seria (solo conceptos).
+# Prohibidos siempre: foros, webs de afiliados, contenido promocional y webs generadas automáticamente.
+
+# --- España: normativa, Hacienda, Seguridad Social, supervisores, estadística ---
+boe.es
+agenciatributaria.gob.es
+hacienda.gob.es
+seg-social.es
+inclusion.gob.es
+mites.gob.es
+cnmv.es
+bde.es
+ine.es
+tesoro.es
+fgd.es
+finanzasparatodos.es
+dgsfp.mineco.gob.es
+economia.gob.es
+lamoncloa.gob.es
+congreso.es
+fogain.es
+# Comunidades autónomas y haciendas forales (ITP, Sucesiones y Donaciones, Patrimonio)
+comunidad.madrid
+madrid.org
+juntadeandalucia.es
+gva.es
+gencat.cat
+euskadi.eus
+bizkaia.eus
+gipuzkoa.eus
+araba.eus
+navarra.es
+xunta.gal
+jcyl.es
+castillalamancha.es
+aragon.es
+carm.es
+caib.es
+gobiernodecanarias.org
+cantabria.es
+asturias.es
+larioja.org
+juntaex.es
+ceuta.es
+melilla.es
+
+# --- Unión Europea y BCE ---
+europa.eu
+
+# --- EE. UU., Reino Unido, Japón y organismos internacionales ---
+federalreserve.gov
+federalreservehistory.org
+newyorkfed.org
+stlouisfed.org
+bls.gov
+bea.gov
+treasury.gov
+sec.gov
+bankofengland.co.uk
+ons.gov.uk
+boj.or.jp
+imf.org
+oecd.org
+bis.org
+worldbank.org
+
+# --- Proveedores de índices (metodologías y fichas) ---
+msci.com
+spglobal.com
+lseg.com
+ftserussell.com
+stoxx.com
+nasdaqomx.com
+bolsasymercados.es
+
+# --- Prensa de referencia ---
+reuters.com
+expansion.com
+elpais.com
+eleconomista.es
+ft.com
+bloomberg.com
+
+# --- Divulgación académica seria (solo conceptos y datos de investigación) ---
+nber.org
+ssrn.com
+repec.org
+nobelprize.org
+cfainstitute.org
+nyu.edu
+dartmouth.edu
+yale.edu
+
+# --- Archivo web (solo la página original archivada) ---
+archive.org

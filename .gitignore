@@ -6,3 +6,6 @@ coverage/
 .finhub-ejemplo-*/
 # por si alguien apunta --datos dentro del repo: nunca versionar datos reales
 .finhub/
+
+# caché de páginas del proyecto de conocimiento (nunca se versiona)
+.cache/
