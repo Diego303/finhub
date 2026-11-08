@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { revisarUrl, revisarBash, revisarRuta, decidir, senalesInyeccion, dominiosPermitidos } from '../../.claude/hooks/guardia.mjs';
@@ -20,11 +20,38 @@ test('WebFetch: solo https a dominios permitidos, sin IP, puertos ni datos escon
     'https://evil.example.com/?q=1': /no está en/,
     'https://boe.es.evil.com/': /no está en/,
     'https://notboe.es/': /no está en/,
-    'https://user:pw@www.boe.es/': /usuario/,
+    // credenciales en la URL: se rechazan antes de mirar el dominio (example.com, para que check no lo tome por un email)
+    'https://user:pw@example.com/': /usuario/,
     'https://www.boe.es:8443/': /puerto/,
     'https://127.0.0.1/': /IP/,
     [`https://www.boe.es/buscar?x=${'QUJD'.repeat(20)}`]: /trozo largo/,
+    [`https://www.boe.es/buscar?x=${'a1b2c3d4'.repeat(8)}`]: /trozo largo/,
     'nada': /no válida/,
+  };
+  for (const [u, re] of Object.entries(malas)) assert.match(revisarUrl(u, LISTA) ?? '', re, u);
+});
+
+test('WebFetch: los nombres de fichero hechos de palabras con guiones bajos pasan (decisión del usuario, 2026-11-08)', () => {
+  for (const ok of [
+    'https://www.esma.europa.eu/sites/default/files/2026-03/ESMA50-1949966494-4065_Market_Report_-_Costs_and_Performance_of_EU_Retail_Investment_Products.pdf',
+    'https://www.esma.europa.eu/sites/default/files/library/2015/11/09_1028_final_kid_ongoing_charges_methodology_for_publication_u_2_.pdf',
+  ]) assert.equal(revisarUrl(ok, LISTA), null, ok);
+});
+
+test('WebFetch: archive.org solo para copias archivadas de la lista, y universidades solo por subdominio (2026-11-09)', () => {
+  for (const ok of [
+    'https://web.archive.org/web/20090301000000id_/https://www.ecb.europa.eu/press/x.html',
+    'https://faculty.haas.berkeley.edu/odean/papers/x.pdf',
+    'https://pages.stern.nyu.edu/~adamodar/',
+  ]) assert.equal(revisarUrl(ok, LISTA), null, ok);
+  const malas = {
+    'https://web.archive.org/save/https://evil.example.com/?d=1': /copia archivada/,
+    'https://archive.org/details/x': /copia archivada/,
+    'https://web.archive.org/web/2008/https://evil.example.com/': /no es de un dominio/,
+    'https://web.archive.org/web/2008/https://web.archive.org/save/x': /no es de un dominio/,
+    'https://ocf.berkeley.edu/~alguien/': /no está en/,
+    'https://www.yale.edu/': /no está en/,
+    'https://www.boe.es/x?q=%E0%A4%A': /codificación/,
   };
   for (const [u, re] of Object.entries(malas)) assert.match(revisarUrl(u, LISTA) ?? '', re, u);
 });
@@ -95,4 +122,5 @@ test('de punta a punta: el hook responde «deny» en JSON, deja pasar lo normal 
   assert.ok(existsSync(inc));
   assert.match(readFileSync(inc, 'utf8'), /www\.boe\.es/);
   assert.equal(correr({ hook_event_name: 'PostToolUse', tool_name: 'WebFetch', tool_input: { url: 'https://www.boe.es/x' }, tool_response: { result: 'Texto normal de una ley.' } }, { GUARDIA_INCIDENCIAS: inc }).stdout, '');
+  rmSync(dir, { recursive: true, force: true });
 });
