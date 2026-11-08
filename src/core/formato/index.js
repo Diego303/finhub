@@ -6,6 +6,7 @@ import { metas, decision } from './metas.js';
 import { activos, operaciones, objetivo, clases, valores, plantilla, borrador } from './cartera.js';
 import { familias, fuentes, mezclas, predicciones, notas, semana, serie, descubrimiento } from './conocimiento.js';
 import { rol, tarea, analisis, encaje, chat, quiz, tuano } from './textos.js';
+import { esReservado } from '../ids.js';
 
 export const FORMATOS = { ajustes, cuentas, grupos, etiquetas, recurrentes, hitos, mes, metas, decision, activos, operaciones, objetivo, clases, valores, plantilla, borrador, familias, fuentes, mezclas, predicciones, notas, semana, serie, descubrimiento, rol, tarea, analisis, encaje, chat, quiz, tuano };
 
@@ -55,6 +56,7 @@ const PATRONES = [
 export function detectar(ruta) {
   const r = String(ruta).replaceAll('\\', '/').replace(/^\.\//, '');
   if (r.startsWith('.finhub/') || r.startsWith('CONTEXTO/') || !r.endsWith('.md')) return null;
+  if (r.split('/').some((p) => p === '..' || p === '.' || esReservado(p))) return null;
   if (FIJOS[r]) return { formato: FORMATOS[FIJOS[r]], ctx: { ruta: r } };
   for (const [re, tipo, ctx] of PATRONES) {
     const m = re.exec(r);

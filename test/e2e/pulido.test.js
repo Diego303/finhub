@@ -45,7 +45,7 @@ async function abrirApp(ficheros, nombre) {
   return { app, raiz, p, doc: async (r) => leer(r, await fsp.readFile(join(raiz, r), 'utf8')) };
 }
 async function hasta(fn, que, ms = 8000) {
-  const fin = Date.now() + ms;
+  const fin = performance.now() + ms;
   for (;;) {
     try {
       const v = await fn();
@@ -53,7 +53,7 @@ async function hasta(fn, que, ms = 8000) {
     } catch {
       /* aún no */
     }
-    if (Date.now() > fin) throw new Error(`no se cumplió: ${que}`);
+    if (performance.now() > fin) throw new Error(`no se cumplió: ${que}`);
     await esperar(80);
   }
 }

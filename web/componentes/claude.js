@@ -99,15 +99,16 @@ export function errorHtml(r) {
 export const avisosHtml = (avisos = []) => (avisos.length ? html`<div class="mut" style="font-size:10.5px;margin-top:6px">⚠ ${avisos.join(' · ')}</div>` : '');
 
 // ---------- modal «Datos de mercado» ----------
-const dm = { fase: 'elegir', series: [], elegidas: new Set(), progreso: { texto: '', herramientas: [], id: null }, resultado: null, guardar: new Set() };
+const dm = { fase: 'elegir', series: [], elegidas: new Set(), historia: false, progreso: { texto: '', herramientas: [], id: null }, resultado: null, guardar: new Set() };
 
 function cuerpoDatos() {
   const lista = dm.series;
-  const r1 = html`<div class="mut" style="font-size:10.5px;margin:6px 0">🔒 Trabajo <b style="font-weight:500">datos</b>: internet sí · tus datos privados no · solo recibe el manifiesto de series y el último mes que tienes. Claude no escribe nada: te propone las filas y tú decides si se guardan.</div>`;
+  const r1 = html`<div class="mut" style="font-size:10.5px;margin:6px 0">🔒 Trabajo <b style="font-weight:500">datos</b>: internet sí · tus datos privados no · solo recibe el manifiesto de series y el último dato que tienes. Claude no escribe nada: te propone las filas y tú decides si se guardan.</div>`;
   if (dm.fase === 'elegir') {
     return html`<div class="mut" style="font-size:11px;margin:6px 0">Series para calcular (comparativas, proyección, crisis, IPC). Sus valores no están en el repo por licencias: se crean en tu máquina, desde fuentes gratuitas, siguiendo semilla/datos-manifiesto.md.</div>${r1}
       <table class="tb"><thead><tr><th><span class="sr-only">elegir</span></th><th>serie</th><th>en tu carpeta</th><th class="n">meses</th></tr></thead><tbody>${lista.map((s) => html`<tr style="${s.sintetica ? 'opacity:.55' : ''}"><td><input type="checkbox" data-cambio="datos-serie" data-id="${s.id}" ${dm.elegidas.has(s.id) ? 'checked' : ''} ${s.sintetica ? 'disabled' : ''} aria-label="${s.id}"></td><td>${s.id}<div class="mut" style="font-size:10px">${s.que}</div></td><td class="mut">${s.sintetica ? 'sintética (ejemplo): no se mezcla' : s.existe ? `hasta ${s.ultimo ?? '—'}` : 'no la tienes'}</td><td class="n">${s.filas || ''}</td></tr>`)}</tbody></table>
-      <div class="entre" style="margin-top:10px"><span class="mut" style="font-size:10.5px">${dm.elegidas.size} serie(s) · modelo ${estado.modelo?.ajustes.claude_modelo?.datos ?? 'haiku'}</span><button type="button" class="pri" data-accion="datos-lanzar" ${dm.elegidas.size ? '' : 'disabled'}>Buscar con Claude (luz verde)</button></div>`;
+      <label class="tg" style="border:0;margin-top:8px"><input type="checkbox" data-cambio="datos-historia" ${dm.historia ? 'checked' : ''}><span style="font-size:11px">Añadir historia aproximada desde 2000 <span class="mut">(índice de precio con dividendos estimados, marcada «aproximación»: para que la prueba de crisis cubra 2000 y 2008)</span></span></label>
+      <div class="entre" style="margin-top:10px"><span class="mut" style="font-size:10.5px">${dm.elegidas.size} serie(s) · modelo ${estado.modelo?.ajustes.claude_modelo?.datos ?? 'sonnet'}</span><button type="button" class="pri" data-accion="datos-lanzar" ${dm.elegidas.size ? '' : 'disabled'}>Buscar con Claude (luz verde)</button></div>`;
   }
   if (dm.fase === 'trabajando') {
     return html`${r1}<div class="fila" style="margin:8px 0"><span class="spinner" aria-hidden="true"></span><b style="font-weight:500">Claude está buscando…</b><button type="button" class="go" data-accion="datos-cancelar" style="margin-left:auto">cancelar</button></div>
@@ -120,7 +121,8 @@ function cuerpoDatos() {
   }
   const series = r.resultado.series;
   return html`${r1}<div style="font-size:11.5px;margin:6px 0">Esto es lo que ha encontrado (ya revisado por código: meses nuevos, sin saltos raros ni el mes en curso). Marca lo que quieras guardar:</div>
-    <table class="tb"><thead><tr><th><span class="sr-only">guardar</span></th><th>serie</th><th class="n">meses nuevos</th><th>de … a</th><th>fuente</th></tr></thead><tbody>${series.map((s) => html`<tr><td><input type="checkbox" data-cambio="datos-guardar" data-id="${s.id}" ${dm.guardar.has(s.id) ? 'checked' : ''} ${s.filas.length ? '' : 'disabled'} aria-label="Guardar ${s.id}"></td><td>${s.id}${s.avisos.length ? html`<div style="color:var(--text-warning);font-size:10px">⚠ ${s.avisos.slice(0, 3).join(' · ')}</div>` : ''}</td><td class="n">${s.filas.length}</td><td class="mut">${s.desde ?? '—'} … ${s.hasta ?? '—'}</td><td class="mut" style="font-size:10px;word-break:break-all">${s.fuente}</td></tr>`)}</tbody></table>
+    <table class="tb"><thead><tr><th><span class="sr-only">guardar</span></th><th>serie</th><th class="n">meses nuevos</th><th>de … a</th><th>fuente</th></tr></thead><tbody>${series.map((s) => html`<tr><td><input type="checkbox" data-cambio="datos-guardar" data-id="${s.id}" ${dm.guardar.has(s.id) ? 'checked' : ''} ${s.filas.length ? '' : 'disabled'} aria-label="Guardar ${s.id}"></td><td>${s.id}${s.avisos.length ? html`<div style="color:var(--text-warning);font-size:10px">⚠ ${s.avisos.slice(0, 3).join(' · ')}</div>` : ''}</td><td class="n">${s.filas.length}${s.filas.some((f) => f.aproximacion) ? html`<div class="mut" style="font-size:10px">${s.filas.filter((f) => f.aproximacion).length} aproximados</div>` : ''}</td><td class="mut">${s.desde ?? '—'} … ${s.hasta ?? '—'}</td><td class="mut" style="font-size:10px;word-break:break-all">${s.fuente}</td></tr>`)}</tbody></table>
+    ${r.resultado.faltan?.length ? html`<div class="banda aviso" style="display:block;margin-top:6px">No ha encontrado datos fiables de: ${r.resultado.faltan.join(', ')}. Puedes pedirlas otra vez.</div>` : ''}
     ${r.resultado.avisos.length ? html`<div class="mut" style="font-size:10.5px;margin-top:4px">⚠ ${r.resultado.avisos.join(' · ')}</div>` : ''}
     <div class="entre" style="margin-top:10px"><button type="button" class="go" data-accion="datos-volver">descartar</button><button type="button" class="pri" data-accion="datos-guardar" ${dm.guardar.size ? '' : 'disabled'}>Guardar en conocimiento/datos/series/</button></div>`;
 }
@@ -146,6 +148,10 @@ export function registrarAccionesClaude() {
     repintarModal();
   };
   cambio('datos-serie', marcar(() => dm.elegidas));
+  cambio('datos-historia', (el) => {
+    dm.historia = el.checked;
+    repintarModal();
+  });
   cambio('datos-guardar', marcar(() => dm.guardar));
   // los eventos «claude» del SSE llegan como evento del documento (ver estado.js)
   document.addEventListener('finhub:claude-evento', (ev) => eventoClaude(ev.detail));
@@ -154,7 +160,7 @@ export function registrarAccionesClaude() {
     dm.progreso = { texto: '', herramientas: [], id: null };
     repintarModal();
     try {
-      dm.resultado = await lanzar('datos', { ids: [...dm.elegidas] }, {
+      dm.resultado = await lanzar('datos', { ids: [...dm.elegidas], historia: dm.historia }, {
         alProgreso: (ev) => {
           if (ev.tipo === 'lanzado') dm.progreso.id = ev.id;
           if (ev.tipo === 'texto') dm.progreso.texto += ev.delta;

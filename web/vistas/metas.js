@@ -80,7 +80,7 @@ function filaMeta(x) {
     const plazo = x.fechaDeseada ? (x.aTiempo ? ` · llegas antes de ${mesAnio(x.fechaDeseada)}` : ` · para ${mesAnio(x.fechaDeseada)} harían falta ${eur(x.necesaria)}/mes`) : '';
     detalle = `${encuadre} · ${ritmo}${plazo}`;
   }
-  return html`<div style="padding:8px 0;border-top:.5px solid var(--border);${apagada ? 'opacity:.6' : ''}" data-meta="${x.id}">
+  return html`<div style="padding:8px 0;border-top:.5px solid var(--border);${apagada ? 'opacity:.75' : ''}" data-meta="${x.id}">
     <div class="entre"><button type="button" class="enlace" data-accion="meta-form" data-id="${x.id}" style="font-weight:500">${x.titulo}</button><span>${eur(x.llevas)} <span class="mut">/ ${eur(x.objetivo)}</span></span></div>
     <div class="bar" style="margin:5px 0" role="img" aria-label="${x.titulo}: ${Math.floor(x.pb / 100)} %"><i style="width:${pct}%;background:${COLOR_ESTADO[x.estado]}"></i></div>
     <div class="entre" style="align-items:flex-start;gap:8px"><span class="mut" style="font-size:10.5px;${x.fechaDeseada && x.aTiempo === false && x.estado === 'activa' ? 'color:var(--text-warning)' : ''}">${x.estado === 'pausada' ? 'en pausa · ' : x.estado === 'archivada' ? 'archivada · ' : ''}${detalle}${x.avisos.length ? html` <span style="color:var(--text-warning)">⚠ ${x.avisos.join(' · ')}</span>` : ''}</span>

@@ -34,7 +34,7 @@ export function bandas(estado) {
   if (estado.error) lista.push(html`<div class="banda error" role="alert">${estado.error}<button type="button" data-accion="reintentar" style="color:inherit;border-color:currentColor">reintentar</button></div>`);
   if (!srv) return lista;
   if (srv.soloLectura) lista.push(html`<div class="banda aviso" role="status">🔒 ${srv.candado.aviso ?? 'Solo lectura'} · ves los datos pero no puedes cambiarlos <span class="fila" style="margin-left:auto"><span class="chip on">Solo lectura</span><button type="button" class="go" data-accion="tomar-control">Tomar el control</button></span></div>`);
-  if (srv.nube.length) lista.push(html`<div class="banda aviso" role="status">☁ Algunos ficheros solo están en la nube o no se pueden leer ahora (${srv.nube.map((n) => n.ruta).join(', ')}): marca la carpeta como «Mantener siempre en este dispositivo». No se modifican hasta poder leerlos.</div>`);
+  if (srv.nube.length) lista.push(html`<div class="banda aviso" role="status">☁ Algunos ficheros solo están en la nube, están vacíos o no se pueden leer ahora (${srv.nube.map((n) => n.ruta).join(', ')}): marca la carpeta como «Mantener siempre en este dispositivo». No se modifican hasta poder leerlos.</div>`);
   for (const c of srv.conflictos) lista.push(html`<div class="banda aviso" role="status">⚠ Conflicto en <b style="font-weight:500">${c.base}</b>: hay otra versión, «${c.ruta}» (${c.descripcion}). <button type="button" class="go" data-accion="conflictos" style="margin-left:auto">ver</button></div>`);
   return lista;
 }

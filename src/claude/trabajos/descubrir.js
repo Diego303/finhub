@@ -53,14 +53,21 @@ export default {
   escribe: ['conocimiento/descubrimientos/'],
   rol: 'Investigas temas de inversión (sectores, regiones, clases de activo, vehículos) a partir de noticias y fuentes públicas, con tesis, riesgos, lo que la invalidaría y vehículos para informarse. Es información, no recomendación. Nunca incluyas importes en euros ni cifras de una cartera concreta.',
   esquema: O({ descubrimientos: L(DESCUBRIMIENTO, { max: 5 }), sin_cambios: opc(T('bool')), cambios: opc(T('texto', { max: 1500 })) }, ['descubrimientos']),
-  comprobar(json, { params = {} } = {}) {
+  comprobar(json, { params = {}, texto = '' } = {}) {
     const e = [];
+    // §9.25: un descubrimiento es público; un importe en euros, en cualquier texto, delata que se coló algo tuyo
+    const textos = (x, ruta, out = []) => {
+      if (typeof x === 'string') out.push([ruta, x]);
+      else if (Array.isArray(x)) x.forEach((y, i) => textos(y, `${ruta}[${i}]`, out));
+      else if (x && typeof x === 'object') for (const [k, v] of Object.entries(x)) if (k !== 'citas') textos(v, ruta ? `${ruta}.${k}` : k, out);
+      return out;
+    };
+    for (const [ruta, t] of textos(json, '')) if (RE_EUROS.test(t)) e.push(`${ruta}: contiene un importe en euros (un descubrimiento es público)`);
+    if (RE_EUROS.test(texto)) e.push('el texto contiene un importe en euros (un descubrimiento es público)');
     json.descubrimientos.forEach((d, i) => {
-      for (const k of ['titulo', 'tesis', 'saldria_bien_si', 'la_invalidaria', 'riesgos']) if (RE_EUROS.test(d[k] ?? '')) e.push(`descubrimientos[${i}].${k}: contiene un importe en euros (un descubrimiento es público)`);
       if (params.modo === 'seguimiento' && d.id && d.id !== params.anterior?.id) e.push(`descubrimientos[${i}].id: ${d.id} no es el descubrimiento revisado`);
       if (params.modo !== 'seguimiento' && d.id) e.push(`descubrimientos[${i}].id: solo se da en seguimiento`);
     });
-    if (RE_EUROS.test(json.cambios ?? '')) e.push('cambios: contiene un importe en euros');
     if (params.modo === 'seguimiento' && json.descubrimientos.length > 1) e.push('en seguimiento se devuelve como mucho un descubrimiento (el revisado)');
     if (params.modo === 'seguimiento' && !json.descubrimientos.length && !json.sin_cambios) e.push('en seguimiento: devuelve la nueva versión o «sin_cambios»: true');
     return e;

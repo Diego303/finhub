@@ -1,6 +1,7 @@
 # Claude Code CLI · verificación F0
 
 > Verificado el 2026-11-03 en WSL2 (Ubuntu 22.04), **Claude Code 2.1.317**, Node 24.21.0, pnpm 12.6.0.
+> **Reverificado el 2026-11-07 con Claude Code 2.1.319** (`pnpm qa:humo -- --si`): 9 de 9 trabajos correctos, sin cambios en flags ni en el evento `init`. Ver §«Prueba de humo».
 > Autenticación: **OAuth de claude.ai** (suscripción Max), sin `ANTHROPIC_API_KEY`.
 > Todas las pruebas se lanzaron como lo hará finhub: `cwd` en un directorio vacío nuevo y entorno mínimo (`env -i HOME PATH LANG`).
 > Coste total de las ~15 ejecuciones de prueba: < 0,10 USD (casi todas con `--model haiku`).
@@ -157,3 +158,18 @@ Los transcripts de las sondas se borraron de `~/.claude/projects/` al terminar.
 - **Tests:** `test/fake-claude.js` reproduce el stream-json (escenarios y grabaciones) y deja una traza de argumentos, entorno, directorio y stdin. `pnpm test:r1`.
 - **Prueba real:** `pnpm claude:probar --real [--trabajos …] [--modelo haiku|config]` con la carpeta de ejemplo en memoria; nada se escribe en el repo ni en una carpeta de datos.
 
+## Prueba de humo con el Claude real (QA9, 2026-11-07)
+
+`pnpm qa:humo -- --si`: una ejecución de cada trabajo con `--model haiku`, sobre una copia temporal de `ejemplo/`. Coste total: 0,11 USD. Lo temporal y los 2 transcripts se borran al acabar.
+
+| Trabajo | Estado | `init.tools` | Herramientas usadas |
+|---|---|---|---|
+| pulso · precios · datos | ok | WebFetch, WebSearch | WebSearch, WebFetch |
+| descubrir | ok | WebFetch, WebSearch | WebSearch |
+| rex-web | ok | WebFetch, WebSearch | ninguna |
+| ingesta · conocimiento · privado · encaje | ok | ninguna | ninguna |
+
+En los 9: `mcp_servers` vacío, sin skills ni comandos, sin memoria, `permissionMode: dontAsk`, ningún evento de hook y solo los plugins internos `cc-plugin-agents-md`, `cc-plugin-privacy` y `cc-plugin-plugin-authoring`. Nada de huddle ni de lo global. En los trabajos sin privado, ni el nombre de una cuenta ni el de una meta en el stdin.
+
+- `init.agents` trae 5 agentes de serie, pero sin la herramienta `Task` no se pueden lanzar. La guardia no mira ese campo.
+- El humo usa haiku. Después, el 2026-11-07 y 08, todos los trabajos se ejecutaron también con sus modelos normales (opus y sonnet) en una carpeta de pruebas: ver «QA9» en [QA-INFORME.md](QA-INFORME.md). Cada uno, una o pocas veces: la calidad de las respuestas no se ha medido en muchas pasadas.

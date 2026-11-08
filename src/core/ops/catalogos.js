@@ -3,8 +3,8 @@
 // etiquetas (renombrar y borrar en todos los movimientos) y cuentas (ajustar saldo).
 import { registrar, ErrorOp } from './motor.js';
 import { seccionDe, buscarItem, validarEntidad, existeItem } from './comun.js';
-import { todosLosMeses } from './mes.js';
-import { items } from '../formato/motor.js';
+import { todosLosMeses, recalcularCierres } from './mes.js';
+import { items, cabeceras, fijarKv } from '../formato/motor.js';
 import { recurrentes as fRecurrentes } from '../formato/catalogos.js';
 import { saldos } from '../patrimonio.js';
 import { mesFinanciero } from '../fechas.js';
@@ -25,12 +25,21 @@ function cadaMovimiento(tx, fn) {
 
 const sub = (tx, nombre, args) => tx.sub(nombre, args);
 
+/** Marca «editado tras cierre» los meses cerrados con algún movimiento afectado: sus totales ya no son los del cierre. */
+function marcarCerrados(tx, afecta) {
+  for (const { ruta, doc } of todosLosMeses(tx)) {
+    if (cabeceras(doc).estado?.estado !== 'cerrado' || !items(doc, 'Movimientos').some(afecta)) continue;
+    fijarKv(doc, 'Cierre', 'editado_tras_cierre', true);
+    tx.tocar(ruta);
+  }
+}
+
 registrar({
   /**
    * {id, cambios, aplicar: 'siguiente' | 'esteMes', mes} · «¿solo a partir del mes que viene o también este mes?»
    * Con «esteMes», el movimiento ya confirmado de ese mes (rec: id) recibe los mismos cambios.
    */
-  'rec.editar'(tx, { id, cambios = {}, aplicar = 'siguiente', mes = null }) {
+  'rec.editar'(tx, { id, cambios = {}, aplicar = 'siguiente', mes = null, confirmarCerrado = false }) {
     const doc = tx.doc('recurrentes.md');
     const { nodo } = buscarItem(doc, null, 'id', id, 'el recurrente');
     if ('id' in cambios && cambios.id !== id) throw new ErrorOp('invalida', 'el id de un recurrente no cambia');
@@ -42,12 +51,20 @@ registrar({
     const objetivo = mes ?? mesFinanciero(tx.ctx.hoy, tx.ctx.ajustes?.mes_inicio_dia ?? 1);
     const campos = ['concepto', 'importe', 'grupo', 'cuenta', 'etiquetas'].filter((k) => k in cambios);
     let n = 0;
-    cadaMovimiento(tx, (m) => {
+    const tocados = cadaMovimiento(tx, (m) => {
       if (m.rec !== id || mesFinanciero(m.fecha, tx.ctx.ajustes?.mes_inicio_dia ?? 1) !== objetivo) return false;
       for (const k of campos) m[k] = nodo.valor[k];
       n++;
       return true;
     });
+    // un mes cerrado no cambia sin preguntar, y queda marcado y con su foto al día (§2.5)
+    for (const ruta of tocados) {
+      const d = tx.doc(ruta);
+      if (cabeceras(d).estado?.estado !== 'cerrado') continue;
+      if (!confirmarCerrado) throw new ErrorOp('mes_cerrado', 'Este mes está cerrado: ¿lo editas igualmente?', { mes: objetivo });
+      fijarKv(d, 'Cierre', 'editado_tras_cierre', true);
+      recalcularCierres(tx, objetivo);
+    }
     if (!n) tx.aviso(`este mes aún no había movimiento de «${nodo.valor.concepto}»: el cambio se verá al confirmarlo`);
     return { movimientos: n };
   },
@@ -70,6 +87,7 @@ registrar({
     if (anterior === naturaleza) return { movimientos: 0 };
     nodo.valor = validarEntidad(doc.spec.preambulo, { ...nodo.valor, naturaleza }, `el grupo «${id}»`);
     tx.tocar('grupos.md');
+    if (aplicarAMovimientos) marcarCerrados(tx, (m) => m.grupo === id && (!m.naturaleza || m.naturaleza === anterior));
     let n = 0;
     cadaMovimiento(tx, (m) => {
       if (m.grupo !== id) return false;
@@ -94,6 +112,7 @@ registrar({
     const doc = tx.doc('grupos.md');
     buscarItem(doc, null, 'id', id, 'el grupo');
     if (destino && !existeItem(doc, null, 'id', destino)) throw new ErrorOp('no_existe', `no existe el grupo destino «${destino}»`);
+    marcarCerrados(tx, (m) => m.grupo === id || m.compensa === id);
     let n = 0;
     if (destino) {
       cadaMovimiento(tx, (m) => {

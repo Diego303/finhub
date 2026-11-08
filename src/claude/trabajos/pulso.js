@@ -2,7 +2,8 @@
 // activas en esa ejecución, los nombres de tus activos. Salida: notas de Mundo propuestas.
 import { O, L, T, opc, TEMAS, POSTURA, TIPO_NOTA } from './comun.js';
 import { bloque } from '../contexto.js';
-import { diasEntre } from '../../core/fechas.js';
+import { diasEntre, esFecha } from '../../core/fechas.js';
+import { slug } from '../../core/ids.js';
 
 export default {
   id: 'pulso',
@@ -24,9 +25,12 @@ export default {
   /** Reglas además del esquema: la fecha es la pedida ±1; los sectores, los del mapa de efectos. */
   comprobar(json, { params, modelo }) {
     const e = [];
+    if (!esFecha(params.fecha)) return ['no se sabe qué día se pidió: la fecha de las notas no se puede comprobar'];
     const sectores = new Set(modelo.ajustes.sectores_efectos ?? []);
     for (const [i, n] of json.notas.entries()) {
       if (Math.abs(diasEntre(params.fecha, n.fecha)) > 1) e.push(`notas[${i}]: fecha ${n.fecha} fuera del día pedido ±1`);
+      // el id del sector, aunque el modelo lo escriba con mayúsculas o tildes
+      if (n.efectos) n.efectos = Object.fromEntries(Object.entries(n.efectos).map(([k, v]) => [sectores.has(slug(k)) ? slug(k) : k, v]));
       for (const s of Object.keys(n.efectos ?? {})) if (!sectores.has(s)) e.push(`notas[${i}]: sector «${s}» no está en tu mapa de efectos`);
     }
     return e;
@@ -35,6 +39,8 @@ export default {
     const bloques = [bloque('temas', 'publico', temas.join(', ') || 'economía, mercados, bancos centrales, inflación')];
     if (modelo.ajustes.sectores_efectos?.length) bloques.push(bloque('sectores del mapa de efectos', 'publico', modelo.ajustes.sectores_efectos.join(', ')));
     if (activos?.length) bloques.push(bloque('nombres de tus activos', 'metadato', activos.join('\n')));
-    return { tarea: `Busca las noticias económicas y de mercados del ${fecha} sobre los temas indicados y devuelve como mucho 6 notas, cada una con su medio y URL. La fecha de cada nota debe ser el ${fecha} (o un día antes o después).`, bloques };
+    const sectores = modelo.ajustes.sectores_efectos ?? [];
+    const efectos = sectores.length ? ` En «efectos» usa solo estos sectores, con el id exacto: ${sectores.join(', ')}. Si una noticia no afecta a ninguno, omite «efectos».` : ' No incluyas «efectos».';
+    return { tarea: `Busca las noticias económicas y de mercados del ${fecha} sobre los temas indicados y devuelve como mucho 6 notas, cada una con su medio y URL. La fecha de cada nota debe ser el ${fecha} (o un día antes o después).${efectos}`, bloques };
   },
 };

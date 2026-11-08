@@ -12,6 +12,7 @@ import { leerEsquema } from '../core/formato/migraciones.js';
 
 const hash = (buf) => createHash('sha256').update(buf).digest('hex');
 const RE_TEMPORAL = /^\.finhub-tmp-/;
+const RE_COPIA_A_MEDIAS = /\.finhub-tmp-\d+$/;
 
 async function existe(ruta) {
   return fsp.stat(ruta).then((s) => s, () => null);
@@ -22,8 +23,9 @@ async function listarTodo(raiz) {
   const visitar = async (abs, rel) => {
     for (const e of await fsp.readdir(abs, { withFileTypes: true })) {
       const r = rel ? `${rel}/${e.name}` : e.name;
-      if (e.isDirectory()) await visitar(join(abs, e.name), r);
-      else if (e.isFile() && !RE_TEMPORAL.test(e.name) && r !== '.finhub/abierto.lock') res.push(r);
+      if (e.isDirectory()) {
+        if (!RE_COPIA_A_MEDIAS.test(e.name)) await visitar(join(abs, e.name), r);
+      } else if (e.isFile() && !RE_TEMPORAL.test(e.name) && r !== '.finhub/abierto.lock') res.push(r);
     }
   };
   await visitar(raiz, '');
@@ -101,7 +103,8 @@ export async function crearCarpeta(ruta) {
  * `progreso({hechos, total, ruta})`.
  */
 export async function copiarVerificando(origen, destino, { progreso = () => {} } = {}) {
-  const lista = await listarTodo(origen);
+  // ajustes.md, el último: es lo que hace que una carpeta «sea de finhub», y una copia a medias no debe parecerlo
+  const lista = (await listarTodo(origen)).sort((a, b) => (a === 'ajustes.md') - (b === 'ajustes.md'));
   const creados = [];
   const dirsCreados = [];
   const ocupados = [];
@@ -182,8 +185,13 @@ export async function cambiarCarpeta({ entrada, modo, actual = null, confirmarBo
   const { ficheros } = await copiarVerificando(actual, v.ruta, { progreso });
   let antiguaEnPapelera = null;
   if (modo === 'mover') {
-    if (confirmarBorrado) antiguaEnPapelera = await enviarAPapelera(actual);
-    else avisos.push('la carpeta antigua sigue en su sitio: confirma para mandarla a la papelera');
+    if (confirmarBorrado) {
+      // lo copiado ya está verificado: que falle la papelera no deshace el cambio de carpeta
+      antiguaEnPapelera = await enviarAPapelera(actual).catch((e) => {
+        avisos.push(`no se pudo mandar la carpeta antigua a la papelera (${e.message}): sigue en su sitio`);
+        return null;
+      });
+    } else avisos.push('la carpeta antigua sigue en su sitio: confirma para mandarla a la papelera');
   }
   return { ruta: v.ruta, modo, ficheros, antiguaEnPapelera, avisos };
 }

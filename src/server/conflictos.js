@@ -74,12 +74,28 @@ export function fusionar(ruta, tuya, otra) {
     while (fin > 0 && !util(sa.lineas[fin - 1])) fin--;
     sa.lineas.splice(fin, 0, ...nuevas);
   }
-  const texto = a.map((s) => [s.cab, ...s.lineas].filter((x) => x !== null).join('\n')).join('\n');
-  const doc = leer(ruta, texto);
+  // deduplicar por id (§2.6): lo que ya está en tu versión con ese id se queda el tuyo; lo de la otra se avisa
+  let texto = a.map((s) => [s.cab, ...s.lineas].filter((x) => x !== null).join('\n')).join('\n');
+  let doc = leer(ruta, texto);
   if (!doc) throw new Error(`«${ruta}» no es un fichero de datos de finhub`);
+  for (let vuelta = 0; vuelta < 50; vuelta++) {
+    const dobles = doc.avisos.filter((x) => /repetid|duplicad/i.test(x.mensaje) && x.linea);
+    if (!dobles.length) break;
+    const lineas = texto.split('\n');
+    const quitar = new Set();
+    for (const x of dobles) {
+      const i = x.linea - 1;
+      if (!lineas[i]) continue;
+      quitar.add(i);
+      if (lineas[i].startsWith('## ')) for (let k = i + 1; k < lineas.length && !lineas[k].startsWith('## '); k++) quitar.add(k); // el bloque entero
+    }
+    ignoradas.push(...[...quitar].sort((x, y) => x - y).map((i) => lineas[i]).filter(util));
+    texto = lineas.filter((_, i) => !quitar.has(i)).join('\n');
+    doc = leer(ruta, texto);
+  }
   const errores = doc.avisos.filter((x) => x.nivel === 'error');
-  const dobles = doc.avisos.filter((x) => /repetid|duplicad/i.test(x.mensaje));
-  if (errores.length || dobles.length) throw new Error(`la fusión no da un fichero válido (${[...errores, ...dobles].slice(0, 3).map((x) => `línea ${x.linea}: ${x.mensaje}`).join(' · ')}): resuélvelo a mano`);
+  const errorPrevio = leer(ruta, tuya).avisos.filter((x) => x.nivel === 'error').length;
+  if (errores.length > errorPrevio) throw new Error(`la fusión no da un fichero válido (${errores.slice(0, 3).map((x) => `línea ${x.linea}: ${x.mensaje}`).join(' · ')}): resuélvelo a mano`);
   return { texto: serializar(doc), ignoradas, avisos: doc.avisos.map((x) => x.mensaje) };
 }
 

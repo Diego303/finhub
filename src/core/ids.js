@@ -6,10 +6,14 @@ const BASE36 = '0123456789abcdefghijklmnopqrstuvwxyz';
 /** Quita tildes y pasa a minúsculas: clave para comparar ids sin depender de mayúsculas (D: no las distingue). */
 export const normalizar = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').normalize('NFC').toLowerCase().trim();
 
+/** Nombres que Windows reserva, también con extensión: no pueden ser ni fichero ni carpeta en D: u OneDrive. */
+export const esReservado = (nombre) => /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(String(nombre));
+
 /** "Hucha Japón" → "hucha-japon" (≤ 40, cortado en un guion si hace falta). */
 export function slug(texto) {
   let s = normalizar(texto).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   if (s.length > 40) s = s.slice(0, 40).replace(/-[^-]*$/, '') || s.slice(0, 40);
+  if (esReservado(s)) s = `${s}-x`;
   return s || 'x';
 }
 

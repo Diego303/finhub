@@ -1,5 +1,5 @@
 // finhub · web. Sin build: módulos ES servidos por el servidor local; /core/ es el mismo código del servidor.
-import { html, pintar } from './esc.js';
+import { html, pintar, conservarEscrito, EN_FORMULARIO } from './esc.js';
 import { estado, alCambiar, cargar, sincronizar, ponerRex } from './estado.js';
 import { accion, delegar } from './acciones.js';
 import { pedir } from './api.js';
@@ -14,7 +14,7 @@ import { registrarPulso, abrirPulso } from './componentes/pulso.js';
 import { registrarIngesta } from './componentes/ingesta.js';
 import { abrirAjustes, registrarAjustes } from './componentes/ajustes.js';
 import { abrirPapelera, registrarPapelera } from './componentes/papelera.js';
-import { registrarConflictos } from './componentes/conflictos.js';
+import { registrarConflictos, abrirConflictos } from './componentes/conflictos.js';
 import { abrirGuardado } from './componentes/guardado.js';
 import { abrirTextos, registrarTextos } from './componentes/textos-claude.js';
 import { arrancarAnimacion } from './componentes/rex-sprite.js';
@@ -68,18 +68,36 @@ function contenido() {
   return html`<div class="rejilla"><div>${principal}</div><aside class="lateral" aria-label="Pendientes y Rex">${cajaPendientes(estado)}</aside></div>`;
 }
 
+// Con el ratón pulsado no se repinta: si el botón se sustituye entre pulsar y soltar, el navegador no ve el clic y se pierde.
+let pulsando = false;
+let renderAplazado = false;
+addEventListener('pointerdown', () => (pulsando = true), true);
+const soltar = () => {
+  pulsando = false;
+  if (!renderAplazado) return;
+  renderAplazado = false;
+  setTimeout(render); // después del clic que va a llegar
+};
+addEventListener('pointerup', soltar, true);
+addEventListener('pointercancel', soltar, true);
+addEventListener('blur', soltar);
+
 export function render() {
+  if (pulsando) {
+    renderAplazado = true;
+    return;
+  }
   const t0 = performance.now();
   const activo = document.activeElement;
   const cursor = activo && typeof activo.selectionStart === 'number' ? activo.selectionStart : null;
   const clave = activo?.id || (activo?.dataset?.accion ? `${activo.dataset.accion}|${activo.dataset.vista ?? activo.dataset.destino ?? activo.dataset.modo ?? ''}` : null);
   const marco = document.getElementById('marco');
-  pintar(
+  conservarEscrito(marco, EN_FORMULARIO, () => pintar(
     marco,
     html`<button type="button" class="saltar" data-accion="saltar">Saltar al contenido</button>${cabecera(estado, { menuAbierto })}${bandas(estado)}${pestanas()}
       <main id="contenido" tabindex="-1" role="tabpanel" aria-labelledby="pestana-${estado.vista}">${contenido()}</main>
       ${barraR1(estado.claude)}`,
-  );
+  ));
   if (clave && !hayModal()) {
     const [acc, dato] = clave.split('|');
     const el = dato !== undefined ? marco.querySelector(`[data-accion="${acc}"][data-vista="${dato}"], [data-accion="${acc}"][data-destino="${dato}"], [data-accion="${acc}"][data-modo="${dato}"], [data-accion="${acc}"]`) : document.getElementById(clave);
@@ -137,6 +155,7 @@ accion('tomar-control', async () => {
 accion('pendiente', (el) => {
   const d = el.dataset.destino;
   const vistas = { mes: 'mes', descubrimientos: 'descubrimientos', predicciones: 'conocimiento', contexto: 'conocimiento', pausas: 'rex' };
+  if (d === 'conflictos') return abrirConflictos(estado);
   if (d === 'recurrentes') return abrirRecurrentes(estado);
   if (d === 'cierre') return abrirCierre(estado);
   if (d === 'valores') return abrirValores(estado);

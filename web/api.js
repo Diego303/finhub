@@ -51,6 +51,19 @@ export async function pedir(metodo, ruta, cuerpo) {
 
 export const obtener = (ruta) => pedir('GET', ruta);
 
+let versionVista = null;
+/** §2.4: la versión de los datos que tiene esta pestaña. Cada operación la lleva: si otro cambió el fichero, 409. */
+export const fijarVersionVista = (v) => (versionVista = v);
+
+// Las operaciones de una pestaña van de una en una, y cada una se calcula con los datos que dejó la anterior:
+// si salieran a la vez, chocarían entre sí.
+let fila = Promise.resolve();
+function enFila(fn) {
+  const p = fila.then(fn, fn);
+  fila = p.catch(() => {});
+  return p;
+}
+
 let recargar = async () => {};
 /** El estado registra cómo recargar los datos tras un 409 o un cambio. */
 export const alRecargar = (fn) => (recargar = fn);
@@ -63,13 +76,18 @@ export const alRecargar = (fn) => (recargar = fn);
  */
 export async function op(nombre, args = {}, { versiones = {}, mensaje = 'Hecho', silencioso = false } = {}) {
   try {
-    const r = await pedir('POST', '/api/ops', { op: nombre, args, versiones });
-    await recargar();
+    const r = await enFila(async () => {
+      const res = await pedir('POST', '/api/ops', { op: nombre, args, versiones, base: versionVista });
+      await recargar();
+      return res;
+    });
     const texto = (typeof mensaje === 'function' ? mensaje(r) : mensaje) + (r.avisos?.length ? ` · ⚠ ${r.avisos.join(' · ')}` : '');
     describirUltimo(typeof mensaje === 'function' ? mensaje(r) : mensaje === 'Hecho' ? nombre : mensaje);
     if (!silencioso) toast(texto, { deshacer: r.deshacer ? () => deshacer(r.deshacer) : null });
     return r;
   } catch (e) {
+    // no se ha guardado: lo que escribiste se conserva al repintar
+    for (const f of document.querySelectorAll('form[data-enviado]')) delete f.dataset.enviado;
     if (e.codigo === 'mes_cerrado') {
       const si = await confirmar(e.message, { si: 'Editar igualmente', no: 'Cancelar' });
       return si ? op(nombre, { ...args, confirmarCerrado: true }, { versiones, mensaje, silencioso }) : null;
@@ -86,8 +104,10 @@ export async function op(nombre, args = {}, { versiones = {}, mensaje = 'Hecho',
 
 export async function deshacer(id) {
   try {
-    await pedir('POST', '/api/deshacer', { id });
-    await recargar();
+    await enFila(async () => {
+      await pedir('POST', '/api/deshacer', { id });
+      await recargar();
+    });
     toast('Deshecho');
   } catch (e) {
     toast(e.message, { tipo: 'error' });

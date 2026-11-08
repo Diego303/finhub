@@ -53,7 +53,7 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
   const partes = componentesDe(filas, clases).map((c, i) => {
     const peso = c.peso / 10000;
     const propia = rDe(c.indice);
-    if (cubre(propia)) return { peso, r: propia };
+    if (cubre(propia)) return { peso, r: propia, id: c.indice, nombre: c.nombre };
     if (c.grupo === 'efectivo' && !c.indice) return { peso, r: tipoBce };
     // sin datos en el periodo: la clase «parecida» (§4.5), indicada
     const clase = clases.find((x) => x.id === filas[i].clase);
@@ -61,7 +61,7 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
     const alt = rDe(parecida);
     if (cubre(alt)) {
       aproximaciones.push({ nombre: c.nombre, con: clases.find((x) => x.id === clase.parecida)?.nombre ?? clase.parecida });
-      return { peso, r: alt };
+      return { peso, r: alt, id: parecida, nombre: c.nombre };
     }
     avisos.push(`«${c.nombre}» no tiene datos en ese periodo: cuenta como si no se moviera`);
     return { peso, r: null };
@@ -87,25 +87,38 @@ export function pruebaCrisis({ filas, clases, series, periodo, valor, aportacion
   }
   // el mínimo se busca dentro del periodo de la caída
   const finPeriodo = meses.indexOf(periodo.hasta);
+  // caída máxima: desde el pico, no desde el valor inicial (si sube antes de caer, la caída real es mayor)
   let iMin = 0;
-  for (let i = 1; i <= finPeriodo; i++) if (sin[i] < sin[iMin]) iMin = i;
-  const recupera = (serie) => {
-    let abajo = false;
-    for (let i = 1; i < serie.length; i++) {
-      if (serie[i] < 100 - 1e-9) abajo = true;
-      else if (abajo && i > iMin) return i;
+  let pico = sin[0];
+  let caida = 0;
+  for (let i = 1; i <= finPeriodo; i++) {
+    pico = Math.max(pico, sin[i]);
+    if (sin[i] / pico - 1 < caida) {
+      caida = sin[i] / pico - 1;
+      iMin = i;
     }
-    return abajo ? null : 0;
+  }
+  // recuperar es volver al pico de antes de la caída (desde donde se mide), contando desde el inicio del periodo
+  const recupera = (serie) => {
+    if (iMin === 0) return 0;
+    const nivel = Math.max(...serie.slice(0, iMin + 1));
+    for (let i = iMin + 1; i < serie.length; i++) if (serie[i] >= nivel - 1e-9) return i;
+    return null;
   };
   const recuperaSin = recupera(sin);
   const recuperaCon = recupera(con);
+  // historia aproximada (índice de precio y dividendos estimados, §7.3): se dice
+  for (const p of partes.filter((x) => x.id && x.r)) {
+    const n = (series(p.id) ?? []).filter((f) => f.aproximacion && f.mes >= periodo.desde && f.mes <= meses.at(-1)).length;
+    if (n) avisos.push(`«${p.nombre}» usa ${n} meses aproximados (índice de precio con los dividendos estimados): tómalo como orientación`);
+  }
   // se enseña hasta 6 meses después de recuperarse las dos (o todo, si alguna no se recupera)
   const corte = recuperaSin === null || recuperaCon === null ? meses.length : Math.min(meses.length, Math.max(recuperaSin, recuperaCon, finPeriodo) + 7);
   return {
     meses: meses.slice(0, corte),
     sin: sin.slice(0, corte),
     con: con.slice(0, corte),
-    caidaPb: Math.round((sin[iMin] / 100 - 1) * 10000),
+    caidaPb: Math.round(caida * 10000),
     valorMinimo: Math.round(valor * (sin[iMin] / 100)),
     mesMinimo: meses[iMin],
     recuperaSin,
@@ -132,7 +145,10 @@ export function rangos12m(historico) {
   }
   moviles.sort((a, b) => a - b);
   const pb = (q) => Math.round(percentil(moviles, q) * 10000);
-  return { pesimista: [pb(0.05), pb(0.25)], base: [pb(0.25), pb(0.75)], optimista: [pb(0.75), pb(0.95)], peor: Math.round(moviles[0] * 10000), ventanas: moviles.length, desde: historico.meses[0], hasta: historico.meses.at(-1) };
+  // el mismo aviso que en la proyección (QA-063): el peor caso es el peor de los años que hay
+  const inicio = historico.meses?.[0];
+  const aviso = r.length < 120 ? `histórico corto: solo ${(r.length / 12).toFixed(1).replace('.', ',')} años de datos, así que estos rangos pueden quedarse cortos` : inicio > '2008-01' ? `tu histórico empieza en ${inicio}: no incluye las crisis de 2000 y 2008, así que el peor caso real pudo ser bastante peor` : null;
+  return { pesimista: [pb(0.05), pb(0.25)], base: [pb(0.25), pb(0.75)], optimista: [pb(0.75), pb(0.95)], peor: Math.round(moviles[0] * 10000), ventanas: moviles.length, aviso, desde: historico.meses[0], hasta: historico.meses.at(-1) };
 }
 
 // ---------- IPC personal (§4.6) ----------

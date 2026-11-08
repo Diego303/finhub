@@ -2,38 +2,48 @@
 // ser una probabilidad del propio JSON), citas (los ids deben existir en <datos>), probabilidades (enteras,
 // entre 5 y 90 y que sumen 100) y lenguaje de recomendación (se resalta y se registra).
 
-const RE_NUM = /(?<![\w.,])[-−+]?\d{1,3}(?:[.\s ]\d{3})+(?:,\d+)?(?![\w])|(?<![\w.,])[-−+]?\d+(?:[.,]\d+)?(?![\w])/g;
+const RE_NUM = /(?<![\w.,-])[-−+]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?![\w])|(?<![\w.,-])[-−+]?\d{1,3}(?:[.\s ]\d{3})+(?:,\d+)?(?![\w])|(?<![\w.,-])[-−+]?\d+(?:[.,]\d+)?(?![\w])/g;
 const RE_ID = /\b[A-Z]{1,4}-\d{2,6}(?:-\d{2})?\b/g;
 export const RE_RECOMENDACION = /\b(compra|vende|comprar ya|vender ya|precio objetivo|te recomiendo (?:comprar|vender))\b/gi;
 
 /** Valores posibles de un número escrito (es-ES «1.234,5» y en-US «1,234.5»). */
 export function interpretar(s) {
+  return lecturas(s).map((l) => l.v);
+}
+
+/** Lecturas posibles de un número escrito, con sus decimales: [{v, decimales}] */
+function lecturas(s) {
   const t = String(s).replace(/[−]/g, '-').replace(/[\s ]/g, '');
-  const out = new Set();
-  const es = t.replace(/\./g, '').replace(',', '.');
-  const en = t.replace(/,/g, '');
-  for (const x of [es, en, t.replace(',', '.')]) {
+  const out = new Map();
+  const anadir = (x) => {
     const n = Number(x);
-    if (Number.isFinite(n)) out.add(n);
-  }
-  return [...out];
+    if (Number.isFinite(n) && !out.has(n)) out.set(n, x.split('.')[1]?.length ?? 0);
+  };
+  anadir(t.replace(/\./g, '').replace(',', '.')); // es-ES
+  anadir(t.replace(/,/g, '')); // en-US
+  anadir(t.replace(',', '.'));
+  return [...out].map(([v, decimales]) => ({ v, decimales }));
 }
 
-/** Todos los números de un texto, con su forma escrita. */
+/** Todos los números de un texto, con su forma escrita y si llevan unidad (%, €…). */
 export function numeros(texto) {
-  return [...String(texto ?? '').matchAll(RE_NUM)].map((m) => ({ texto: m[0], valores: interpretar(m[0]) }));
+  // los números de una URL no son cifras; los de un id ([B-1001]) tampoco (el «-» de delante no es un signo)
+  const limpio = String(texto ?? '').replace(/https?:\/\/\S+/g, ' ');
+  return [...limpio.matchAll(RE_NUM)].map((m) => ({ texto: m[0], lecturas: lecturas(m[0]), valores: interpretar(m[0]), conUnidad: /^\s*(%|€|eur\b|euros?\b|puntos?\b|pb\b)/i.test(limpio.slice(m.index + m[0].length)) }));
 }
 
-const parecido = (a, b) => Math.abs(a - b) <= Math.max(0.5, Math.abs(b) * 0.005);
+/** Tolerancia de redondeo: media unidad del último decimal escrito, o un 0,5 % de la cifra si es mayor. */
+const parecido = (l, p) => Math.abs(Math.abs(l.v) - Math.abs(p)) <= Math.max(0.5 * 10 ** -l.decimales, Math.abs(p) * 0.005) + 1e-9;
 
 /**
  * Comprueba los números de `texto` contra los permitidos (cifras, números de los datos y probabilidades).
- * Los años (1900–2100) que aparecen en los datos y los enteros pequeños de enumeraciones (1–12) se aceptan.
+ * Sin unidad se aceptan los enteros pequeños de enumeraciones (0–12) y los años (1900–2100).
  * → [{texto}] no verificadas
  */
 export function cifrasNoVerificadas(texto, permitidos) {
   const lista = [...permitidos];
-  return numeros(texto).filter((n) => !n.valores.some((v) => (Number.isInteger(v) && v >= 0 && v <= 12) || lista.some((p) => parecido(Math.abs(v), Math.abs(p)))));
+  const libre = (n) => !n.conUnidad && n.lecturas.some((l) => l.decimales === 0 && Number.isInteger(l.v) && ((l.v >= 0 && l.v <= 12) || (l.v >= 1900 && l.v <= 2100)));
+  return numeros(texto).filter((n) => !libre(n) && !n.lecturas.some((l) => lista.some((p) => parecido(l, p))));
 }
 
 /** Números permitidos: los de <cifras>, los que aparecen en el texto de <datos> y las probabilidades del JSON. */
@@ -44,15 +54,23 @@ export function permitidos({ cifras = [], datos = '', probabilidades = [] }) {
   return s;
 }
 
-/** Citas: devuelve las válidas y las inventadas (que se quitan). */
-export function revisarCitas(citas, idsValidos) {
+/**
+ * Citas: devuelve las válidas y las inventadas (que se quitan). Una URL no se confunde con un id aunque lleve
+ * algo parecido dentro; solo vale en los trabajos con internet (`urls`): en uno privado, una URL con datos en
+ * la query sería una forma de sacarlos.
+ */
+export function revisarCitas(citas, idsValidos, { urls = true } = {}) {
   const ok = new Set(idsValidos);
   const validas = [];
   const inventadas = [];
   for (const c of citas ?? []) {
+    if (/^(web:)?https?:\/\//i.test(String(c).trim())) {
+      (urls ? validas : inventadas).push(c);
+      continue;
+    }
     const ids = String(c).match(RE_ID);
     if (!ids) {
-      validas.push(c); // una URL o una referencia que no es un id de nota
+      validas.push(c); // una referencia que no es un id de nota
       continue;
     }
     (ids.every((id) => ok.has(id)) ? validas : inventadas).push(c);
@@ -60,10 +78,10 @@ export function revisarCitas(citas, idsValidos) {
   return { validas, inventadas };
 }
 
-/** Ids citados en un texto ([B-1001]) que no existen. */
+/** Ids citados en un texto ([B-1001]) que no existen (lo que hay dentro de una URL no es un id). */
 export const idsInventados = (texto, idsValidos) => {
   const ok = new Set(idsValidos);
-  return [...new Set((String(texto ?? '').match(RE_ID) ?? []).filter((id) => !ok.has(id)))];
+  return [...new Set((String(texto ?? '').replace(/https?:\/\/\S+/g, ' ').match(RE_ID) ?? []).filter((id) => !ok.has(id)))];
 };
 
 /** Probabilidades de escenarios (§8.4): enteras, entre 5 y 90, suma 100. → errores */

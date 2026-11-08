@@ -1,5 +1,5 @@
 // Cálculos del mes (§4.1). Todo en céntimos y puntos básicos; sin floats en lo que se guarda.
-import { proporcionPb, sumar } from './dinero.js';
+import { proporcionPb, sumar, dividirRedondeo } from './dinero.js';
 
 /** Naturaleza efectiva: la del movimiento si la indica; si no, la de su grupo; si no hay grupo, null. */
 export function naturalezaDe(mov, gruposPorId) {
@@ -82,7 +82,8 @@ export function presupuestos(tot, grupos, delMes = {}) {
       const presupuesto = delMes[g.id] ?? g.presupuesto;
       const gastado = tot.porGrupo.get(g.id)?.consumo ?? 0;
       const pct = presupuesto > 0 ? proporcionPb(gastado, presupuesto) : null;
-      const color = pct === null ? (gastado > 0 ? 'rojo' : 'verde') : pct <= 9000 ? 'verde' : pct <= 10000 ? 'ambar' : 'rojo';
+      // con los céntimos, no con el porcentaje redondeado: 100,001 % ya es rojo
+      const color = pct === null ? (gastado > 0 ? 'rojo' : 'verde') : gastado * 100 <= presupuesto * 90 ? 'verde' : gastado <= presupuesto ? 'ambar' : 'rojo';
       return { grupo: g.id, nombre: g.nombre, gastado, presupuesto, pct, color, delMes: delMes[g.id] !== undefined };
     });
 }
@@ -94,7 +95,7 @@ export function presupuestos(tot, grupos, delMes = {}) {
 export function mediaCerrados(meses, mes, n = 6) {
   const cerrados = meses.filter((x) => x.mes < mes && x.estado === 'cerrado').sort((a, b) => (a.mes < b.mes ? 1 : -1)).slice(0, n);
   if (!cerrados.length) return null;
-  const media = (vals) => Math.round(vals.reduce((a, b) => a + b, 0) / cerrados.length);
+  const media = (vals) => dividirRedondeo(vals.reduce((a, b) => a + b, 0), cerrados.length);
   const ids = new Set(cerrados.flatMap((c) => [...c.totales.porGrupo.keys()]));
   const porGrupo = new Map([...ids].map((id) => [id, media(cerrados.map((c) => c.totales.porGrupo.get(id)?.consumo ?? 0))]));
   return { meses: cerrados.map((c) => c.mes), consumo: media(cerrados.map((c) => c.totales.consumo)), entradas: media(cerrados.map((c) => c.totales.entradas)), porGrupo };

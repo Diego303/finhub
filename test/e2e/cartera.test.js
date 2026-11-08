@@ -1,5 +1,6 @@
 // F5 «hecho cuando»: la cartera se mantiene entera desde la web (operaciones, valores, activos, objetivo,
 // cartera base) y lo que enseña coincide con lo que calcula core; cada paso se comprueba en el disco.
+import { fechaLocal } from '../../src/core/fechas.js';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fsp from 'node:fs/promises';
@@ -15,6 +16,7 @@ let app;
 let aislado;
 let raiz;
 let p;
+const HOY = fechaLocal();
 const errores = [];
 
 before(async () => {
@@ -42,7 +44,7 @@ after(async () => {
 const doc = async (ruta) => leer(ruta, await fsp.readFile(join(raiz, ruta), 'utf8'));
 const ops = async () => items(await doc('cartera/operaciones.md'));
 async function hasta(fn, que, ms = 6000) {
-  const fin = Date.now() + ms;
+  const fin = performance.now() + ms;
   for (;;) {
     try {
       const v = await fn();
@@ -50,7 +52,7 @@ async function hasta(fn, que, ms = 6000) {
     } catch {
       /* el fichero aún no existe */
     }
-    if (Date.now() > fin) throw new Error(`no se cumplió: ${que}`);
+    if (performance.now() > fin) throw new Error(`no se cumplió: ${que}`);
     await esperar(80);
   }
 }
@@ -117,7 +119,7 @@ test('la cartera de punta a punta desde la web', async (t) => {
   const filas = await p.$$eval(`${dialogo} input[name^="v:"]`, (xs) => xs.map((x) => x.name.slice(2)));
   for (const id of filas) await p.fill(`${dialogo} [name="v:${id}"]`, '1000');
   await p.click(`${dialogo} button[type=submit]`);
-  const foto = await hasta(async () => items(await doc('cartera/valores/2026-11-03.md')), 'foto guardada');
+  const foto = await hasta(async () => items(await doc(`cartera/valores/${HOY}.md`)), 'foto guardada');
   assert.equal(foto.length, filas.length);
   assert.ok(foto.every((f) => f.valor === 100000 && f.origen === 'manual'));
   await p.waitForFunction((n) => new RegExp(`Valor\\s*${n}\\.000 €`).test(document.querySelector('#contenido').textContent.replace(/ /g, ' ')), filas.length);
@@ -145,7 +147,7 @@ test('la cartera de punta a punta desde la web', async (t) => {
   await p.click(`${dialogo} [data-accion=generar-perfil][data-perfil=conservadora]`);
   await p.waitForFunction(() => document.querySelector('[data-perfil=conservadora]')?.classList.contains('on'));
   await p.click(`${dialogo} [data-accion=generar-crear]`);
-  const ruta = 'cartera/borradores/2026-11-03-conservadora.md';
+  const ruta = `cartera/borradores/${HOY}-conservadora.md`;
   await hasta(async () => cabeceras(await doc(ruta)).estado === 'borrador', 'borrador creado');
   await p.click(`[data-accion=borrador-aceptar][data-ruta="${ruta}"]`);
   await si();
@@ -174,7 +176,7 @@ test('la cartera de punta a punta desde la web', async (t) => {
   await p.click('[data-accion=vista][data-vista=mes]');
   await p.waitForFunction(() => document.querySelector('#marco').dataset.vista === 'mes');
   await p.selectOption('#anotar-grupo', 'cartera');
-  await p.fill('#anotar-dia', '3');
+  await p.fill('#anotar-dia', String(+HOY.slice(8)));
   await p.fill('#anotar-concepto', 'Aportación extra fondo');
   await p.fill('#anotar-importe', '150');
   await p.click('form[data-form=anotar] button[type=submit]');
@@ -184,7 +186,7 @@ test('la cartera de punta a punta desde la web', async (t) => {
   assert.equal(await p.inputValue(`${dialogo} [name=importe]`), '150,00');
   await p.selectOption(`${dialogo} [name=activo]`, 'msci-world');
   await p.click(`${dialogo} button[type=submit]`);
-  const enlazada = await hasta(async () => (await ops()).find((o) => o.mov && o.fecha === '2026-11-03'), 'operación enlazada');
+  const enlazada = await hasta(async () => (await ops()).find((o) => o.mov && o.fecha === HOY), 'operación enlazada');
   const [mes, idMov] = enlazada.mov.split('/');
   const m = items(await doc(`mes/${mes}.md`), 'Movimientos').find((x) => x.id === idMov);
   assert.deepEqual([m.concepto, m.importe, m.op], ['Aportación extra fondo', -15000, enlazada.id]);

@@ -6,7 +6,7 @@ import { valorCarteraEn } from './cartera.js';
 import { resumenCartera } from './cartera-resumen.js';
 import { progresoMetas, todosLosMovimientos } from './metas.js';
 import { pendientes } from './resumen.js';
-import { proporcionPb, sumar } from './dinero.js';
+import { proporcionPb, sumar, dividirRedondeo } from './dinero.js';
 import { mesFinanciero, periodoMes, sumarMesesMes, sumarDias } from './fechas.js';
 
 export function saludo(hora) {
@@ -67,7 +67,7 @@ export function kpisPanel(modelo, hoy) {
   const antes = patrimonioEn(modelo, finAnterior, movs).patrimonio;
   const porMes = totalesPorMes(modelo);
   const cerrados = [...porMes].filter(([m, x]) => m < mes && x.estado === 'cerrado').sort(([a], [b]) => (a < b ? 1 : -1));
-  const consumoMedio = cerrados.length ? Math.round(sumar(...cerrados.slice(0, 6).map(([, x]) => x.totales.consumo)) / Math.min(6, cerrados.length)) : null;
+  const consumoMedio = cerrados.length ? dividirRedondeo(sumar(...cerrados.slice(0, 6).map(([, x]) => x.totales.consumo)), Math.min(6, cerrados.length)) : null;
   const col = colchon(ahora.cuentas, modelo.cuentas, consumoMedio);
   const cuentasColchon = new Set(modelo.cuentas.filter((c) => c.colchon).map((c) => c.id));
   const metaColchon = progresoMetas(modelo, hoy).find((x) => x.origen?.tipo === 'cuenta' && cuentasColchon.has(x.origen.valor) && x.estado !== 'archivada');

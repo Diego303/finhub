@@ -80,13 +80,13 @@ Cabecera `# Ajustes`, `esquema: 1` y una lista `- clave: valor`. Claves (todas o
 | `rex_humor`, `accesorios` | como el plan | del plan |
 | `copias` | `carpeta` \| `local` | `carpeta` |
 | `conflictos` 🆕 | patrones de copias en conflicto de tu servicio de sincronización, separados por ` \| `: `{nombre}` es el nombre del fichero original sin `.md` (una vez), `*` cualquier texto, y acaba en `.md`. Ejemplo: `{nombre} (conflicto *).md \| {nombre}_*_conflicto.md`. Se suman a los de serie y se aplican en caliente | sin patrones propios; los de serie: `nombre-EQUIPO.md`, `nombre (1).md`, `nombre (… conflicted copy …).md` / `(… copia en conflicto …)`, `nombre.sync-conflict-….md` |
-| `claude_modelo` 🆕 | `trabajo=modelo` separados por `, ` (modelo: `opus` \| `sonnet` \| `haiku` \| nombre completo) | `pulso=sonnet, precios=haiku, datos=haiku, ingesta=sonnet, conocimiento=sonnet, rex-web=sonnet, privado=opus, encaje=opus, descubrir=opus` |
+| `claude_modelo` 🆕 | `trabajo=modelo` separados por `, ` (modelo: `opus` \| `sonnet` \| `haiku` \| nombre completo) | `pulso=sonnet, precios=haiku, datos=sonnet, ingesta=sonnet, conocimiento=sonnet, rex-web=sonnet, privado=opus, encaje=opus, descubrir=opus` |
 | `nombre` 🆕 | texto (para el saludo del resumen al abrir) | — |
 | `umbral_desviacion` 🆕 | porcentaje (aviso de clases frente a objetivo) | `1` |
-| `sectores_efectos` 🆕 | lista de ids de sectores del mapa de efectos | los 7 de la maqueta |
+| `sectores_efectos` 🆕 | lista de ids de sectores del mapa de efectos (puede quedar vacía: `- sectores_efectos:`) | los 7 de la maqueta |
 | `crisis_periodos` 🆕 (F7) | periodos de la prueba de crisis: `AAAA-MM..AAAA-MM nombre \| …` (desde = el máximo de partida; la trayectoria sigue con la historia posterior hasta recuperarse) | `2000-03..2003-03 Puntocom \| 2007-10..2009-02 Crisis financiera \| 2020-01..2020-03 Covid \| 2021-12..2022-09 Inflación y tipos` |
 | `descubrir_sin_cambios` 🆕 (F11) | «¿qué ha cambiado?» sin noticias nuevas (§9.26): `version` (nueva versión «sin cambios relevantes») o `nada` (solo se aplaza la revisión) | `version` |
-| `descubrir_filtros` 🆕 (F11) | filtros editables del panel de Descubrimientos (texto que recibe `descubrir`) | `fondos indexados, ETF, acciones, renta fija, sin cripto` |
+| `descubrir_filtros` 🆕 (F11) | filtros editables del panel de Descubrimientos (texto que recibe `descubrir`; puede quedar vacía) | `fondos indexados, ETF, acciones, renta fija, sin cripto` |
 | `contexto_max` | `60 notas · 60000 car.` | del plan |
 
 ✓ Válido

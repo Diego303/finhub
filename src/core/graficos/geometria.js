@@ -128,3 +128,11 @@ export function barras({ valores, ancho, alto, hueco = 2 }) {
 export function redondear(v) {
   return Math.round(v * 100) / 100;
 }
+
+/** Etiqueta de un eje en miles de euros: «500 €» por debajo de mil, «2,5k» hasta diez mil y «57k» desde ahí. */
+export function etiquetaMiles(miles) {
+  const a = Math.abs(miles);
+  if (a < 1) return `${Math.round(miles * 1000)} €`;
+  if (a < 10) return `${String(Math.round(miles * 10) / 10).replace('.', ',')}k`;
+  return `${Math.round(miles)}k`;
+}

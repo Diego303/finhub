@@ -4,7 +4,7 @@
 | # | Decisión | Detalle |
 |---|---|---|
 | 1 | **Playwright** aprobado como única devDependency (e2e) | Se añade cuando se escriba el primer e2e (F3), no antes. |
-| 2 | **Modelo por trabajo** (`claude_modelo` en `ajustes.md`, editable) | `pulso`: **sonnet** (tiene que juzgar qué es importante del día) · `precios`, `datos`: **haiku** · `ingesta`, `conocimiento`, `rex-web`: **sonnet** · `privado`, `encaje`, `descubrir`: **opus**. Sin `--model`, Claude Code usaría opus en todo (no se cargan tus settings). |
+| 2 | **Modelo por trabajo** (`claude_modelo` en `ajustes.md`, editable) | `pulso`: **sonnet** (tiene que juzgar qué es importante del día) · `precios`: **haiku** · `datos`: **sonnet** (haiku se rendía sin encontrar el histórico: QA-062) · `ingesta`, `conocimiento`, `rex-web`: **sonnet** · `privado`, `encaje`, `descubrir`: **opus**. Sin `--model`, Claude Code usaría opus en todo (no se cargan tus settings). |
 | 3 | **Novedades de formato** de `docs/FORMATOS.md` §6 aprobadas | `id: xxxx` en movimientos · Mundo `M-AAMMDD-NN` · Datos `DT-` · Mis notas `N-` · formatos de los ficheros que el plan no fijaba. |
 | 4 | **Sondeo** | Conjunto caliente + carpetas cada 2 s; barrido completo concurrente cada 30 s y al recuperar el foco (`docs/SINCRONIZACION.md` §3). |
 | 5 | **Varios equipos**: sí | El candado y los conflictos son prioritarios. Los nombres de las copias en conflicto de Google Drive se verificarán en F12 con dos equipos. |
@@ -187,3 +187,32 @@
 | 4 | **Documentación** | `INSTRUCCIONES.md` (instalar, elegir y cambiar tu carpeta, primera vez, uso diario, Claude, arranque, copias, actualizar, problemas), `docs/ARQUITECTURA.md` (mapa del código y flujos), `docs/README.md` (índice), `OPERACIONES.md` reescrito desde el registro real de operaciones (la propuesta de F0 tenía nombres que nunca existieron) y `FORMATOS.md` §5 corregido (cuarentena en JSON, campos reales del registro y de la papelera). README con galería de capturas. |
 | 5 | **Sectores con nombre** | El mapa de efectos enseña «Consumo básico», «Tecnología»… en vez de los ids. |
 
+## QA · decisiones dudosas resueltas · 2026-11-06
+El usuario pidió aplicar en cada una la opción recomendada. Detalle y bugs en [QA-INFORME.md](QA-INFORME.md).
+| # | Decisión | Detalle |
+|---|---|---|
+| 1 | **Mover a una fuente pública** | Se sigue rechazando (QA-018): gana R1. Para publicar una nota, se copia su texto. |
+| 2 | **Quitar «privada» a una fuente con notas** | Rechazado por R1 (QA-049). Vacía, sí. |
+| 3 | **`<datos origen nivel>`** | Se queda: `nivel="externo"` en su atributo, `origen` dice de dónde viene. Mismo efecto que el `origen="externo"` del plan. |
+| 4 | **Fichero de 0 bytes** | Se trata como «solo en la nube», nunca como vacío: lo prudente. El aviso ya dice «o están vacíos». |
+| 5 | **Lección al reabrir** | Se conserva (QA-050). `## Cierre` puede quedar en un mes reabierto solo con `leccion`. |
+| 6 | **Grupos y meses cerrados** | Cambiar la naturaleza aplicándola, o borrar el grupo, marca «editado tras cierre» sin preguntar (QA-051): es una acción explícita sobre todo el catálogo. Renombrar etiquetas no marca: no cambia cifras. |
+| 7 | **Listas vacías en ajustes** | `sectores_efectos` y `descubrir_filtros` admiten `- clave:` vacío (QA-052). Sin la clave, las de serie. Único cambio de formato, compatible hacia atrás. |
+| 8 | **Conflicto con la misma entidad** | Fusionar deja la tuya y avisa; la otra versión va a la papelera (QA-036). |
+| 9 | **Edición a mano de un fichero poco usado** | Se ve en el barrido (hasta 30 s), como dice el plan. No se pierde: QA-024 da 409 si operas antes. |
+| 10 | **Saldo inicial** | Los movimientos anteriores a su fecha no cuentan: si no, se contarían dos veces. |
+| 11 | **Movimiento sin cuenta** | A la cuenta por defecto (la primera corriente activa). |
+| 12 | **Venta sin participaciones** | Reduce el coste en proporción al valor estimado: es lo que significa «reembolsos a coste». |
+| 13 | **Crisis** | La caída se mide desde el pico (QA-044) y recuperar es volver a ese pico (QA-053). «Aportando» compara con lo que llevas puesto, como dice la interfaz. |
+| 14 | **Libertad financiera** | Superar, no igualar (QA-054). |
+| 15 | **Impuesto** | Se redondea una vez, al final (QA-055). |
+| 16 | **Mínimo por fondo** | Quien no llega recibe 0 y su parte va a los demás: nunca se invierte de más de lo que pones. |
+| 17 | **XIRR > 1.000 % anual** | «No concluyente»: anualizar un 1 % de un día no dice nada útil. |
+| 18 | **Colores** | Los de la maqueta, en gráficos; un poco más oscuros en texto para llegar a AA (QA-046). El ■ de «Queda» se queda como en la maqueta: el dato está escrito al lado. |
+| 19 | **Rutas de la API** | `/api/claude/ejecutar` y `/api/eventos`: un solo canal SSE con todos los trabajos, en vez del `/api/trabajos/:runId/eventos` del plan. |
+| 20 | **Sandbox** | Fuera de la carpeta (§2.6), no en `.finhub/sandbox/` (§0.3.4): el plan se contradice y fuera no se sincroniza. |
+| 21 | **Primera vez** | La carpeta se elige en la terminal, porque el servidor la necesita para arrancar; luego se cambia desde Ajustes. |
+| 22 | **Ancho en 1920 px** | A la izquierda con el ancho máximo, como la maqueta. |
+| 23 | **Migraciones** | El mecanismo está probado, pero no conectado al servidor: con el esquema 1 no hay nada que migrar. Al subir a esquema 2 hay que conectarlo, con su copia previa. |
+| 24 | **Historia aproximada en Datos** (QA-075, decidido por el usuario el 2026-11-07) | La salida de `datos` admite `aproximacion: true` en cada fila. Esas filas solo pueden ir antes de tu primer mes, encadenadas a él, y se guardan con `| aproximación`. La fuente de esa historia se añade a la del proxy («… · antes de AAAA-MM (aproximación): …») y se conserva al actualizar. La prueba de crisis avisa de cuántos meses aproximados usa. |
+| 25 | **Precios en tu divisa** (QA-076, decidido por el usuario el 2026-11-07) | `precios` recibe también la divisa del activo (EUR si no tiene), que no es un dato privado, y pide el precio en esa divisa. |

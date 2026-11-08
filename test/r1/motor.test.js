@@ -51,7 +51,7 @@ test('runner: sandbox vacío y borrado, entorno mínimo, prompt por stdin, event
   assert.ok(tr.cwd.startsWith(base));
   assert.equal(tr.stdin, 'PROMPT secreto');
   assert.equal(tr.env.FINHUB_CARPETA, undefined);
-  assert.deepEqual(Object.keys(tr.env).filter((k) => !['PWD', 'SHLVL', '_'].includes(k)).sort(), ['CLAUDE_CODE_DISABLE_AUTO_MEMORY', 'CLAUDE_CODE_DISABLE_CLAUDE_MDS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', 'HOME', 'LANG', 'PATH']);
+  assert.deepEqual(Object.keys(tr.env).filter((k) => !['NODE_V8_COVERAGE', 'PWD', 'SHLVL', '_'].includes(k)).sort(), ['CLAUDE_CODE_DISABLE_AUTO_MEMORY', 'CLAUDE_CODE_DISABLE_CLAUDE_MDS', 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', 'HOME', 'LANG', 'PATH']);
   assert.ok(tr.args.includes('--no-session-persistence'));
   assert.deepEqual(await fsp.readdir(base), [], 'el sandbox se borró');
   assert.ok(eventos.includes('init') && eventos.includes('texto'));

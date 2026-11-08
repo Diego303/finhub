@@ -17,7 +17,7 @@ import { semanaIso, limitesSemana, textoCorto, sumarDias } from '/core/fechas.js
 import { normalizar } from '/core/ids.js';
 
 export const MODOS = [['chat', 'Chat'], ['opinan', '¿Qué opinan mis canales?'], ['pausa', 'Pausa de 48 h'], ['semana', 'Resumen semanal'], ['quiz', 'Quiz']];
-const COLOR_POSTURA = { alcista: '#1D9E75', neutral: '#888780', bajista: '#E24B4A' };
+const COLOR_POSTURA = { alcista: 'var(--t-verde)', neutral: 'var(--t-gris)', bajista: 'var(--t-rojo)' };
 let modo = 'chat';
 export const ponerModo = (m) => (modo = MODOS.some((x) => x[0] === m) ? m : 'chat');
 
@@ -70,7 +70,7 @@ function guarida(e) {
       <svg style="position:absolute;right:16px;bottom:20px" width="60" height="78" viewBox="0 0 30 39" role="img" aria-label="${g.hucha === null ? 'Hucha: aún no tienes metas' : `Hucha: tus metas van, de media, al ${Math.round(h * 100)} %`}"><rect x="3" y="6" width="24" height="31" rx="5" fill="none" stroke="var(--text-secondary)" stroke-width="1.2"/><rect x="4.2" y="${7 + 29 * (1 - h)}" width="21.6" height="${29 * h}" rx="4" fill="#EF9F27" opacity=".85"/><rect x="9" y="2" width="12" height="4" rx="1" fill="var(--text-secondary)"/><text x="15" y="${Math.max(11, 7 + 29 * (1 - h) - 2)}" font-size="5" text-anchor="middle" fill="var(--text-primary)" font-family="var(--font-mono)">${g.hucha === null ? '—' : `${Math.round(h * 100)}%`}</text></svg>
       <div style="position:absolute;left:8px;top:6px;font-size:10px" class="mut">humor: <b style="font-weight:500;color:var(--text-primary)" data-humor>${g.humor.humor}</b> · ${tasa}</div></div>
     <div class="lab" style="margin-top:8px">Accesorios de Rex</div>${g.error ? html`<div class="mut" style="font-size:10.5px">⚠ accesorios en Ajustes: ${g.error}</div>` : ''}
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:10px;text-align:center" role="list">${g.accesorios.map((a) => html`<div role="listitem" data-accesorio="${a.id}" data-logrado="${a.logrado ? 'true' : 'false'}" title="${a.que}" aria-label="${a.nombre}: ${a.logrado ? 'conseguido' : `se consigue con ${a.que}`}" style="padding:5px 0;border-radius:6px;border:0.5px solid var(--border);${a.logrado ? '' : 'opacity:.35;filter:grayscale(1)'}"><div style="font-size:15px" aria-hidden="true">${a.emoji}</div>${a.nombre}</div>`)}</div>`;
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:10px;text-align:center" role="list">${g.accesorios.map((a) => html`<div role="listitem" data-accesorio="${a.id}" data-logrado="${a.logrado ? 'true' : 'false'}" title="${a.que}" aria-label="${a.nombre}: ${a.logrado ? 'conseguido' : `se consigue con ${a.que}`}" style="padding:5px 0;border-radius:6px;border:0.5px solid var(--border);${a.logrado ? '' : 'color:var(--text-muted)'}"><div style="font-size:15px;${a.logrado ? '' : 'opacity:.35;filter:grayscale(1)'}" aria-hidden="true">${a.emoji}</div>${a.nombre}</div>`)}</div>`;
 }
 
 // ---------- vista ----------
@@ -124,7 +124,7 @@ function cuerpoOpinan(e) {
   return html`<div class="mut" style="font-size:11px;margin-bottom:8px">Qué dicen sobre una pregunta las fuentes de tu mezcla (${d.resumen.filter((x) => x.activa).length} activas), cada una con su postura y la nota que lo respalda. 🔒 Trabajo <b style="font-weight:500">conocimiento</b>: sin internet y sin Mis notas.</div>
     <form class="fila" data-form="opinan"><label class="sr-only" for="opinan-pregunta">Pregunta</label><input class="inp" id="opinan-pregunta" name="pregunta" value="${rx.opinan.pregunta}" data-entrada-texto="opinan-pregunta" placeholder="¿Está cara la bolsa americana?" style="flex:1"><button type="submit" class="pri" ${p.fase === 'trabajando' ? 'disabled' : ''}>Preguntar</button></form>
     ${progresoHtml(p, { que: 'Rex está leyendo tus fuentes…' })}${p.fase === 'hecho' ? errorHtml(r) : ''}
-    ${j ? html`<table class="tb" style="margin-top:8px" data-opinan><thead><tr><th>fuente</th><th>postura</th><th>argumento</th></tr></thead><tbody>${j.fuentes.map((f) => html`<tr><td>${d.porId.get(f.id)?.nombre ?? f.id}</td><td><span style="color:${COLOR_POSTURA[f.postura]}">●</span> ${f.postura}</td><td style="font-size:11px">${f.argumento} <span class="cit">[${f.cita}]</span></td></tr>`)}</tbody></table>
+    ${j ? html`<table class="tb" style="margin-top:8px" data-opinan><thead><tr><th>fuente</th><th>postura</th><th>argumento</th></tr></thead><tbody>${j.fuentes.map((f) => html`<tr><td>${d.porId.get(f.id)?.nombre ?? f.id}</td><td><span style="color:${COLOR_POSTURA[f.postura]}">●</span> ${f.postura}</td><td style="font-size:11px">${f.argumento}${f.cita ? html` <span class="cit">[${f.cita}]</span>` : ''}</td></tr>`)}</tbody></table>
       <div style="font-size:11.5px;line-height:1.7;margin-top:8px"><b style="font-weight:500">Coinciden:</b> ${textoConCitas(j.coinciden)}<br><b style="font-weight:500">Discrepan:</b> ${textoConCitas(j.discrepan)}</div>
       <div style="margin-top:6px;font-size:11.5px"><span class="ep o">opinión del modelo</span> ${j.opinion_modelo}</div>${avisosHtml(r.resultado.avisos)}` : ''}`;
 }
@@ -237,7 +237,8 @@ export function registrarAccionesRex() {
   });
   entrada('chat-pregunta', (el) => (rx.pregunta = el.value));
   formulario('chat-enviar', (f, d) => {
-    if (!d.pregunta.trim()) return;
+    // con Rex trabajando el campo está desactivado y no viene en el formulario
+    if (!d.pregunta?.trim()) return;
     enviar(d.pregunta.trim());
   });
   accion('explicame-ir', () => {
@@ -249,14 +250,14 @@ export function registrarAccionesRex() {
   // ¿Qué opinan?
   entrada('opinan-pregunta', (el) => (rx.opinan.pregunta = el.value));
   formulario('opinan', async (f, d) => {
-    if (!d.pregunta.trim()) return toast('Escribe la pregunta', { tipo: 'error' });
+    if (!d.pregunta?.trim()) return toast('Escribe la pregunta', { tipo: 'error' });
     const fuentes = datosConocimiento(est()).resumen.filter((r) => r.activa).map((r) => r.id);
     await ejecutarCon(rx.opinan.prog, 'conocimiento', { tarea: 'opinan-canales', pregunta: d.pregunta.trim(), fuentes }, { repintar });
   });
   // Pausa de 48 h
   entrada('pausa-idea', (el) => (rx.pausa.idea = el.value));
   formulario('pausa', async (f, d) => {
-    const idea = d.idea.trim();
+    const idea = (d.idea ?? '').trim();
     if (!idea) return toast('Escribe la decisión', { tipo: 'error' });
     const r = await ejecutarCon(rx.pausa.prog, 'privado', { tarea: 'pausa-48h', pregunta: idea }, { repintar });
     if (r?.estado !== 'ok') return;

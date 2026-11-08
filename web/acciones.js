@@ -32,6 +32,7 @@ export function delegar(raiz) {
     cambios.get(el.dataset.cambio)?.(el, ev);
   });
   raiz.addEventListener('input', (ev) => {
+    if (ev.target.form) delete ev.target.form.dataset.enviado; // si vuelves a escribir, ya no es lo que enviaste
     const el = ev.target.closest('[data-entrada-texto]');
     if (el) entradas.get(el.dataset.entradaTexto)?.(el, ev);
   });
@@ -39,6 +40,7 @@ export function delegar(raiz) {
     const f = ev.target.closest('form[data-form]');
     if (!f) return;
     ev.preventDefault();
+    f.dataset.enviado = '1'; // al repintar, lo enviado no se conserva (web/esc.js)
     formularios.get(f.dataset.form)?.(f, Object.fromEntries(new FormData(f)), ev);
   });
   // elementos que no son botones (p. ej. un hito del gráfico, role="button"): Enter y espacio los activan

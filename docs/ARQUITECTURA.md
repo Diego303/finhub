@@ -50,14 +50,14 @@ tu carpeta (Markdown) ──lee──▶ Almacen (índice en memoria) ──/api
         ▲                                                                              │
         │ escritura atómica (temporal + fsync + renombrar)                             │ acción del usuario
         │                                                                              ▼
-   App.aplicar() ◀── cola ◀── POST /api/ops {op, args, versiones} ◀── api.op() ── indicador de guardado
+   App.aplicar() ◀── cola ◀── POST /api/ops {op, args, base} ◀── api.op() ── indicador de guardado
         │
         └─▶ SSE «version» ──▶ el navegador recarga los datos (también si el cambio vino de fuera)
 ```
 1. **Arranque.** `Almacen.cargar()` recorre la carpeta y clasifica cada fichero: dato, `CONTEXTO/`, temporal huérfano (se limpia), copia en conflicto o ajeno. Lee los datos en paralelo y nunca vacía uno ilegible: lo marca «nube» o «ilegible».
 2. **Lectura.** La web pide `/api/datos` (todos los textos con su versión) y construye el modelo con el mismo `src/core/` del servidor. Cada vista calcula lo suyo; el peor repintado con 5 años de datos es de unos 70 ms (`test/e2e/rendimiento.test.js`).
 3. **Escritura.** Una acción llama a `api.op(nombre, args)`.
-   - El servidor encola la operación y la aplica sobre los textos actuales con `aplicarOp`. Comprueba las versiones (409) y escribe cada fichero de forma atómica (si falla a mitad, deshace).
+   - El servidor encola la operación y la aplica sobre los textos actuales con `aplicarOp`. Relee el candado, comprueba las versiones y el disco (409) y escribe cada fichero de forma atómica (si falla a mitad, deshace).
    - Guarda la inversa para deshacer y avisa por SSE.
    - El **indicador de guardado** (`web/componentes/guardado.js`) sigue cada petición que escribe: guardando… → guardado (con los ficheros), o «no se guardó», «sin conexión» y «solo lectura».
 4. **Cambios de fuera.**
@@ -98,6 +98,10 @@ Los trabajos son declarativos (`src/claude/trabajos/*.js`): herramientas, bander
 | `test/propiedades/` | ida y vuelta de todos los formatos con datos generados (PRNG con semilla) |
 | `test/server/` | API por HTTP real, almacén, carpeta, candado, papelera, copias y conflictos, con carpetas temporales |
 | `test/r1/` | regla R1, aislamiento, guardia, ataques (textos y webs trampa) con `test/fake-claude.js` |
-| `test/e2e/` | flujos completos en Chromium: cada pestaña, IA con el Claude falso, accesibilidad, rendimiento (5 años), guardado |
+| `test/e2e/` | flujos completos en Chromium: cada pestaña, IA con el Claude falso, accesibilidad, rendimiento (5 años), guardado, XSS en todo |
+| `test/integridad/` · `test/sincronizacion/` · `test/seguridad/` · `test/conocimiento/` | baterías de QA: ida y vuelta de cada fichero, secuencias de operaciones, SIGKILL, fallos de disco, nube, conflictos, candado, cada ruta de la API, CLI |
+| `test/oraculos/` | cálculos frente a una implementación independiente escrita solo desde el plan |
+| `test/qa/` | entorno aislado, trampa de rutas, ayudas y una prueba de regresión por cada bug (`regresiones/QA-NNN.test.js`) |
+| `test/visual/` · `test/larga/` | contraste AA, desbordes y capturas · sesión prolongada de 30 minutos (`pnpm test:larga`) |
 
-`pnpm test` lanza primero todo lo que no es e2e (en paralelo) y después los e2e de uno en uno, con `TZ=Europe/Madrid` (los casos de zona horaria cambian `TZ` dentro de su test). **Ningún test llama al Claude real ni toca una carpeta real.** La lista de casos límite con su prueba está en [CHECKLIST.md](CHECKLIST.md).
+`pnpm test` lanza todo lo que no es navegador ni largo; `pnpm test:e2e` y `pnpm test:visual`, los de Chromium; `pnpm test:todo`, todo en orden con las baterías enteras. Cada ejecución va en un entorno aislado (`scripts/test.js`: HOME y XDG temporales, un `claude` falso que da la alarma y una trampa que hace fallar cualquier escritura fuera de los temporales), con `TZ=Europe/Madrid` (los casos de zona horaria cambian `TZ` dentro de su test). **Ningún test llama al Claude real ni toca una carpeta real.** La lista de casos límite con su prueba está en [CHECKLIST.md](CHECKLIST.md).

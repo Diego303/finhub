@@ -35,7 +35,7 @@ function patronesDe(textoAjustes) {
 }
 export const VERSION_APP = JSON.parse(readFileSync(join(RAIZ_REPO, 'package.json'), 'utf8')).version;
 
-const ESTADO_OP = { invalida: 400, no_existe: 404, solo_lectura: 423, mes_cerrado: 409, conflicto: 409 };
+const ESTADO_OP = { desconocida: 422, invalida: 400, no_existe: 404, solo_lectura: 423, mes_cerrado: 409, conflicto: 409 };
 const ESTADO_ALMACEN = { conflicto_version: 409, nube: 503, ilegible: 503, ruta: 400, disco: 500 };
 
 export class App {
@@ -59,7 +59,7 @@ export class App {
   async abrirCarpeta(ruta, { tomarControl = false } = {}) {
     // patrones de conflicto: los de serie + los de tus ajustes (se leen antes de clasificar la carpeta)
     const ajustesTexto = await fsp.readFile(join(ruta, 'ajustes.md'), 'utf8').catch(() => null);
-    const almacen = await new Almacen({ raiz: ruta, patrones: patronesDe(ajustesTexto) }).cargar();
+    const almacen = await new Almacen({ raiz: ruta, patrones: patronesDe(ajustesTexto) }).cargar({ limpiar: false });
     const ajustes = this.ajustesDe(almacen);
     this.almacen = almacen;
     this.carpeta = ruta;
@@ -69,7 +69,12 @@ export class App {
     this.candado.arrancar();
     this.papelera = new Papelera({ almacen });
     this.copias = new Copias({ almacen, hoy: () => fechaLocal(), destinoLocal: ajustes.copias === 'local' ? join(carpetasLocales(this.env).datos, 'copias') : null });
-    this.purgadas = await this.papelera.purgar().catch(() => []);
+    // la limpieza, solo con el candado: en solo lectura esos temporales pueden ser de la otra instancia, en marcha
+    if (!this.candado.estado.soloLectura) {
+      almacen.temporalesLimpiados = await almacen.limpiarTemporales();
+      this.purgadas = await this.papelera.purgar().catch(() => []);
+      await this.copias.limpiarHuerfanas().catch(() => {});
+    } else this.purgadas = [];
     almacen.alCambiar((ev) => {
       this.difusor.enviar('version', { version: ev.version, rutas: ev.rutas, origen: ev.origen });
       if (ev.rutas.includes('ajustes.md')) this.actualizarPatrones();
@@ -92,6 +97,7 @@ export class App {
   async cerrarCarpeta() {
     clearInterval(this.tSondeo);
     clearInterval(this.tBarrido);
+    await this.copias?.enCurso; // una copia a medias no se abandona
     await this.candado?.soltar().catch(() => {});
     this.almacen = null;
   }
@@ -142,12 +148,20 @@ export class App {
     return p;
   }
 
-  async aplicar({ op, args = {}, versiones = {}, sesion = 'anonima' }) {
+  /** Relee el candado antes de escribir: si otro equipo tomó el control entre latidos, 423 y no se escribe. */
+  async exigirEscritura() {
+    await this.candado.verificar().catch((e) => this.log(`candado: ${e.message}`));
+    if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+  }
+
+  async aplicar({ op, args = {}, versiones = {}, base = null, sesion = 'anonima' }) {
     if (typeof op !== 'string') throw new ErrorHttp(400, 'falta «op»');
+    if (base !== null && (!Number.isInteger(base) || base < 0)) throw new ErrorHttp(400, '«base» no es una versión válida');
     if (op === 'ficheros.restaurar' || op === 'papelera.restaurar') throw new ErrorHttp(400, `«${op}» no se puede pedir directamente`);
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const res = aplicarOp((r) => this.almacen.texto(r), op, args, this.ctxOps());
+      if (base !== null) this.almacen.comprobarBase(Object.keys(res.escribir), base);
       return this.escribirResultado(res, { op, versiones, sesion });
     });
   }
@@ -169,7 +183,7 @@ export class App {
 
   async deshacerUltima({ sesion = 'anonima', id = null }) {
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const e = this.deshacer.tomar(sesion, id);
       if (!e) throw new ErrorHttp(404, 'No hay nada que deshacer');
       for (const [ruta, v] of Object.entries(e.versiones)) {
@@ -184,7 +198,7 @@ export class App {
 
   async restaurarPapelera({ id, sesion = 'anonima' }) {
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const entrada = await this.papelera.entrada(id);
       if (!entrada) throw new ErrorHttp(404, 'Esa entrada ya no está en la papelera');
       if (entrada.tipo === 'conflicto') {
@@ -255,7 +269,7 @@ export class App {
   async resolverConflicto({ ruta, modo }) {
     if (!['tuya', 'otra', 'fusionar', 'hecho'].includes(modo)) throw new ErrorHttp(400, 'modo no válido');
     return this.enCola(async () => {
-      if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+      await this.exigirEscritura();
       const { c, tuya, otra } = await this.leerConflicto(ruta);
       const hoy = fechaLocal();
       let nuevo = null;
@@ -292,6 +306,8 @@ export class App {
   async cambiar({ ruta, modo, confirmarBorrado = false, aceptarAjenos = false }) {
     if (this.ejemplo) throw new ErrorHttp(400, 'En modo ejemplo no se cambia la carpeta');
     return this.enCola(async () => {
+      await this.claude.cancelarTodos(); // un trabajo de la carpeta anterior no puede acabar en la nueva
+      await this.copias?.enCurso; // la copia del día se está escribiendo dentro de lo que se va a copiar
       const actual = this.carpeta;
       const progreso = (p) => this.difusor.enviar('progreso', p);
       const res = await cambiarCarpeta({
@@ -309,7 +325,12 @@ export class App {
         throw new ErrorHttp(400, e.message);
       });
       if (this.almacen) await this.cerrarCarpeta();
-      await this.abrirCarpeta(res.ruta);
+      try {
+        await this.abrirCarpeta(res.ruta);
+      } catch (e) {
+        await this.abrirCarpeta(actual); // el servidor nunca se queda sin carpeta
+        throw new ErrorHttp(400, e.message);
+      }
       if (this.guardarConfig) await fijarCarpeta(res.ruta, this.env);
       return { ok: true, ...res, rutaWindows: aRutaWindows(res.ruta) };
     });
@@ -418,7 +439,7 @@ export class App {
       case 'GET /api/claude/datos':
         return enviarJson(res, 200, { series: this.claude.estadoDatos() });
       case 'POST /api/claude/ejecutar': {
-        if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+        await this.exigirEscritura();
         try {
           return enviarJson(res, 202, await this.claude.lanzar({ trabajo: cuerpo.trabajo, params: cuerpo.params ?? {}, desclasificar: !!cuerpo.desclasificar, resume: cuerpo.resume ?? null }));
         } catch (e) {
@@ -443,7 +464,7 @@ export class App {
         return enviarJson(res, 200, { tareas: [...tareas.values()].map(({ instrucciones, ...t }) => ({ ...t, instrucciones })), roles: [...roles.values()] });
       }
       case 'POST /api/contexto/procesado': {
-        if (this.candado.estado.soloLectura) throw new ErrorHttp(423, this.candado.estado.aviso ?? 'solo lectura', { codigo: 'solo_lectura' });
+        await this.exigirEscritura();
         try {
           return enviarJson(res, 200, await this.claude.archivarContexto(String(cuerpo.fichero ?? ''), String(cuerpo.fuente ?? '')));
         } catch (e) {
@@ -481,6 +502,7 @@ export class App {
   // ---------- arranque y parada ----------
   async iniciar({ host = '127.0.0.1', intentos = 20 } = {}) {
     await this.abrirCarpeta(this.carpeta);
+    await this.claude.limpiarSandboxesViejos();
     this.servidor = http.createServer((req, res) => this.manejar(req, res));
     this.servidor.requestTimeout = 120000;
     this.servidor.headersTimeout = 20000;
@@ -508,6 +530,7 @@ export class App {
   }
 
   async parar() {
+    await this.claude.cancelarTodos();
     this.difusor.cerrarTodo();
     await new Promise((ok) => {
       if (!this.servidor) return ok();

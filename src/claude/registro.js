@@ -3,11 +3,19 @@
 import fsp from 'node:fs/promises';
 import { dirname } from 'node:path';
 
+const colas = new WeakMap();
+
 /** servicio: {leer(rel) → texto|null, escribir(rel, texto)} (los ficheros .finhub/ del almacén). */
-export async function registrar(servicio, linea) {
+export function registrar(servicio, linea) {
+  // leer y reescribir no es atómico: en cola por servicio, para que dos trabajos a la vez no pierdan líneas
   const rel = `registro/${linea.inicio.slice(0, 7)}.jsonl`;
-  const previo = (await servicio.leer(rel)) ?? '';
-  await servicio.escribir(rel, `${previo}${JSON.stringify(linea)}\n`);
+  const previa = colas.get(servicio) ?? Promise.resolve();
+  const hecha = previa.catch(() => {}).then(async () => {
+    const previo = (await servicio.leer(rel)) ?? '';
+    await servicio.escribir(rel, `${previo}${JSON.stringify(linea)}\n`);
+  });
+  colas.set(servicio, hecha);
+  return hecha;
 }
 
 export async function leerRegistro(servicio, mes) {

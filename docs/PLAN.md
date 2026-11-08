@@ -31,7 +31,7 @@ R1 está por encima de cualquier otra regla, de la comodidad y del rendimiento. 
 | Trabajo | Internet | Privado | Externo | Entrada (la monta el servidor) | Salida | Herramientas |
 |---|---|---|---|---|---|---|
 | `pulso` | ✅ | ❌ | ✅ | fecha, temas y, opcional, nombres de activos | notas Mundo (JSON) | WebSearch, WebFetch |
-| `precios` | ✅ | ❌ | ✅ | lista de ISIN y nombres | precios propuestos (JSON) | WebSearch, WebFetch |
+| `precios` | ✅ | ❌ | ✅ | lista de ISIN, nombres y divisa | precios propuestos (JSON) | WebSearch, WebFetch |
 | `datos` | ✅ | ❌ | ✅ | manifiesto de series y último dato que tienes | filas nuevas de series (JSON) | WebSearch, WebFetch |
 | `ingesta` | ❌ | ❌ | ✅ | texto de CONTEXTO y ficha de la fuente | notas propuestas (JSON) | ninguna |
 | `conocimiento` | ❌ | ❌ | ✅ (normalizado) | notas de la mezcla | ¿Qué opinan?, resumen semanal, quiz | ninguna |
@@ -181,7 +181,7 @@ finhub/
 ### 2.3 Puerto y CLI
 - Puerto por defecto `4747`, o el siguiente libre.
 - `finhub` abre el navegador con `wslview`, o con `explorer.exe` + `wslpath -w`. Si ya está en marcha, solo abre la pestaña.
-- `pnpm link --global` para usarlo desde cualquier sitio. App instalable (manifest) y arranque con Windows opcional, como en el planner.
+- `pnpm add -g "link:$PWD"` (pnpm 12 ya no admite `pnpm link --global`) para usarlo desde cualquier sitio. App instalable (manifest) y arranque con Windows opcional, como en el planner.
 
 ### 2.4 Escritura, copias y concurrencia
 - **Escritura atómica:** fichero `tmp`, `fsync` y `rename`, con una cola por fichero.
@@ -758,7 +758,7 @@ stdin: prompt con bloques <datos …>   ·   cwd: .finhub/sandbox/<id>/ vacío  
 |---|---|
 | `pulso` | `{notas:[{titulo, tipo, fecha, origen:{medio,url}, temas[], activos[], postura?, efectos?:{<sector>: "▲"\|"▼"\|"•"}, resumen}]}`. La fecha tiene que ser el día pedido ±1. Los sectores salen de la lista editable del mapa de efectos |
 | `precios` | `{precios:[{isin, valor, divisa, fecha, origen}]}` |
-| `datos` | `{series:[{id, filas:[{mes, valor}], origen}]}` |
+| `datos` | `{series:[{id, filas:[{mes, valor, aproximacion?}], origen}]}` |
 | `ingesta` | `{notas:[…], predicciones:[{texto, medir?, horizonte}]}` |
 | `privado` (escenarios) | `{escenarios:[{nombre, prob, porque, citas[]}], ideas:[{titulo, tipo, texto, citas[]}], no_concluyente?}`. `prob` entera y la suma 100 |
 | `privado` / `rex-web` (chat) | `{respuesta_md, citas[], cifras_usadas[]}` |

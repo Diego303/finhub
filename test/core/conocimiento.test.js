@@ -164,10 +164,10 @@ test('operaciones: crear, editar (marca editada), mover y borrar notas', () => {
   assert.deepEqual([nueva[0].id, nueva[0].campos.fuente], ['P-0019', 'indexado']);
   assert.ok(!bloques(m.doc('conocimiento/pizarra/2026-10-28-valoraciones.md')).some((b) => b.id === 'P-0019'));
   // mover la última nota de un fichero lo deja vacío: va a la papelera
-  const ult = m.op('nota.mover', { ruta: r.resultado.ruta, id, fuente: 'pizarra' });
-  assert.ok(!m.fs.has(r.resultado.ruta));
+  const ult = m.op('nota.mover', { ruta: mv.resultado.ruta, id: 'P-0019', fuente: 'pizarra' });
+  assert.ok(!m.fs.has(mv.resultado.ruta));
   assert.equal(ult.papelera.length, 1);
-  const b = m.op('bloque.borrar', { ruta: mv.resultado.ruta, id: 'P-0019', que: 'nota P-0019' });
+  const b = m.op('bloque.borrar', { ruta: ult.resultado.ruta, id: 'P-0019', que: 'nota P-0019' });
   assert.equal(b.papelera.length, 1);
 });
 

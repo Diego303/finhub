@@ -42,7 +42,7 @@ after(async () => {
 const doc = async (ruta) => leer(ruta, await fsp.readFile(join(raiz, ruta), 'utf8'));
 const movs = async (mes) => items(await doc(`mes/${mes}.md`), 'Movimientos');
 async function hasta(fn, que, ms = 6000) {
-  const fin = Date.now() + ms;
+  const fin = performance.now() + ms;
   for (;;) {
     try {
       const v = await fn();
@@ -50,7 +50,7 @@ async function hasta(fn, que, ms = 6000) {
     } catch {
       /* el fichero aún no existe */
     }
-    if (Date.now() > fin) throw new Error(`no se cumplió: ${que}`);
+    if (performance.now() > fin) throw new Error(`no se cumplió: ${que}`);
     await esperar(80);
   }
 }
@@ -146,7 +146,7 @@ test('un mes (diciembre 2026) de punta a punta desde la web', async (t) => {
   await p.click('[data-accion=mes-reabrir]');
   await p.click('[data-si]');
   await hasta(async () => cabeceras(await doc('mes/2026-12.md')).estado.estado === 'reabierto', 'reabierto');
-  assert.ok(!(await doc('mes/2026-12.md')).secciones.some((s) => s.nombre === 'Cierre'));
+  assert.equal(valores(await doc('mes/2026-12.md'), 'Cierre').saldos, undefined, 'sin foto; la lección se queda (QA-050)');
 });
 
 async function anotarCerrado() {

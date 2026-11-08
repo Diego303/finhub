@@ -8,6 +8,7 @@ import { revisarInit } from './guardia.js';
 import { PROHIBIDAS, HERRAMIENTAS_WEB } from './r1.js';
 
 export const INIT_MS = 15000;
+export const MAX_SALIDA = 64 * 1024 * 1024; // ninguna salida legítima se acerca: protege la memoria del servidor
 
 /** Argumentos de `claude` para un trabajo (verificados en F0). */
 export function argumentos(trabajo, { sistema, modelo = trabajo.modelo, resume = null, persistir = trabajo.sesion ?? false, maxTurns = trabajo.maxTurns } = {}) {
@@ -49,9 +50,9 @@ const MENSAJES = {
 
 /**
  * Ejecuta un trabajo. → Promise<{estado: ok|error, codigo?, mensaje?, texto, sesion, init, herramientas, resultado, motivos?}>
- * opciones: {sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume, persistir, timeoutMs, initMs, senal, alEvento, maxTurns}
+ * opciones: {sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume, persistir, timeoutMs, initMs, senal, alEvento, maxTurns, maxSalida}
  */
-export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume = null, persistir = trabajo.sesion ?? false, timeoutMs = trabajo.timeoutMs, initMs = INIT_MS, senal = null, alEvento = () => {}, env = process.env, maxTurns = trabajo.maxTurns }) {
+export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando = ['claude'], modelo, resume = null, persistir = trabajo.sesion ?? false, timeoutMs = trabajo.timeoutMs, initMs = INIT_MS, senal = null, alEvento = () => {}, env = process.env, maxTurns = trabajo.maxTurns, maxSalida = MAX_SALIDA }) {
   const sandbox = await crearSandbox(sandboxBase);
   const herramientas = [];
   let texto = '';
@@ -60,27 +61,37 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
   let resultado = null;
   let limite = null;
   let fin = null; // {estado, codigo, motivos}
+  const vistas = new Set(); // ids de tool_use ya anotados
   const args = argumentos(trabajo, { sistema, modelo, resume, persistir, maxTurns });
   try {
     return await new Promise((resolver) => {
       let hijo;
       try {
-        hijo = spawn(comando[0], [...comando.slice(1), ...args], { cwd: sandbox, env: entornoMinimo(env), stdio: ['pipe', 'pipe', 'pipe'] });
+        // su propio grupo de procesos: cancelar o abortar mata también a lo que haya lanzado
+        hijo = spawn(comando[0], [...comando.slice(1), ...args], { cwd: sandbox, env: entornoMinimo(env), stdio: ['pipe', 'pipe', 'pipe'], detached: true });
       } catch (e) {
         resolver({ estado: 'error', codigo: e.code === 'ENOENT' ? 'no_instalado' : 'fallo', mensaje: e.code === 'ENOENT' ? MENSAJES.no_instalado : e.message, texto: '', herramientas });
         return;
       }
       const temporizadores = [];
+      const matar = (senalKill) => {
+        try {
+          if (hijo.pid) process.kill(-hijo.pid, senalKill);
+        } catch {
+          /* el grupo ya no existe */
+        }
+      };
       const parar = (estado, codigo, motivos = []) => {
         if (fin) return;
         fin = { estado, codigo, motivos };
-        hijo.kill(codigo === 'guardia' ? 'SIGKILL' : 'SIGTERM');
-        temporizadores.push(setTimeout(() => hijo.kill('SIGKILL'), 5000));
+        matar(codigo === 'guardia' ? 'SIGKILL' : 'SIGTERM');
+        temporizadores.push(setTimeout(() => matar('SIGKILL'), 5000));
       };
       temporizadores.push(setTimeout(() => !init && parar('error', 'sin_init'), initMs));
       temporizadores.push(setTimeout(() => parar('error', 'timeout'), timeoutMs));
       const alAbortar = () => parar('error', 'cancelado');
       senal?.addEventListener('abort', alAbortar, { once: true });
+      if (senal?.aborted) alAbortar();
       let resto = '';
       let stderr = '';
       const linea = (l) => {
@@ -91,28 +102,57 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
         } catch {
           return;
         }
+        if (!ev || typeof ev !== 'object' || Array.isArray(ev)) return; // «null», números…: ruido, no un evento
+        // un tool_use se comprueba en cuanto se anuncia (stream parcial) y otra vez en el mensaje completo
+        const usarHerramienta = (b) => {
+          const yaVista = b.id && vistas.has(b.id);
+          if (b.id) vistas.add(b.id);
+          if (!yaVista) herramientas.push({ nombre: b.name, entrada: resumirEntrada(b.input) });
+          if (!trabajo.herramientas.includes(b.name)) {
+            parar('error', 'guardia', [`herramienta no permitida «${b.name}»`]);
+            return false;
+          }
+          if (!yaVista) alEvento({ tipo: 'herramienta', nombre: b.name, entrada: resumirEntrada(b.input) });
+          return true;
+        };
+        if (!init && ev.type !== 'system') {
+          // nada puede ocurrir antes del init: lo que haga antes de que se compruebe el aislamiento se aborta
+          const bloquesAntes = ev.type === 'assistant' && Array.isArray(ev.message?.content) ? ev.message.content : ev.event?.content_block ? [ev.event.content_block] : [];
+          for (const b of bloquesAntes) if (b?.type === 'tool_use') return void usarHerramienta(b);
+          if (ev.type === 'assistant' || ev.type === 'stream_event') return parar('error', 'sin_init');
+        }
         if (ev.type === 'system' && ev.subtype === 'init') {
           init = ev;
           const motivos = revisarInit(ev, trabajo, sandbox);
           if (motivos.length) return parar('error', 'guardia', motivos);
           alEvento({ tipo: 'init', modelo: ev.model, sesion: ev.session_id });
-        } else if (ev.type === 'stream_event' && ev.event?.delta?.type === 'text_delta') {
+        } else if (ev.type === 'stream_event' && ev.event?.content_block?.type === 'tool_use') {
+          usarHerramienta(ev.event.content_block);
+        } else if (ev.type === 'stream_event' && ev.event?.delta?.type === 'text_delta' && typeof ev.event.delta.text === 'string') {
           textoDeltas += ev.event.delta.text;
           alEvento({ tipo: 'texto', delta: ev.event.delta.text });
         } else if (ev.type === 'assistant') {
-          for (const b of ev.message?.content ?? []) {
-            if (b.type === 'tool_use') {
-              herramientas.push({ nombre: b.name, entrada: resumirEntrada(b.input) });
-              if (!trabajo.herramientas.includes(b.name)) return parar('error', 'guardia', [`herramienta no permitida «${b.name}»`]);
-              alEvento({ tipo: 'herramienta', nombre: b.name, entrada: resumirEntrada(b.input) });
-            } else if (b.type === 'text') texto += b.text;
+          const contenido = Array.isArray(ev.message?.content) ? ev.message.content : [];
+          for (const b of contenido) {
+            if (b?.type === 'tool_use') {
+              if (!usarHerramienta(b)) return;
+            } else if (b?.type === 'text' && typeof b.text === 'string') texto += b.text;
           }
         } else if (ev.type === 'rate_limit_event') {
           limite = ev.rate_limit_info;
           if (limite?.status === 'rejected') parar('error', 'limite');
         } else if (ev.type === 'result' || (ev.session_id && ev.stop_reason !== undefined && ev.usage)) resultado = ev;
       };
+      let totalSalida = 0;
       hijo.stdout.on('data', (d) => {
+        if (fin) return; // ya abortado: lo que siga llegando no se lee
+        totalSalida += d.length;
+        if (totalSalida > maxSalida) {
+          resto = '';
+          texto = '';
+          textoDeltas = '';
+          return parar('error', 'fallo', ['la salida de Claude es demasiado grande: se ha parado el trabajo']);
+        }
         resto += d.toString('utf8');
         let i;
         while ((i = resto.indexOf('\n')) >= 0) {
@@ -124,7 +164,8 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
       hijo.on('error', (e) => {
         fin ??= { estado: 'error', codigo: e.code === 'ENOENT' ? 'no_instalado' : 'fallo', motivos: [e.message] };
       });
-      hijo.on('close', (codigoSalida) => {
+      hijo.on('close', (codigoSalida, senalSalida) => {
+        matar('SIGKILL'); // lo que el proceso haya dejado vivo en su grupo
         if (resto) linea(resto);
         for (const t of temporizadores) clearTimeout(t);
         senal?.removeEventListener('abort', alAbortar);
@@ -134,7 +175,10 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           const errorTexto = `${resultado?.result ?? ''} ${resultado?.errors?.join(' ') ?? ''} ${stderr}`;
           if (resultado?.subtype === 'error_max_turns' || resultado?.terminal_reason === 'max_turns') r = { estado: 'error', codigo: 'turnos' };
           else if (/not logged in|please run \/login/i.test(errorTexto)) r = { estado: 'error', codigo: 'sin_sesion' };
-          else if (resultado?.is_error || codigoSalida) r = { estado: 'error', codigo: 'fallo', motivos: [errorTexto.trim().slice(0, 300)] };
+          else if (/usage limit|rate limit|limit reached|hit your .*limit/i.test(errorTexto)) r = { estado: 'error', codigo: 'limite' };
+          else if (resultado?.is_error || codigoSalida || senalSalida) r = { estado: 'error', codigo: 'fallo', motivos: [errorTexto.trim().slice(0, 300) || (senalSalida ? `el proceso murió con ${senalSalida}` : '')] };
+          // sin init no se ha podido comprobar el aislamiento: la salida no vale, aunque el proceso acabe bien (§0.3.3)
+          else if (!init) r = { estado: 'error', codigo: 'sin_init' };
           else r = { estado: 'ok' };
         }
         resolver({
@@ -146,7 +190,7 @@ export async function ejecutar(trabajo, { sistema, usuario, sandboxBase, comando
           sesion: init?.session_id ?? resultado?.session_id ?? null,
           init: init ? { modelo: init.model, version: init.claude_code_version, herramientas: init.tools } : null,
           herramientas,
-          resultado: resultado ? { duracionMs: resultado.duration_ms ?? null, turnos: resultado.num_turns ?? null, coste: resultado.total_cost_usd ?? null } : null,
+          resultado: resultado ? { duracionMs: resultado.duration_ms ?? null, turnos: resultado.num_turns ?? null, coste: resultado.total_cost_usd ?? null, uso: resultado.usage ?? null } : null,
           limite: limite ? { estado: limite.status, uso: limite.utilization ?? null, renueva: limite.resetsAt ?? null } : null,
         });
       });

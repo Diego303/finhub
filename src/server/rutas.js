@@ -1,6 +1,7 @@
 // Rutas: Windows ↔ WSL (§2.6) y carpetas locales de finhub (fuera de la carpeta de datos).
 import { homedir } from 'node:os';
 import { join, resolve, relative, isAbsolute, sep, posix } from 'node:path';
+import { esReservado } from '../core/ids.js';
 
 /**
  * Convierte una ruta escrita por el usuario a ruta de WSL:
@@ -39,7 +40,7 @@ export function dentroDe(hijo, padre) {
  * Solo se admiten separadores "/" y nombres sin ".." ni rutas absolutas.
  */
 export function rutaSegura(raiz, rel) {
-  if (typeof rel !== 'string' || !rel || rel.includes('\0') || rel.includes('\\') || isAbsolute(rel) || rel.split('/').some((p) => p === '..' || p === '.' || p === '')) {
+  if (typeof rel !== 'string' || !rel || rel.includes('\0') || rel.includes('\\') || isAbsolute(rel) || rel.split('/').some((p) => p === '..' || p === '.' || p === '' || esReservado(p))) {
     throw new Error(`ruta no permitida: «${rel}»`);
   }
   const abs = resolve(raiz, rel);

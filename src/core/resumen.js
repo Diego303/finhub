@@ -18,7 +18,7 @@ const nombreMes = (mes) => MESES[partesMes(mes).m - 1];
  * → {elementos: [{id, titulo, detalle, hecho, principal, accion?: {texto, destino}}], hechos, total, proximos: [{fecha, texto, importe?}]}
  * `ahora`: {fecha, hora}; `contexto`: rutas de CONTEXTO/ (las da el servidor).
  */
-export function pendientes(modelo, { fecha: hoy, hora = '00:00' }, { contexto = [] } = {}) {
+export function pendientes(modelo, { fecha: hoy, hora = '00:00' }, { contexto = [], conflictos = [] } = {}) {
   const activos = pendientesActivos(modelo.ajustes.pendientes);
   const inicio = modelo.ajustes.mes_inicio_dia;
   const mes = mesFinanciero(hoy, inicio);
@@ -26,6 +26,9 @@ export function pendientes(modelo, { fecha: hoy, hora = '00:00' }, { contexto = 
   const datosMes = modelo.mes(mes);
   const elementos = [];
   const anadir = (e) => activos.has(e.id) && elementos.push({ principal: PRINCIPALES.includes(e.id), ...e });
+
+  // §2.6: una copia en conflicto siempre se avisa; no se puede quitar de Pendientes
+  for (const c of conflictos) elementos.push({ id: `conflicto:${c.ruta}`, titulo: `⚠ Conflicto en ${c.base}`, detalle: `hay otra versión: ${c.ruta}`, hecho: false, principal: false, accion: { texto: 'Resolver', destino: 'conflictos' } });
 
   // pulso: hecho si hoy ya hay pulso; si no, cuántos días de los últimos 14 no tienen
   const conPulso = new Set(modelo.mundo.filter((d) => d.notas.length || d.pulsos.length).map((d) => d.fecha));

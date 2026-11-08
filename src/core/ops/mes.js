@@ -243,7 +243,7 @@ registrar({
   },
 
   /** {mes, leccion?} → cierra el mes con su foto (saldos, cartera, patrimonio). Avisa, no bloquea. */
-  'mes.cerrar'(tx, { mes, leccion = '' }) {
+  'mes.cerrar'(tx, { mes, leccion }) {
     const { doc, ruta } = abrirMes(tx, mes, { crear: true });
     const cab = cabeceras(doc);
     if (cab.estado?.estado === 'cerrado') throw new ErrorOp('invalida', `${mes} ya está cerrado`);
@@ -252,8 +252,9 @@ registrar({
     const foto = fotoCierre({ ...d, hasta });
     fijarCabecera(doc, 'estado', { estado: 'cerrado', fecha: hasta });
     const sec = seccionDe(doc, 'Cierre');
+    const leccionPrevia = valores(doc, 'Cierre').leccion ?? ''; // la de antes de reabrir, si no dices otra
     if (sec) sec.nodos = sec.nodos.filter((n) => n.k !== 'kv');
-    for (const [k, v] of [['fecha', hasta], ['saldos', foto.saldos], ['cartera', foto.cartera], ['patrimonio', foto.patrimonio], ['leccion', String(leccion ?? '').trim()], ['editado_tras_cierre', false]]) fijarKv(doc, 'Cierre', k, v);
+    for (const [k, v] of [['fecha', hasta], ['saldos', foto.saldos], ['cartera', foto.cartera], ['patrimonio', foto.patrimonio], ['leccion', leccion === undefined ? leccionPrevia : String(leccion ?? '').trim()], ['editado_tras_cierre', false]]) fijarKv(doc, 'Cierre', k, v);
     const grupos = tx.existe('grupos.md') ? items(tx.doc('grupos.md')) : [];
     const t = totales(items(doc, 'Movimientos'), grupos);
     if (t.sinGrupo.length) tx.aviso(`${t.sinGrupo.length} movimiento(s) sin grupo`);
@@ -267,12 +268,16 @@ registrar({
     return { mes, foto };
   },
 
-  /** {mes} → reabre: quita la foto (al volver a cerrar se hace otra). */
+  /** {mes} → reabre: quita la foto (al volver a cerrar se hace otra). La lección y lo escrito a mano se quedan. */
   'mes.reabrir'(tx, { mes }) {
     const { doc, ruta } = abrirMes(tx, mes);
     if (cabeceras(doc).estado?.estado !== 'cerrado') throw new ErrorOp('invalida', `${mes} no está cerrado`);
     fijarCabecera(doc, 'estado', { estado: 'reabierto', fecha: null });
-    doc.secciones = doc.secciones.filter((s) => s.nombre !== 'Cierre');
+    const sec = seccionDe(doc, 'Cierre');
+    if (sec) {
+      sec.nodos = sec.nodos.filter((n) => (n.k === 'kv' ? n.clave === 'leccion' && String(n.valor ?? '').trim() : String(n.texto ?? '').trim()));
+      if (!sec.nodos.length) doc.secciones = doc.secciones.filter((s) => s !== sec);
+    }
     tx.tocar(ruta);
   },
 

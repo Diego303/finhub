@@ -74,10 +74,9 @@ export async function servidorVivo(env = process.env) {
   }
 }
 
-export function abrirNavegador(url) {
-  const candidatos = [['wslview', [url]], ['/mnt/c/Windows/explorer.exe', [url]], ['xdg-open', [url]]];
+export function abrirNavegador(url, { candidatos = [['wslview', [url]], ['/mnt/c/Windows/explorer.exe', [url]], ['xdg-open', [url]]], env = process.env } = {}) {
   for (const [cmd, args] of candidatos) {
-    if (cmd.startsWith('/') ? !existsSync(cmd) : !process.env.PATH?.split(':').some((d) => existsSync(join(d, cmd)))) continue;
+    if (cmd.startsWith('/') ? !existsSync(cmd) : !env.PATH?.split(':').some((d) => existsSync(join(d, cmd)))) continue;
     try {
       const p = spawn(cmd, args, { detached: true, stdio: 'ignore', cwd: cmd.includes('/mnt/c/') ? '/mnt/c' : undefined });
       p.on('error', () => {});

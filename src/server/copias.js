@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 
 export const MANTENER = 14;
 const RE_DIA = /^\d{4}-\d{2}-\d{2}$/;
+const RE_TMP = /^\d{4}-\d{2}-\d{2}\.finhub-tmp-\d+$/;
 
 export class Copias {
   constructor({ almacen, destinoLocal = null, fs = fsp, hoy }) {
@@ -36,12 +37,13 @@ export class Copias {
   }
 
   async copiar(dia) {
+    // la foto, antes del primer `await`: la copia es la de antes de la escritura que la ha pedido
+    const textos = this.almacen.textos().filter((e) => e.legible);
     const dir = join(this.base(), dia);
     const existe = await this.fs.stat(dir).then(() => true, () => false);
     if (existe) return { dia, ficheros: 0, yaExistia: true };
     const tmp = `${dir}.finhub-tmp-${process.pid}`;
     await this.fs.rm(tmp, { recursive: true, force: true });
-    const textos = this.almacen.textos().filter((e) => e.legible);
     const lista = [...textos];
     const trabajar = async () => {
       while (lista.length) {
@@ -55,6 +57,13 @@ export class Copias {
     await this.fs.rename(tmp, dir);
     await this.rotar();
     return { dia, ficheros: textos.length };
+  }
+
+  /** Al abrir con el candado: quita las copias a medias de un corte (solo carpetas con ese nombre exacto). */
+  async limpiarHuerfanas() {
+    const nombres = (await this.fs.readdir(this.base()).catch(() => [])).filter((n) => RE_TMP.test(n));
+    for (const n of nombres) await this.fs.rm(join(this.base(), n), { recursive: true, force: true });
+    return nombres;
   }
 
   /** Deja las 14 copias más recientes (solo carpetas con nombre de fecha). */

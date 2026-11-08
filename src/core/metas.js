@@ -2,7 +2,7 @@
 // Importes en céntimos; porcentajes en puntos básicos. Isomórfico.
 import { saldos } from './patrimonio.js';
 import { totales } from './mes.js';
-import { proporcionPb } from './dinero.js';
+import { proporcionPb, dividirRedondeo } from './dinero.js';
 import { mesDe, sumarMesesMes, mesesEntre, sumarMeses, mesFinanciero, periodoMes } from './fechas.js';
 
 /** Todos los movimientos de la carpeta (de todos los meses). */
@@ -57,7 +57,7 @@ export function progresoMeta(meta, { cuentas, movimientos, hoy, diaInicio = 1 })
   } else if (c.aportacion?.media3m && origen && origen.tipo !== 'manual') {
     const actual = mesFinanciero(hoy, diaInicio);
     const meses = [1, 2, 3].map((k) => sumarMesesMes(actual, -k));
-    aportacion = Math.round(meses.reduce((a, m) => a + flujoMensual(origen, movimientos, m, diaInicio), 0) / 3);
+    aportacion = dividirRedondeo(meses.reduce((a, m) => a + flujoMensual(origen, movimientos, m, diaInicio), 0), 3);
     aportacionOrigen = 'media3m';
   } else if (c.aportacion?.media3m) avisos.push('«media3m» necesita una cuenta o un grupo');
 
@@ -115,5 +115,5 @@ export function consumo12(modelo, hoy) {
   const meses = Array.from({ length: 12 }, (_, i) => sumarMesesMes(actual, -(i + 1))).filter((m) => modelo.mes(m)?.movimientos.length);
   if (!meses.length) return { consumo: null, meses: 0, estimado: true };
   const suma = meses.reduce((a, m) => a + totales(modelo.mes(m).movimientos, modelo.grupos).consumo, 0);
-  return { consumo: meses.length === 12 ? suma : Math.round((suma * 12) / meses.length), meses: meses.length, estimado: meses.length < 12 };
+  return { consumo: meses.length === 12 ? suma : dividirRedondeo(suma * 12, meses.length), meses: meses.length, estimado: meses.length < 12 };
 }

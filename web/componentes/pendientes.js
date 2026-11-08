@@ -5,7 +5,7 @@ import { textoCorto } from '/core/fechas.js';
 import { rex } from './rex-sprite.js';
 
 export function cajaPendientes(estado) {
-  const p = pendientes(estado.modelo, estado.ahora, { contexto: estado.servidor?.contexto ?? [] });
+  const p = pendientes(estado.modelo, estado.ahora, { contexto: estado.servidor?.contexto ?? [], conflictos: estado.servidor?.conflictos ?? [] });
   const pulsoHecho = p.elementos.find((e) => e.id === 'pulso')?.hecho;
   return html`<section class="box" aria-labelledby="titulo-pendientes">
       <div class="entre"><h2 class="lab" id="titulo-pendientes" style="margin:0;font-weight:400">Pendientes hoy</h2><span class="mut" style="font-size:10.5px" aria-label="${p.hechos} de ${p.total} hechos">${p.hechos} / ${p.total}</span></div>

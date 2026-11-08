@@ -28,7 +28,7 @@ const movs = (m, mes) => items(leer(`mes/${mes}.md`, m.fs.get(`mes/${mes}.md`)),
 
 test('el registro tiene las operaciones base', () => {
   for (const o of ['mov.crear', 'mov.editar', 'mov.borrar', 'rec.confirmar', 'rec.saltar', 'rec.desmarcar', 'pres.fijar', 'lista.crear', 'lista.editar', 'lista.borrar', 'bloque.crear', 'bloque.editar', 'bloque.borrar', 'ajustes.fijar', 'ajustes.quitar', 'fichero.borrar', 'papelera.restaurar', 'ficheros.restaurar']) assert.ok(operaciones().includes(o), o);
-  falla(() => aplicarOp(() => null, 'inventada', {}), 'invalida');
+  falla(() => aplicarOp(() => null, 'inventada', {}), 'desconocida');
 });
 
 test('mov.crear: al mes de su fecha, ordenado, con id, escapando | y #; mes nuevo con cabeceras', () => {

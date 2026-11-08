@@ -4,9 +4,11 @@ import { randomBytes } from 'node:crypto';
 import { versionDe } from './almacen.js';
 
 export const MAX_POR_SESION = 30;
+export const DURACION_MS = 10 * 1000; // §2.5: lo que dura el toast
+export const GRACIA_MS = 5 * 1000; // el viaje de ida y vuelta, con la máquina ocupada
 
 export class Deshacer {
-  constructor({ ahora = () => Date.now() } = {}) {
+  constructor({ ahora = () => performance.now() } = {}) {
     this.sesiones = new Map();
     this.ahora = ahora;
   }
@@ -26,7 +28,7 @@ export class Deshacer {
   tomar(sesion, id = null) {
     const pila = this.sesiones.get(sesion) ?? [];
     const i = id ? pila.findIndex((x) => x.id === id) : pila.length - 1;
-    if (i < 0) return null;
+    if (i < 0 || this.ahora() - pila[i].creado > DURACION_MS + GRACIA_MS) return null;
     return pila.splice(i, 1)[0];
   }
 

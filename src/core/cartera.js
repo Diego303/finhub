@@ -1,6 +1,6 @@
 // Cartera (§4.3): posiciones, coste fiscal, valor, plusvalía, impuesto, exposición y clases frente a objetivo.
 // Importes en céntimos; participaciones en millonésimas; pesos en puntos básicos.
-import { sumar, aplicarPb, proporcionPb, dividirRedondeo } from './dinero.js';
+import { sumar, proporcionPb, dividirRedondeo } from './dinero.js';
 
 /**
  * Flujos externos de la cartera (dinero que entra o sale de ella), desde el punto de vista de la cartera:
@@ -214,13 +214,14 @@ export function valorCarteraEn({ activos = [], operaciones = [], fotos, hasta })
  */
 export function impuestoVenta(plusvalia, tramos) {
   if (plusvalia <= 0) return 0;
-  let total = 0;
+  // céntimos × pb, exactos; se redondea una sola vez, al final
+  let total = 0n;
   for (const t of tramos) {
     const tope = t.hasta === null ? plusvalia : Math.min(plusvalia, t.hasta);
     if (tope <= t.desde) break;
-    total += aplicarPb(tope - t.desde, t.pb);
+    total += BigInt(tope - t.desde) * BigInt(t.pb);
   }
-  return total;
+  return dividirRedondeo(total, 10000n);
 }
 
 /**

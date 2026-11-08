@@ -6,7 +6,7 @@
 import fsp from 'node:fs/promises';
 import { createHash, randomBytes } from 'node:crypto';
 import { join, dirname, basename } from 'node:path';
-import { rutaSegura } from './rutas.js';
+import { rutaSegura, dentroDe } from './rutas.js';
 import { detectar } from '../core/formato/index.js';
 
 export const ERRORES_NUBE = new Set(['EIO', 'ETIMEDOUT', 'EAGAIN', 'EBUSY', 'ENODATA', 'ECANCELED', 'EINTR', 'ENXIO']);
@@ -63,6 +63,7 @@ export class Almacen {
     this.oyentes = new Set();
     this.colas = new Map();
     this.caliente = new Map(); // ruta → último uso (ms)
+    this.cambioEn = new Map(); // ruta → versión global en la que cambió por última vez
     this.contador = 0;
   }
 
@@ -74,16 +75,18 @@ export class Almacen {
   avisar(rutas, origen) {
     if (!rutas.length) return;
     this.version++;
+    for (const r of rutas) this.cambioEn.set(r, this.version);
     for (const fn of this.oyentes) fn({ version: this.version, rutas, origen });
   }
 
   // ---------- carga y sondeo ----------
-  async cargar() {
+  /** `limpiar: false`: sin tocar nada aún (hasta saber si tenemos el candado). */
+  async cargar({ limpiar = true } = {}) {
     const st = await this.fs.stat(this.raiz).catch((e) => {
       throw new ErrorAlmacen('ruta', e.code === 'ENOENT' ? `la carpeta de datos no existe: ${this.raiz}` : `no se puede abrir la carpeta de datos: ${e.message}`);
     });
     if (!st.isDirectory()) throw new ErrorAlmacen('ruta', `no es una carpeta: ${this.raiz}`);
-    this.temporalesLimpiados = await this.limpiarTemporales();
+    if (limpiar) this.temporalesLimpiados = await this.limpiarTemporales();
     await this.barrer();
     return this;
   }
@@ -92,6 +95,7 @@ export class Almacen {
   async recorrer() {
     const ficheros = [];
     const dirs = [];
+    const externos = [];
     const visitar = async (rel) => {
       dirs.push(rel);
       let entradas;
@@ -106,12 +110,49 @@ export class Almacen {
         const r = rel ? `${rel}/${e.name}` : e.name;
         if (e.isDirectory()) {
           if (r !== '.finhub') subdirs.push(r);
-        } else if (e.isFile() || e.isSymbolicLink()) ficheros.push(r);
+        } else if (e.isFile()) ficheros.push(r);
+        else if (e.isSymbolicLink()) {
+          // un enlace solo vale si apunta a un fichero dentro de la carpeta (§2.2)
+          if (await this.enlaceDentro(join(this.raiz, r))) ficheros.push(r);
+          else externos.push(r);
+        }
       }
       await enParalelo(subdirs, 8, visitar);
     };
     await visitar('');
-    return { ficheros: ficheros.sort(), dirs: dirs.sort() };
+    return { ficheros: ficheros.sort(), dirs: dirs.sort(), externos: externos.sort() };
+  }
+
+  /** ¿Este enlace apunta a un fichero que está dentro de la carpeta? */
+  async enlaceDentro(abs) {
+    try {
+      const [real, raiz] = await Promise.all([this.fs.realpath(abs), this.fs.realpath(this.raiz)]);
+      return dentroDe(real, raiz) && (await this.fs.stat(real)).isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  /** Antes de escribir: ni el fichero ni la carpeta que lo contiene pueden salir por un enlace. */
+  async comprobarDentro(rel, abs) {
+    let raiz;
+    try {
+      raiz = await this.fs.realpath(this.raiz);
+    } catch {
+      return;
+    }
+    for (let p = abs; p.length >= this.raiz.length; p = dirname(p)) {
+      let real;
+      try {
+        real = await this.fs.realpath(p);
+      } catch (e) {
+        // un enlace colgando sí sale; lo que aún no existe, no
+        if (e.code === 'ENOENT' && (await this.fs.lstat(p).then((l) => l.isSymbolicLink(), () => false))) throw new ErrorAlmacen('ruta', `«${rel}» es un enlace que apunta fuera de la carpeta`, { ruta: rel });
+        continue;
+      }
+      if (!dentroDe(real, raiz)) throw new ErrorAlmacen('ruta', `«${rel}» es un enlace que apunta fuera de la carpeta`, { ruta: rel });
+      return;
+    }
   }
 
   /** Clasifica una ruta: 'dato' | 'conflicto' | 'contexto' | 'temporal' | 'ajeno'. */
@@ -136,9 +177,9 @@ export class Almacen {
     for (let intento = 0; intento <= this.reintentos.length; intento++) {
       try {
         const texto = await this.fs.readFile(abs, 'utf8');
-        if (tamEsperado > 0 && texto.length === 0) {
-          ultimo = Object.assign(new Error('el fichero tiene tamaño pero no devuelve contenido'), { code: 'EIO' });
-        } else return { texto };
+        // 0 bytes es el marcador de un fichero solo en la nube, o una lectura a medias: nunca un fichero vacío
+        if (texto.length === 0) ultimo = Object.assign(new Error('el fichero no devuelve contenido'), { code: 'EIO' });
+        else return { texto };
       } catch (e) {
         if (e.code === 'ENOENT') return { borrado: true };
         ultimo = e;
@@ -172,10 +213,10 @@ export class Almacen {
 
   /** Barrido completo: stat concurrente de todo y lectura de lo que cambió. */
   async barrer() {
-    const { ficheros, dirs } = await this.recorrer();
+    const { ficheros, dirs, externos } = await this.recorrer();
     const existentes = new Set(ficheros);
     const datos = [];
-    const otros = { contexto: [], ajenos: [], conflictos: [] };
+    const otros = { contexto: [], ajenos: [...externos], conflictos: [] };
     for (const rel of ficheros) {
       const c = this.clasificar(rel, existentes);
       if (c.clase === 'dato') datos.push(rel);
@@ -186,11 +227,18 @@ export class Almacen {
       else if (c.clase === 'ajeno') otros.ajenos.push(rel);
     }
     const cambiados = [];
-    const stats = await enParalelo(datos, this.concurrencia, async (rel) => this.fs.stat(join(this.raiz, rel)).catch(() => null));
+    const stats = await enParalelo(datos, this.concurrencia, async (rel) => this.fs.stat(join(this.raiz, rel)).catch((e) => (e.code === 'ENOENT' ? null : { fallo: e.code })));
     await enParalelo(datos, this.concurrencia, async (rel, i) => {
       const st = stats[i];
       const e = this.ficheros.get(rel);
       if (!st) return;
+      if (st.fallo) {
+        // existe (está en el listado) pero no se puede consultar: ni fuera del índice ni «inexistente»
+        const error = ERRORES_NUBE.has(st.fallo) ? 'nube' : 'ilegible';
+        this.ficheros.set(rel, { ...(e ?? { texto: null, version: null, tam: null, mtimeMs: null }), tipo: detectar(rel)?.formato.tipo ?? null, legible: false, error, codigo: st.fallo });
+        if (!e || e.legible !== false) cambiados.push(rel);
+        return;
+      }
       if (e && e.legible && e.tam === st.size && e.mtimeMs === st.mtimeMs) return;
       if (await this.refrescar(rel, st)) cambiados.push(rel);
     });
@@ -249,6 +297,15 @@ export class Almacen {
   }
 
   // ---------- escritura ----------
+  /** rutaSegura con el error que entiende la API (400, no 500). */
+  rutaDatos(rel) {
+    try {
+      return rutaSegura(this.raiz, rel);
+    } catch (e) {
+      throw new ErrorAlmacen('ruta', e.message);
+    }
+  }
+
   /** Encola fn por ruta (escrituras del mismo fichero, en orden). */
   cola(rel, fn) {
     const previa = this.colas.get(rel) ?? Promise.resolve();
@@ -258,10 +315,10 @@ export class Almacen {
   }
 
   async escribirAtomico(abs, texto) {
-    await this.fs.mkdir(dirname(abs), { recursive: true });
     const tmp = join(dirname(abs), `.finhub-tmp-${process.pid}-${++this.contador}-${randomBytes(3).toString('hex')}`);
     let fh;
     try {
+      await this.fs.mkdir(dirname(abs), { recursive: true });
       fh = await this.fs.open(tmp, 'w');
       await fh.writeFile(texto, 'utf8');
       await fh.sync();
@@ -275,6 +332,35 @@ export class Almacen {
     }
   }
 
+  /** §2.4: ¿alguna de estas rutas cambió después de `base` (la versión con la que el cliente cargó los datos)? */
+  comprobarBase(rutas, base) {
+    const cambiada = base > this.version ? rutas[0] : rutas.find((r) => (this.cambioEn.get(r) ?? 0) > base);
+    if (cambiada) throw new ErrorAlmacen('conflicto_version', `«${cambiada}» ha cambiado desde que lo cargaste`, { ruta: cambiada, version: this.obtener(cambiada)?.version ?? null });
+  }
+
+  /** Compara el fichero con el índice. Si cambió por fuera lo recarga y lanza conflicto: nada se escribe. */
+  async comprobarDisco(rel) {
+    const abs = this.rutaDatos(rel);
+    await this.comprobarDentro(rel, abs);
+    const e = this.ficheros.get(rel) ?? null;
+    let st = null;
+    try {
+      st = await this.fs.stat(abs);
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw new ErrorAlmacen(ERRORES_NUBE.has(err.code) ? 'nube' : 'ilegible', `«${rel}» no se puede consultar ahora: no se sobrescribe`, { ruta: rel });
+    }
+    if (!st && !e) return;
+    if (st && e?.legible && e.tam === st.size && e.mtimeMs === st.mtimeMs) return;
+    if (st) await this.refrescar(rel, st);
+    else this.ficheros.delete(rel);
+    const ahora = this.ficheros.get(rel) ?? null;
+    if ((ahora?.version ?? null) !== (e?.version ?? null)) {
+      this.avisar([rel], 'disco');
+      throw new ErrorAlmacen('conflicto_version', `«${rel}» ha cambiado por fuera desde que lo cargaste`, { ruta: rel, version: ahora?.version ?? null });
+    }
+    if (ahora && !ahora.legible) throw new ErrorAlmacen(ahora.error, `«${rel}» no se puede leer ahora: no se sobrescribe`, { ruta: rel });
+  }
+
   /**
    * Escribe varios ficheros de datos {ruta: texto | null(borrar)}.
    * `versiones` {ruta: versión que el cliente vio}: si alguna no coincide → conflicto (409).
@@ -285,11 +371,15 @@ export class Almacen {
       const actual = this.ficheros.get(rel)?.version ?? null;
       if ((v ?? null) !== actual) throw new ErrorAlmacen('conflicto_version', `«${rel}» ha cambiado desde que lo cargaste`, { ruta: rel, version: actual });
     }
+    // el índice puede ir hasta 30 s por detrás del disco: lo editado a mano y aún sin detectar no se pisa
+    for (const [rel, texto] of Object.entries(cambios)) {
+      if (detectar(rel) && (this.ficheros.get(rel)?.texto ?? null) !== texto) await this.comprobarDisco(rel);
+    }
     const hechos = [];
     try {
       for (const [rel, texto] of Object.entries(cambios)) {
         if (!detectar(rel)) throw new ErrorAlmacen('ruta', `«${rel}» no es un fichero de datos`);
-        const abs = rutaSegura(this.raiz, rel);
+        const abs = this.rutaDatos(rel);
         const antes = this.ficheros.get(rel) ?? null;
         if (antes && !antes.legible) throw new ErrorAlmacen(antes.error, `«${rel}» no se puede leer ahora: no se sobrescribe`, { ruta: rel });
         if ((antes?.texto ?? null) === texto) continue;
@@ -342,7 +432,7 @@ export class Almacen {
 
   // ---------- ficheros de servicio (.finhub/) ----------
   rutaServicio(rel) {
-    return rutaSegura(this.raiz, `.finhub/${rel}`);
+    return this.rutaDatos(`.finhub/${rel}`);
   }
   async leerServicio(rel) {
     try {

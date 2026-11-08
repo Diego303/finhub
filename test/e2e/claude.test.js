@@ -57,11 +57,14 @@ test('Datos de mercado con Claude: luz verde, progreso, propuesta revisada y gua
   assert.equal(await p.isDisabled(`${dialogo} [data-cambio=datos-serie][data-id=msci-world-nr-eur]`), true, 'las sintéticas no se tocan');
   for (const id of await p.$$eval(`${dialogo} [data-cambio=datos-serie]:checked`, (x) => x.map((y) => y.dataset.id))) await p.uncheck(`${dialogo} [data-cambio=datos-serie][data-id=${id}]`);
   await p.check(`${dialogo} [data-cambio=datos-serie][data-id=msci-acwi-nr-eur]`);
+  await p.check(`${dialogo} [data-cambio=datos-serie][data-id=rf-global-agregada-eur-h]`); // la respuesta no la trae: QA-071
+  assert.equal(await p.isChecked(`${dialogo} [data-cambio=datos-historia]`), false, 'la historia aproximada solo se pide si la marcas (QA-077)');
   await p.click(`${dialogo} [data-accion=datos-lanzar]`);
   await p.waitForSelector(`${dialogo} .spinner`);
   await p.waitForFunction(() => [...document.querySelectorAll('[data-rex]')].some((x) => ['piensa', 'habla'].includes(x.dataset.rexEstado)));
   await p.waitForSelector(`${dialogo} [data-accion=datos-guardar]`, { timeout: 10000 });
   assert.match(await p.textContent(dialogo), /msci-acwi-nr-eur/);
+  assert.match(await p.textContent(dialogo), /No ha encontrado datos fiables de: rf-global-agregada-eur-h/);
   await p.click(`${dialogo} [data-accion=datos-guardar]`);
   const ruta = join(raiz, 'conocimiento/datos/series/msci-acwi-nr-eur.md');
   for (let i = 0; i < 100 && !(await fsp.stat(ruta).catch(() => null)); i++) await esperar(80);

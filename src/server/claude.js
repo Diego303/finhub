@@ -2,6 +2,7 @@
 // lee), ejecuta el motor aislado, avisa del progreso por SSE, guarda registro y cuarentena en .finhub/ y
 // deja el resultado como PROPUESTA: nada se escribe en tus datos sin una operación que lances tú.
 import { readFileSync } from 'node:fs';
+import fsp from 'node:fs/promises';
 import { join } from 'node:path';
 import { ejecutarTrabajo } from '../claude/motor.js';
 import { trabajo as trabajoDe, resumenTrabajos } from '../claude/trabajos/index.js';
@@ -21,6 +22,10 @@ import { textoInforme } from '../claude/trabajos/encaje.js';
 import { MODOS_DESCUBRIR, PROFUNDIDAD } from '../claude/trabajos/descubrir.js';
 
 const RAIZ_REPO = join(import.meta.dirname, '..', '..');
+function temasValidos(temas = []) {
+  if (!Array.isArray(temas) || temas.some((t) => typeof t !== 'string')) throw Object.assign(new Error('temas no válidos'), { estado: 400 });
+  return temas.slice(0, 20).map((t) => t.slice(0, 60));
+}
 const CONSERVAR = 20; // ejecuciones terminadas que se recuerdan en memoria
 
 export class ServicioClaude {
@@ -57,14 +62,14 @@ export class ServicioClaude {
 
   /** Texto de un fichero de CONTEXTO (la bandeja de la carpeta), solo para la ingesta. */
   async leerContexto(fichero) {
-    if (!/^[^/]+$/.test(fichero ?? '') || fichero.startsWith('.')) throw Object.assign(new Error('fichero de CONTEXTO no válido'), { estado: 400 });
+    if (!/^[^/\\]+$/.test(fichero ?? '') || /^\.+$/.test(fichero) || fichero.startsWith('.')) throw Object.assign(new Error('fichero de CONTEXTO no válido'), { estado: 400 });
     if (!this.app.almacen.otros.contexto.includes(`CONTEXTO/${fichero}`)) throw Object.assign(new Error(`no está en CONTEXTO: ${fichero}`), { estado: 404 });
     return this.app.almacen.fs.readFile(join(this.app.almacen.raiz, 'CONTEXTO', fichero), 'utf8');
   }
 
   /** Mueve un fichero procesado a CONTEXTO/procesados/<fuente>/ (no se borra nada). */
   async archivarContexto(fichero, fuente) {
-    if (!/^[^/]+$/.test(fichero ?? '') || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fuente ?? '')) throw Object.assign(new Error('datos no válidos'), { estado: 400 });
+    if (!/^[^/\\]+$/.test(fichero ?? '') || /^\.+$/.test(fichero) || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fuente ?? '')) throw Object.assign(new Error('datos no válidos'), { estado: 400 });
     const a = this.app.almacen;
     const origen = join(a.raiz, 'CONTEXTO', fichero);
     const dir = join(a.raiz, 'CONTEXTO', 'procesados', fuente);
@@ -85,7 +90,7 @@ export class ServicioClaude {
     return this.manifiesto().map((s) => {
       const existente = modelo.series.find((x) => x.id === s.id);
       const filas = existente ? modelo.serie(s.id) : [];
-      return { ...s, existe: !!existente, sintetica: !!existente?.sintetica, ultimo: filas.at(-1)?.mes ?? null, filas: filas.length, actualizado: existente?.actualizado ?? null };
+      return { ...s, existe: !!existente, sintetica: !!existente?.sintetica, ultimo: filas.at(-1)?.mes ?? null, ultimoValor: filas.at(-1)?.valor ?? null, primero: filas[0]?.mes ?? null, primeroValor: filas[0]?.valor ?? null, filas: filas.length, actualizado: existente?.actualizado ?? null };
     });
   }
 
@@ -95,12 +100,18 @@ export class ServicioClaude {
       const pedidas = new Set(params.ids ?? []);
       const series = this.estadoDatos(modelo).filter((s) => pedidas.has(s.id) && !s.sintetica);
       if (!series.length) throw Object.assign(new Error('elige al menos una serie que no sea sintética'), { estado: 400 });
-      return { series };
+      return { series, historia: params.historia === true };
     }
     if (id === 'privado' || id === 'conocimiento') return this.parametrosTarea(id, params, modelo);
+    if (id === 'rex-web') {
+      if (typeof params.pregunta !== 'string' || !params.pregunta.trim()) throw Object.assign(new Error('escribe la pregunta'), { estado: 400 });
+      return { pregunta: params.pregunta.slice(0, 8000), temas: temasValidos(params.temas) };
+    }
     if (id === 'pulso') {
+      if (!esFecha(params.fecha) || params.fecha > fechaLocal()) throw Object.assign(new Error('elige un día que ya haya pasado o el de hoy'), { estado: 400 });
+      temasValidos(params.temas);
       const activos = params.misActivos ? modelo.activos.filter((a) => !a.campos.archivado).map((a) => a.titulo) : null;
-      return { fecha: params.fecha, temas: params.temas ?? [], activos };
+      return { fecha: params.fecha, temas: temasValidos(params.temas), activos };
     }
     if (id === 'precios' && params.seguimiento) {
       const activos = isinsSeguidos(modelo);
@@ -117,7 +128,7 @@ export class ServicioClaude {
     }
     if (id === 'precios') {
       const ids = new Set(params.ids ?? []);
-      const activos = modelo.activos.filter((a) => a.campos.isin && !a.campos.archivado && (!ids.size || ids.has(a.id))).map((a) => ({ isin: a.campos.isin, nombre: a.titulo }));
+      const activos = modelo.activos.filter((a) => a.campos.isin && !a.campos.archivado && (!ids.size || ids.has(a.id))).map((a) => ({ isin: a.campos.isin, nombre: a.titulo, divisa: a.campos.divisa ?? 'EUR' }));
       if (!activos.length) throw Object.assign(new Error('ningún activo con ISIN'), { estado: 400 });
       return { activos };
     }
@@ -155,24 +166,26 @@ export class ServicioClaude {
     if (params.tarea && (!t || t.trabajo !== id)) throw Object.assign(new Error(`la tarea «${params.tarea}» no es del trabajo «${id}»`), { estado: 400 });
     const r = params.rol ? roles.get(params.rol) : null;
     if (params.rol && (!r || r.trabajo !== id)) throw Object.assign(new Error(`el rol «${params.rol}» no es del trabajo «${id}»`), { estado: 400 });
+    // R1 (§0.1): borradores, análisis e ideas son tuyos: solo los recibe el trabajo «privado»
+    if (id !== 'privado' && (params.borrador || params.analisis || params.idea)) throw Object.assign(new Error('eso son datos tuyos: solo los puede recibir el trabajo «privado»'), { estado: 400 });
     const p = { pregunta: params.pregunta ?? null, fuentes: Array.isArray(params.fuentes) ? params.fuentes : null, temas: params.temas ?? [], tarea: t ? { id: t.id, instrucciones: t.instrucciones, esquema: t.esquema } : null, rol: r ? { texto: r.texto } : null, cifrasExtra: [], bloquesExtra: [] };
     const pct = (pb) => `${pb > 0 ? '+' : ''}${(pb / 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
     if (t?.rangos) {
       const rg = rangos12m(historicoMezcla(componentesDe(filasCartera(modelo), modelo.clases), (x) => modelo.serie(x)));
-      if (!rg.error) p.cifrasExtra.push({ nombre: 'rango 12 m pesimista (p5–p25)', valor: `${pct(rg.pesimista[0])} … ${pct(rg.pesimista[1])}` }, { nombre: 'rango 12 m base (p25–p75)', valor: `${pct(rg.base[0])} … ${pct(rg.base[1])}` }, { nombre: 'rango 12 m optimista (p75–p95)', valor: `${pct(rg.optimista[0])} … ${pct(rg.optimista[1])}` }, { nombre: 'peor caso histórico a 12 m', valor: pct(rg.peor) });
+      if (!rg.error) p.cifrasExtra.push({ nombre: 'rango 12 m pesimista (p5–p25)', valor: `${pct(rg.pesimista[0])} … ${pct(rg.pesimista[1])}` }, { nombre: 'rango 12 m base (p25–p75)', valor: `${pct(rg.base[0])} … ${pct(rg.base[1])}` }, { nombre: 'rango 12 m optimista (p75–p95)', valor: `${pct(rg.optimista[0])} … ${pct(rg.optimista[1])}` }, { nombre: 'peor caso histórico a 12 m', valor: rg.aviso ? `${pct(rg.peor)} (${rg.aviso})` : pct(rg.peor) });
     }
     if (t?.id === 'tu-ano') for (const c of tarjetas(tuAnio(modelo, +hoy.slice(0, 4), hoy))) p.cifrasExtra.push({ nombre: c.titulo, valor: `${c.valor} (${c.sub})` });
     if (params.borrador) {
       const d = modelo.doc(params.borrador);
       if (!d || d.tipo !== 'borrador') throw Object.assign(new Error('borrador no válido'), { estado: 400 });
-      p.bloquesExtra.push({ origen: 'borrador de cartera', nivel: 'publico', contenido: `${d.titulo}\n${items(d).map((f) => `${f.nombre} (${f.clase ?? 'sin clase'}): ${(f.peso / 100).toLocaleString('es-ES')} %`).join('\n')}` });
+      p.bloquesExtra.push({ origen: 'borrador de cartera', nivel: 'privado', contenido: `${d.titulo}\n${items(d).map((f) => `${f.nombre} (${f.clase ?? 'sin clase'}): ${(f.peso / 100).toLocaleString('es-ES')} %`).join('\n')}` });
     }
     if (params.analisis) {
       const d = modelo.doc(params.analisis);
       if (!d || d.tipo !== 'analisis') throw Object.assign(new Error('análisis no válido'), { estado: 400 });
       p.bloquesExtra.push({ origen: `análisis ${params.analisis}`, nivel: 'privado', contenido: textoSeccion(d, 'Resultado') ?? '' });
     }
-    if (params.idea) p.bloquesExtra.push({ origen: 'idea a revisar', nivel: id === 'privado' ? 'privado' : 'publico', contenido: String(params.idea).slice(0, 4000) });
+    if (params.idea) p.bloquesExtra.push({ origen: 'idea a revisar', nivel: 'privado', contenido: String(params.idea).slice(0, 4000) });
     if (params.semana) Object.assign(p, limitesSemana(params.semana));
     if (params.quiz) p.quiz = Math.min(8, Math.max(3, +params.quiz || 6));
     return p;
@@ -234,10 +247,11 @@ export class ServicioClaude {
       const series = r.json.series.map((s) => {
         const m = params.series.find((x) => x.id === s.id);
         const existentes = modelo.series.some((x) => x.id === s.id) ? modelo.serie(s.id) : [];
-        const rev = revisarFilas(existentes, s.filas, { unidad: m.unidad, mesActual });
+        const rev = revisarFilas(existentes, s.filas, { id: s.id, unidad: m.unidad, mesActual });
         return { id: s.id, titulo: m.que, unidad: m.unidad, fuente: s.origen, metodo: m.metodo, filas: rev.filas, avisos: rev.avisos, desde: rev.filas[0]?.mes ?? null, hasta: rev.filas.at(-1)?.mes ?? null };
       });
-      return { ...base, series };
+      const faltan = params.series.filter((p) => !series.some((s) => s.id === p.id)).map((p) => p.id);
+      return { ...base, series, faltan };
     }
     return { ...base, json: r.json };
   }
@@ -246,6 +260,23 @@ export class ServicioClaude {
     const e = this.ejecuciones.get(id);
     if (!e) return null;
     return { id: e.id, trabajo: e.trabajo, estado: e.estado, inicio: e.inicio, texto: e.texto, resultado: e.resultado ?? null };
+  }
+
+  /** Sandboxes de más de un día: los dejó un servidor que murió. Solo «sbx-*» (otra instancia viva usa los recientes). */
+  async limpiarSandboxesViejos({ ahora = Date.now() } = {}) {
+    const nombres = await fsp.readdir(this.sandboxBase).catch(() => []);
+    for (const n of nombres.filter((x) => x.startsWith('sbx-'))) {
+      const d = join(this.sandboxBase, n);
+      const st = await fsp.stat(d).catch(() => null);
+      if (st && ahora - st.mtimeMs > 24 * 3600 * 1000) await fsp.rm(d, { recursive: true, force: true }).catch(() => {});
+    }
+  }
+
+  /** Cancela todo lo que esté en marcha y espera a que termine (al parar el servidor o cambiar de carpeta). */
+  async cancelarTodos() {
+    const enCurso = [...this.ejecuciones.values()].filter((e) => e.estado === 'en_curso');
+    for (const e of enCurso) e.ac.abort();
+    await Promise.allSettled(enCurso.map((e) => e.promesa));
   }
 
   cancelar(id) {
