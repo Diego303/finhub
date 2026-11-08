@@ -6,7 +6,7 @@ Plan e inventario: [QA-PLAN.md](QA-PLAN.md). Lista manual: [QA-CHECKLIST.md](QA-
 
 | | |
 |---|---|
-| **`pnpm test:todo`** | **720 pruebas, en verde tres veces seguidas** (650 sin navegador + 70 de navegador) |
+| **`pnpm test:todo`** | **772 pruebas, en verde tres veces seguidas** (702 sin navegador + 70 de navegador), las dos primeras el 2026-11-07 y la tercera el 2026-11-08, con el mismo código |
 | **Cobertura de líneas** | `src/core` 99,1 % (objetivo 95) · `src/claude` 98,8 % y `src/server` 98,0 % (objetivo 85) · `src/cli` 85,4 % |
 | **Sesión prolongada** (`pnpm test:larga`, aparte) | 30 minutos, 15.976 operaciones: sin fugas |
 | **`~/.config/finhub/config.json`** | igual que al empezar: no existe. Ninguna prueba ha tocado tu carpeta ni ha llamado al Claude real |
