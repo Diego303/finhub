@@ -74,6 +74,8 @@ ftserussell.com
 stoxx.com
 nasdaqomx.com
 bolsasymercados.es
+# Bloomberg Index: metodologías y fichas oficiales (Global/Euro Aggregate, WGILB, BCOM). Añadido con OK del usuario, 2026-11-08
+assets.bbhub.io
 
 # --- Prensa de referencia ---
 reuters.com
@@ -89,9 +91,19 @@ ssrn.com
 repec.org
 nobelprize.org
 cfainstitute.org
-nyu.edu
-dartmouth.edu
-yale.edu
+# Universidades: solo los subdominios de facultad o de datos, nunca el dominio entero (tiene páginas de
+# estudiantes y de terceros). Endurecido con OK del usuario, 2026-11-09.
+pages.stern.nyu.edu
+mba.tuck.dartmouth.edu
+cowles.yale.edu
+econ.yale.edu
+# Añadidos con OK del usuario, 2026-11-08 (fuentes de la Base actual: supervisor británico, Nobel y artículos académicos)
+fca.org.uk
+kva.se
+faculty.haas.berkeley.edu
+chicagobooth.edu
+econometricsociety.org
 
-# --- Archivo web (solo la página original archivada) ---
+# --- Archivo web: solo https://web.archive.org/web/<fecha>/<URL de un dominio de esta lista> (la guardia
+# rechaza /save y cualquier otra ruta) ---
 archive.org

@@ -45,8 +45,28 @@ export function dominiosPermitidos(texto = readFileSync(join(import.meta.dirname
 
 const hostPermitido = (host, lista) => lista.some((d) => host === d || host.endsWith(`.${d}`));
 
-/** ¿La URL puede sacar datos? Trozos largos aleatorios (base64, hex) en la ruta o en la consulta. */
-const RE_TROZO_SOSPECHOSO = /[A-Za-z0-9+/_=-]{48,}/;
+/**
+ * ¿La URL puede sacar datos? Trozos largos aleatorios (base64, hex) en la ruta o en la consulta.
+ * Sin «/», «-» ni «_» en la clase (decisión del usuario, 2026-11-08, INCIDENCIAS): con ellos saltaban rutas y
+ * nombres de fichero normales de AEAT, MSCI, CNMV, BdE, BCE o ESMA. Sigue parando base64 y hex de 48+ caracteres
+ * seguidos; un token troceado con «-», «_» o «/» ya no se para, y por eso la lista de dominios es la barrera principal.
+ */
+const RE_TROZO_SOSPECHOSO = /[A-Za-z0-9+=]{48,}/;
+
+/** archive.org solo sirve para ver la copia archivada de una fuente de la lista: nunca /save ni otras rutas. */
+const RE_ARCHIVADA = /^\/web\/\d{4,14}[a-z_]{0,4}\/(https?:\/\/.+)$/i;
+function revisarArchivo(host, ruta, lista) {
+  const m = RE_ARCHIVADA.exec(ruta);
+  if (host !== 'web.archive.org' || !m) return 'archive.org solo para ver una copia archivada: https://web.archive.org/web/<fecha>/<URL de una fuente de la lista>';
+  let h;
+  try {
+    h = new URL(m[1]).hostname.toLowerCase();
+  } catch {
+    return 'archive.org: la URL archivada no es válida';
+  }
+  if (hostPermitido(h, ['archive.org']) || !hostPermitido(h, lista)) return `archive.org: la página archivada («${h}») no es de un dominio de la lista`;
+  return null;
+}
 
 export function revisarUrl(url, lista = dominiosPermitidos()) {
   let u;
@@ -61,8 +81,18 @@ export function revisarUrl(url, lista = dominiosPermitidos()) {
   const host = u.hostname.toLowerCase();
   if (/^[\d.]+$/.test(host) || host.includes(':') || host === 'localhost') return 'no se permiten IP ni localhost';
   if (!hostPermitido(host, lista)) return `el dominio «${host}» no está en .claude/hooks/dominios.txt. Si es una fuente válida (primaria, prensa de referencia o divulgación seria), pide al usuario que lo añada`;
+  if (hostPermitido(host, ['archive.org'])) {
+    const m = revisarArchivo(host, u.pathname + u.search, lista);
+    if (m) return m;
+  }
   if (u.search.length > 400) return 'la consulta de la URL es demasiado larga (posible salida de datos)';
-  if (RE_TROZO_SOSPECHOSO.test(decodeURIComponent(u.pathname + u.search).replace(/period\d=\d+/g, ''))) return 'la URL lleva un trozo largo aleatorio (posible salida de datos)';
+  let plano;
+  try {
+    plano = decodeURIComponent(u.pathname + u.search);
+  } catch {
+    return 'la URL lleva una codificación «%» no válida';
+  }
+  if (RE_TROZO_SOSPECHOSO.test(plano.replace(/period\d=\d+/g, ''))) return 'la URL lleva un trozo largo aleatorio (posible salida de datos)';
   return null;
 }
 
