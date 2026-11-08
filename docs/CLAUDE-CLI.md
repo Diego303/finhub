@@ -172,4 +172,4 @@ Los transcripts de las sondas se borraron de `~/.claude/projects/` al terminar.
 En los 9: `mcp_servers` vacío, sin skills ni comandos, sin memoria, `permissionMode: dontAsk`, ningún evento de hook y solo los plugins internos `cc-plugin-agents-md`, `cc-plugin-privacy` y `cc-plugin-plugin-authoring`. Nada de huddle ni de lo global. En los trabajos sin privado, ni el nombre de una cuenta ni el de una meta en el stdin.
 
 - `init.agents` trae 5 agentes de serie, pero sin la herramienta `Task` no se pueden lanzar. La guardia no mira ese campo.
-- Solo se ha probado haiku. Los trabajos usan opus o sonnet en el uso real: el aislamiento es el mismo, pero la calidad de las respuestas no se ha medido.
+- El humo usa haiku. Después, el 2026-11-07 y 08, todos los trabajos se ejecutaron también con sus modelos normales (opus y sonnet) en una carpeta de pruebas: ver «QA9» en [QA-INFORME.md](QA-INFORME.md). Cada uno, una o pocas veces: la calidad de las respuestas no se ha medido en muchas pasadas.

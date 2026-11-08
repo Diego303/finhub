@@ -70,7 +70,7 @@ aplicarOp(leer, nombre, args, ctx) → { escribir: {ruta: texto | null}, inversa
 | `familia.borrar` | `{id, destino}` | sus fuentes pasan a otra familia |
 | `mezcla.crear` · `mezcla.limpiar` · `fuentes.activas` | `{nombre, miembros}` · `{id}` · `{ids}` | mezclas (con selectores `@…`); limpiar quita las fuentes borradas (§9.10); tu mezcla por defecto |
 | `prediccion.crear` · `prediccion.resolver` · `predicciones.resolverAuto` | `{fuente, texto, medir?, nota?}` · `{id, estado}` · `{}` | predicciones y su resolución, a mano o automática con las series |
-| `datos.aplicar` | `{series}` | guarda las filas que propuso el trabajo «datos» y confirmaste (nunca completa una serie sintética) |
+| `datos.aplicar` | `{series}` | guarda las filas que propuso el trabajo «datos» y confirmaste: los meses posteriores a tu último, y los anteriores a tu primero solo si vienen marcados `aproximación` (van delante, y su fuente se añade a la de la serie). Nunca completa una serie sintética |
 | `base.importar` | `{ficheros}` | copia a `conocimiento/base/` las notas de la Base que aún no tienes |
 
 ## Lo que propone Claude (`ia.js`)
